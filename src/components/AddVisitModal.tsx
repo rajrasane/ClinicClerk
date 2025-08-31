@@ -1,6 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
+import toast from 'react-hot-toast';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface Patient {
   id: number;
@@ -37,6 +41,12 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Focus management
+  const modalRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    modalRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     fetchPatients();
@@ -84,12 +94,15 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
       const result = await response.json();
 
       if (result.success) {
+        toast.success('Visit added successfully!');
         onSuccess();
         onClose();
       } else {
+        toast.error(result.error || 'Failed to create visit');
         setError(result.error || 'Failed to create visit');
       }
     } catch (error) {
+      toast.error('Network error. Please try again.');
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
@@ -121,246 +134,318 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     patient.phone.includes(searchTerm)
   );
 
-  return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-gray-100">
-        <div className="flex justify-between items-center p-6 border-b border-gray-100/50">
-          <h2 className="text-2xl font-semibold text-gray-900">Record New Visit</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+  const handleOverlayKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Escape') {
+      e.stopPropagation();
+      onClose();
+    }
+  };
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {error && (
-            <div className="p-4 bg-red-50/50 backdrop-blur-sm border border-red-200 text-red-700 rounded-lg">
-              {error}
+  const modalContent = (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center z-[99999] p-2 sm:p-4"
+        onClick={onClose}
+        onKeyDown={handleOverlayKeyDown}
+        aria-hidden={false}
+      >
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          className="bg-white rounded-2xl sm:rounded-3xl shadow-xl w-full max-w-[95vw] sm:max-w-xl md:max-w-2xl lg:max-w-4xl h-[90vh] sm:h-[85vh] lg:h-[94vh] flex flex-col overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-title"
+          tabIndex={-1}
+          ref={modalRef}
+        >
+          {/* Header */}
+          <div className="border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex-shrink-0">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 id="modal-title" className="text-xl sm:text-2xl font-bold text-gray-800">Add New Visit</h2>
+                <p className="text-gray-600 text-xs sm:text-sm mt-0.5 sm:mt-1">Record patient visit details</p>
+              </div>
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-gray-600 text-xl sm:text-2xl p-1"
+                aria-label="Close modal"
+              >
+                <XMarkIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+              </button>
             </div>
-          )}
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Patient Selection */}
-            <div className="md:col-span-2">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <span className="p-1.5 bg-green-50 rounded-md text-green-600">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </span>
-                Patient Information
-              </h3>
-            </div>
+          <div className="flex-1 flex flex-col">
+            {/* Content */}
+            <div className="flex-1 min-h-0 relative">
+              <div className="absolute inset-0 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 hover:scrollbar-thumb-gray-400 scrollbar-track-transparent p-3 sm:p-4 md:p-5">
+                <form id="visit-form" onSubmit={handleSubmit} className="space-y-6">
+                  {error && (
+                    <div className="p-4 bg-red-50/50 backdrop-blur-sm border border-red-200 text-red-700 rounded-lg">
+                      {error}
+                    </div>
+                  )}
 
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Patient <span className="text-red-500">*</span>
-              </label>
-              <div className="space-y-2">
-                <input
-                  type="text"
-                  placeholder="Search patient by name or phone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-white/50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-colors"
-                />
-                <select
-                  name="patient_id"
-                  value={formData.patient_id}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-white/50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-colors"
-                >
-                  <option value="">Choose a patient</option>
-                  {filteredPatients.map((patient) => (
-                    <option key={patient.id} value={patient.id}>
-                      {patient.first_name} {patient.last_name} - {patient.phone}
-                    </option>
-                  ))}
-                </select>
+                  {/* Patient Selection */}
+                  <div className="space-y-6">
+                    <div className="text-center mb-4 sm:mb-6">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900">Patient Information</h3>
+                      <p className="text-xs sm:text-sm text-gray-600">Select patient and visit details</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="md:col-span-2">
+                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                          Select Patient <span className="text-red-500">*</span>
+                        </label>
+                        <div className="space-y-2">
+                          <input
+                            type="text"
+                            placeholder="Search patient by name or phone..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                          />
+                          <select
+                            name="patient_id"
+                            value={formData.patient_id}
+                            onChange={handleChange}
+                            required
+                            className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                          >
+                            <option value="">Choose a patient</option>
+                            {filteredPatients.map((patient) => (
+                              <option key={patient.id} value={patient.id}>
+                                {patient.first_name} {patient.last_name} - {patient.phone}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                          Visit Date <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="date"
+                          name="visit_date"
+                          value={formData.visit_date}
+                          onChange={handleChange}
+                          required
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                          Follow-up Date <span className="text-gray-400">(optional)</span>
+                        </label>
+                        <input
+                          type="date"
+                          name="follow_up_date"
+                          value={formData.follow_up_date}
+                          onChange={handleChange}
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Visit Details */}
+                  <div className="space-y-6">
+                    <div className="text-center mb-4 sm:mb-6">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900">Visit Details</h3>
+                      <p className="text-xs sm:text-sm text-gray-600">Medical examination information</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="md:col-span-2">
+                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                          Chief Complaint <span className="text-red-500">*</span>
+                        </label>
+                        <textarea
+                          name="chief_complaint"
+                          value={formData.chief_complaint}
+                          onChange={handleChange}
+                          required
+                          rows={2}
+                          placeholder="Main reason for visit"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                          Symptoms
+                        </label>
+                        <textarea
+                          name="symptoms"
+                          value={formData.symptoms}
+                          onChange={handleChange}
+                          rows={3}
+                          placeholder="Detailed symptoms observed"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                          Diagnosis
+                        </label>
+                        <textarea
+                          name="diagnosis"
+                          value={formData.diagnosis}
+                          onChange={handleChange}
+                          rows={2}
+                          placeholder="Medical diagnosis"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                          Prescription
+                        </label>
+                        <textarea
+                          name="prescription"
+                          value={formData.prescription}
+                          onChange={handleChange}
+                          rows={3}
+                          placeholder="Medications and dosage instructions"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Vitals */}
+                  <div className="space-y-6">
+                    <div className="text-center mb-4 sm:mb-6">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900">Vital Signs</h3>
+                      <p className="text-xs sm:text-sm text-gray-600">Patient vital measurements (optional)</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Temperature</label>
+                        <input
+                          type="text"
+                          name="vitals.temperature"
+                          value={formData.vitals.temperature}
+                          onChange={handleChange}
+                          placeholder="e.g., 98.6°F"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Blood Pressure</label>
+                        <input
+                          type="text"
+                          name="vitals.blood_pressure"
+                          value={formData.vitals.blood_pressure}
+                          onChange={handleChange}
+                          placeholder="e.g., 120/80"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Pulse Rate</label>
+                        <input
+                          type="text"
+                          name="vitals.pulse"
+                          value={formData.vitals.pulse}
+                          onChange={handleChange}
+                          placeholder="e.g., 72 bpm"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Weight</label>
+                        <input
+                          type="text"
+                          name="vitals.weight"
+                          value={formData.vitals.weight}
+                          onChange={handleChange}
+                          placeholder="e.g., 70 kg"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  <div className="space-y-6">
+                    <div className="text-center mb-4 sm:mb-6">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900">Additional Notes</h3>
+                      <p className="text-xs sm:text-sm text-gray-600">Any other observations or instructions</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 gap-6">
+                      <div>
+                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                          Additional Notes
+                        </label>
+                        <textarea
+                          name="notes"
+                          value={formData.notes}
+                          onChange={handleChange}
+                          rows={3}
+                          placeholder="Any additional observations or instructions"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                </form>
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Visit Date <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                name="visit_date"
-                value={formData.visit_date}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Follow-up Date <span className="text-gray-400">(optional)</span>
-              </label>
-              <input
-                type="date"
-                name="follow_up_date"
-                value={formData.follow_up_date}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            {/* Visit Details */}
-            <div className="md:col-span-2 mt-4">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Visit Details</h3>
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Chief Complaint <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                name="chief_complaint"
-                value={formData.chief_complaint}
-                onChange={handleChange}
-                required
-                rows={2}
-                placeholder="Main reason for visit"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Symptoms
-              </label>
-              <textarea
-                name="symptoms"
-                value={formData.symptoms}
-                onChange={handleChange}
-                rows={3}
-                placeholder="Detailed symptoms observed"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Diagnosis
-              </label>
-              <textarea
-                name="diagnosis"
-                value={formData.diagnosis}
-                onChange={handleChange}
-                rows={2}
-                placeholder="Medical diagnosis"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Prescription
-              </label>
-              <textarea
-                name="prescription"
-                value={formData.prescription}
-                onChange={handleChange}
-                rows={3}
-                placeholder="Medications and dosage instructions"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            {/* Vitals */}
-            <div className="md:col-span-2 mt-4">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Vital Signs <span className="text-gray-400">(optional)</span></h3>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Temperature</label>
-              <input
-                type="text"
-                name="vitals.temperature"
-                value={formData.vitals.temperature}
-                onChange={handleChange}
-                placeholder="e.g., 98.6°F"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Blood Pressure</label>
-              <input
-                type="text"
-                name="vitals.blood_pressure"
-                value={formData.vitals.blood_pressure}
-                onChange={handleChange}
-                placeholder="e.g., 120/80"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Pulse Rate</label>
-              <input
-                type="text"
-                name="vitals.pulse"
-                value={formData.vitals.pulse}
-                onChange={handleChange}
-                placeholder="e.g., 72 bpm"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Weight</label>
-              <input
-                type="text"
-                name="vitals.weight"
-                value={formData.vitals.weight}
-                onChange={handleChange}
-                placeholder="e.g., 70 kg"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            {/* Notes */}
-            <div className="md:col-span-2 mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Additional Notes
-              </label>
-              <textarea
-                name="notes"
-                value={formData.notes}
-                onChange={handleChange}
-                rows={3}
-                placeholder="Any additional observations or instructions"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+            {/* Footer */}
+            <div className="bg-gray-50 px-4 sm:px-6 py-2.5 sm:py-3 flex justify-end items-center border-t flex-shrink-0">
+              <div className="flex space-x-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  form="visit-form"
+                  disabled={loading}
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white bg-gray-900 border border-transparent rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {loading ? (
+                    <span className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Adding...
+                    </span>
+                  ) : (
+                    'Add Visit'
+                  )}
+                </button>
+              </div>
             </div>
           </div>
-
-          <div className="flex justify-end space-x-3 mt-6 pt-4 border-t">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Recording Visit...' : 'Record Visit'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
+
+  return typeof window !== 'undefined' ? createPortal(modalContent, document.body) : null;
 }

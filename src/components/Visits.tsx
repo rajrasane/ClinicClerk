@@ -24,13 +24,14 @@ interface Visit {
 export default function AdminVisits() {
   // Component state
   const [visits, setVisits] = useState<Visit[]>([]);
-  const [loading, setLoading] = useState(false); // Start as false to avoid flash on mount
+  const [loading, setLoading] = useState(false);
   const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showDateFilter, setShowDateFilter] = useState(false);
   const [dateRange, setDateRange] = useState({
     startDate: '',
     endDate: ''
@@ -112,8 +113,6 @@ export default function AdminVisits() {
     };
   }, [currentPage, searchQuery, dateRange.startDate, dateRange.endDate]);
 
-  
-
   // Fetch function for component callbacks
   const fetchVisitsData = () => {
     setCurrentPage(1);
@@ -143,210 +142,237 @@ export default function AdminVisits() {
   return (
     <div className="space-y-6">
       {/* Controls Section */}
-        {/* Header Section */}
-        <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4">
         {/* Header and Add Button */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Visit Management</h2>
             <p className="text-gray-600">Record and manage patient visits</p>
           </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Add New Visit
-          </button>
+          <div className="flex items-center gap-11">
+            <button
+              onClick={() => setShowDateFilter(!showDateFilter)}
+              className={`order-2 md:order-1 flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                showDateFilter 
+                  ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              Filter by Date
+            </button>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="order-1 md:order-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm sm:text-base"
+            >
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Add New Visit</span>
+            </button>
+          </div>
         </div>
 
         {/* Search and Date Filters */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
-          <div className="col-span-1">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Search
-            </label>
+        <div className='mt-2'>
+          {/* Search Input */}
+          <div className="relative w-full">
             <input
               type="text"
               placeholder="Search by patient name or complaint..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base"
             />
+            <svg
+              className="absolute left-3 top-2.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
           </div>
 
-          <div className="col-span-1">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              From Date
-            </label>
-            <input
-              type="date"
-              value={dateRange.startDate}
-              onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          {/* Date Inputs */}
+          <div className="space-y-4 mt-2">
 
-          <div className="col-span-1">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              To Date
-            </label>
-            <input
-              type="date"
-              value={dateRange.endDate}
-              min={dateRange.startDate}
-              onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            {/* Date Inputs */}
+            {showDateFilter && (
+              <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs md:text-sm lg:text-sm font-medium text-gray-700 mb-1">
+                    From Date
+                  </label>
+                  <input
+                    type="date"
+                    value={dateRange.startDate}
+                    onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs md:text-sm lg:text-sm font-medium text-gray-700 mb-1">
+                    To Date
+                  </label>
+                  <input
+                    type="date"
+                    value={dateRange.endDate}
+                    min={dateRange.startDate}
+                    onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Visits Table */}
-      <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-            <p className="mt-2 text-gray-500">Loading visits...</p>
-          </div>
-        ) : visits.length === 0 ? (
-          <div className="p-8 text-center">
-            <p className="text-gray-500">No visits found</p>
-          </div>
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Visit Details
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Patient
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Chief Complaint
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Diagnosis
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Vitals
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {visits.map((visit) => (
-                    <tr key={visit.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            Visit #{visit.id}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {formatDate(visit.visit_date)}
-                          </div>
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+              <tr>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Visit
+                </th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Date
+                </th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+                  Patient
+                </th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                  Chief Complaint
+                </th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                  Diagnosis
+                </th>
+                <th className="px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-100">
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="px-3 sm:px-6 py-4 text-center">
+                    <div className="flex justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                    </div>
+                  </td>
+                </tr>
+              ) : visits.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-3 sm:px-6 py-4 text-center text-gray-500">
+                    No visits found
+                  </td>
+                </tr>
+              ) : (
+                visits.map((visit) => (
+                  <tr key={visit.id} className="hover:bg-gray-50">
+                    <td className="px-3 sm:px-6 py-3">
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium text-gray-900">
+                          Visit #{visit.id}
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
+                        
+                        <div className="sm:hidden space-y-1">
+                          <div className="text-xs text-gray-700 font-medium">
                             {visit.first_name} {visit.last_name}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            ID: {visit.patient_id} | {visit.phone}
+                          <div className="text-xs text-gray-600">
+                            {visit.chief_complaint.length > 50 ? `${visit.chief_complaint.substring(0, 50)}...` : visit.chief_complaint}
                           </div>
+                          {visit.diagnosis && (
+                            <div className="text-xs text-green-700">
+                              <span className="font-medium">Dx:</span> {visit.diagnosis.length > 40 ? `${visit.diagnosis.substring(0, 40)}...` : visit.diagnosis}
+                            </div>
+                          )}
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900 max-w-xs truncate">
-                          {visit.chief_complaint}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900 max-w-xs truncate">
-                          {visit.diagnosis || 'Not specified'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-xs text-gray-500">
-                          {formatVitals(visit.vitals)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <div className="flex justify-center items-center">
-                          <button
-                            onClick={() => handleViewVisit(visit)}
-                            className="inline-flex items-center px-3 py-1.5 bg-green-50 hover:bg-green-100 text-green-600 rounded-md transition-colors"
-                          >
-                            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                            View Details
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      </div>
+                    </td>
+                    <td className="px-3 sm:px-6 py-4">
+                      <div className="text-sm text-gray-900">
+                        {formatDate(visit.visit_date)}
+                      </div>
+                    </td>
+                    <td className="px-3 sm:px-6 py-4 hidden sm:table-cell">
+                      <div className="text-sm font-medium text-gray-900">
+                        {visit.first_name} {visit.last_name}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        ID: {visit.patient_id}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {visit.phone}
+                      </div>
+                    </td>
+                    <td className="px-3 sm:px-6 py-4 hidden md:table-cell">
+                      <div className="text-sm text-gray-900 max-w-xs truncate">
+                        {visit.chief_complaint}
+                      </div>
+                    </td>
+                    <td className="px-3 sm:px-6 py-4 hidden lg:table-cell">
+                      <div className="text-sm text-gray-900 max-w-xs truncate">
+                        {visit.diagnosis || 'Not specified'}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {visit.vitals?.weight && (
+                          <div>Weight: {visit.vitals.weight.toLowerCase().includes('kg') ? visit.vitals.weight : `${visit.vitals.weight} kg`}</div>
+                        )}
+                        {formatVitals(visit.vitals)}
+                      </div>
+                    </td>
+                    <td className="px-3 sm:px-6 py-4 text-center">
+                      <button
+                        onClick={() => handleViewVisit(visit)}
+                        className="px-3 py-1.5 rounded-md bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors text-sm font-medium"
+                        title="View Details"
+                      >
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
-                <div className="flex-1 flex justify-between sm:hidden">
-                  <button
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
-                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    Next
-                  </button>
-                </div>
-                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm text-gray-700">
-                      Page <span className="font-medium">{currentPage}</span> of{' '}
-                      <span className="font-medium">{totalPages}</span>
-                    </p>
-                  </div>
-                  <div>
-                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                      <button
-                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                        disabled={currentPage === 1}
-                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                      >
-                        Previous
-                      </button>
-                      <button
-                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                        disabled={currentPage === totalPages}
-                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                      >
-                        Next
-                      </button>
-                    </nav>
-                  </div>
-                </div>
-              </div>
-            )}
-          </>
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4 px-4 py-3 border-t border-gray-200">
+            <div className="text-sm text-gray-700">
+              Page {currentPage} of {totalPages}
+            </div>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-3 sm:px-4 py-2 border rounded-md text-sm disabled:opacity-50 hover:bg-gray-50"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-3 sm:px-4 py-2 border rounded-md text-sm disabled:opacity-50 hover:bg-gray-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
         )}
       </div>
 
