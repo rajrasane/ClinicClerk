@@ -111,8 +111,13 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    
+    // Only submit if we're on the final step
+    if (currentStep < totalSteps) {
+      return;
+    }
     
     // Validate required fields only
     const newErrors: FormErrors = {};
@@ -202,6 +207,9 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
       if (target.tagName === 'INPUT' && currentStep < totalSteps) {
         e.preventDefault();
         if (canProceed()) nextStep();
+      } else if (currentStep < totalSteps) {
+        // Prevent form submission when not on the last step
+        e.preventDefault();
       }
     }
   };
@@ -260,7 +268,6 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
         value={formData[name as keyof typeof formData] || ''}
         onChange={handleChange}
         onBlur={handleBlur}
-        required={required}
         maxLength={type === 'tel' ? 10 : undefined}
         placeholder={placeholder}
         className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
@@ -298,7 +305,6 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
                   name="gender"
                   value={formData.gender}
                   onChange={handleChange}
-                  required
                   className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
                     errors.gender 
                       ? 'border-red-500 focus:ring-red-500' 
@@ -435,7 +441,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} onKeyDown={handleFormKeyDown} className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col">
             {/* Content */}
             <div className="flex-1 min-h-0 relative">
               <div className="absolute inset-0 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 hover:scrollbar-thumb-gray-400 scrollbar-track-transparent p-3 sm:p-4 md:p-5">
@@ -476,7 +482,8 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
                   </button>
                 ) : (
                   <button
-                    type="submit"
+                    type="button"
+                    onClick={handleSubmit}
                     disabled={loading || !canProceed()}
                     className="px-4 py-2 text-sm font-medium text-white bg-gray-900 border border-transparent rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
@@ -495,7 +502,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
                 )}
               </div>
             </div>
-          </form>
+          </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>

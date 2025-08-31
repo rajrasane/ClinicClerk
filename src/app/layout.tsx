@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from 'react-hot-toast';
-import { SpeedInsights } from '@vercel/speed-insights/next';
-import { Analytics } from "@vercel/analytics/next"
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ 
+  subsets: ["latin"],
+  display: 'swap',
+  preload: true
+});
 
 export const metadata: Metadata = {
   title: "ClinicClerk - Patient Management System",
@@ -45,8 +47,6 @@ export default function RootLayout({
             },
           }}
         />
-        <SpeedInsights />
-        <Analytics />
       </body>
     </html>
   );

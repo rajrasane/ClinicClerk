@@ -184,7 +184,7 @@ export default function PatientDetailsModal({ patient, onClose, onUpdate }: Pati
                 </div>
               </div>
 
-              <hr className="md:col-span-2 border-gray-200 my-4" />
+              <hr className="md:col-span-2 border-gray-200 my-2" />
 
               <div className="md:col-span-2 space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">Medical Information</h3>
