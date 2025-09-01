@@ -1,5 +1,7 @@
 import { Pool } from 'pg';
 
+console.log("👉 DATABASE_URL =", process.env.DATABASE_URL);
+
 // In development, we want to avoid creating multiple pool instances
 declare global {
   var postgres: Pool | undefined;
