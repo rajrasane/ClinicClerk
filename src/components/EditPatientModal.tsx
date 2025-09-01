@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 
 interface Patient {
   id: number;
@@ -103,17 +104,21 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
       const result = await response.json();
 
       if (result.success) {
+        toast.success('Patient updated successfully!');
         onSuccess();
         onClose();
       } else {
         if (result.error === 'Phone number already exists') {
+          toast.error('This phone number is already registered with another patient');
           setErrors({ phone: 'This phone number is already registered with another patient' });
         } else {
+          toast.error(result.error || 'Failed to update patient');
           setErrors({ general: result.error || 'Failed to update patient' });
         }
       }
     } catch (error) {
       console.error('Error updating patient:', error);
+      toast.error('Failed to update patient. Please try again.');
       setErrors({ general: 'Failed to update patient. Please try again.' });
     } finally {
       setLoading(false);

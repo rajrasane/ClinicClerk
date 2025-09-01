@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import VisitDetailsModal from '@/components/VisitDetailsModal';
 import AddVisitModal from '@/components/AddVisitModal';
 import EditVisitModal from '@/components/EditVisitModal';
@@ -143,10 +144,14 @@ export default function AdminVisits() {
       });
       
       if (response.ok) {
+        toast.success('Visit deleted successfully!');
         fetchVisitsData(); // Refresh the list
+      } else {
+        toast.error('Failed to delete visit');
       }
     } catch (error) {
       console.error('Error deleting visit:', error);
+      toast.error('Failed to delete visit. Please try again.');
     }
   };
 

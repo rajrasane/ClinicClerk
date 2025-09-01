@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 
 interface Visit {
   id: number;
@@ -91,13 +92,16 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
       const result = await response.json();
 
       if (result.success) {
+        toast.success('Visit updated successfully!');
         onSuccess();
         onClose();
       } else {
+        toast.error(result.error || 'Failed to update visit');
         setErrors({ general: result.error || 'Failed to update visit' });
       }
     } catch (error) {
       console.error('Error updating visit:', error);
+      toast.error('Failed to update visit. Please try again.');
       setErrors({ general: 'Failed to update visit. Please try again.' });
     } finally {
       setLoading(false);
@@ -131,7 +135,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Edit Visit</h2>
             <p className="text-sm text-gray-600 mt-1">
-              Visit #{visit.id} - {visit.first_name} {visit.last_name}
+              {visit.first_name} {visit.last_name} • {new Date(visit.visit_date).toLocaleDateString()}
             </p>
           </div>
           <button
@@ -322,7 +326,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end space-x-2 p-4 border-t border-gray-200 bg-gray-50">
+        <div className="flex justify-end space-x-3 p-2 border-t bg-gray-50">
           <button
             type="button"
             onClick={onClose}

@@ -74,10 +74,10 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(preselectedPatientId ? 1 : 1);
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
-  const [patientType, setPatientType] = useState<'existing' | 'new' | null>(null);
-  const totalSteps = patientType === 'new' ? 6 : 4;
+  const [patientType, setPatientType] = useState<'existing' | 'new' | null>(preselectedPatientId ? 'existing' : null);
+  const totalSteps = patientType === 'new' ? 5 : (preselectedPatientId ? 2 : 4);
 
   // Focus management
   const modalRef = useRef<HTMLDivElement | null>(null);
@@ -463,6 +463,117 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
   };
 
   const renderStepContent = () => {
+    // If patient is preselected, skip to visit details
+    if (preselectedPatientId) {
+      switch (currentStep) {
+        case 1:
+          return (
+            <div className="space-y-6">
+              <div className="text-center mb-4 sm:mb-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Visit Details</h3>
+                <p className="text-xs sm:text-sm text-gray-600">Medical examination information</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {renderInput("Visit Date", "visit_date", "date", true)}
+                {renderInput("Follow-up Date", "follow_up_date", "date", false)}
+                <div className="md:col-span-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Chief Complaint <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    name="chief_complaint"
+                    value={formData.chief_complaint}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    required
+                    rows={2}
+                    placeholder="Main reason for visit"
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                      errors.chief_complaint 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:ring-gray-900'
+                    }`}
+                  />
+                  {errors.chief_complaint && (
+                    <p className="mt-1 text-sm text-red-600">{errors.chief_complaint}</p>
+                  )}
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Symptoms
+                  </label>
+                  <textarea
+                    name="symptoms"
+                    value={formData.symptoms}
+                    onChange={handleChange}
+                    rows={3}
+                    placeholder="Detailed symptoms observed"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Diagnosis
+                  </label>
+                  <textarea
+                    name="diagnosis"
+                    value={formData.diagnosis}
+                    onChange={handleChange}
+                    rows={3}
+                    placeholder="Medical diagnosis"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Prescription
+                  </label>
+                  <textarea
+                    name="prescription"
+                    value={formData.prescription}
+                    onChange={handleChange}
+                    rows={3}
+                    placeholder="Medications and dosage instructions"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        case 2:
+          return (
+            <div className="space-y-6">
+              <div className="text-center mb-4 sm:mb-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Vital Signs & Notes</h3>
+                <p className="text-xs sm:text-sm text-gray-600">Patient vital measurements and additional notes</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {renderInput("Temperature", "vitals.temperature", "text", false, "e.g., 98.6°F")}
+                {renderInput("Blood Pressure", "vitals.blood_pressure", "text", false, "e.g., 120/80")}
+                {renderInput("Pulse Rate", "vitals.pulse", "text", false, "e.g., 72 bpm")}
+                {renderInput("Weight", "vitals.weight", "text", false, "e.g., 70 kg")}
+                <div className="md:col-span-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Additional Notes
+                  </label>
+                  <textarea
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleChange}
+                    rows={3}
+                    placeholder="Any additional observations or instructions"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        default:
+          return null;
+      }
+    }
+
+    // Normal flow when no patient is preselected
     switch (currentStep) {
       case 1:
         return (
@@ -726,54 +837,12 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           return (
             <div className="space-y-6">
               <div className="text-center mb-4 sm:mb-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Visit Dates</h3>
-                <p className="text-xs sm:text-sm text-gray-600">Select visit and follow-up dates</p>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {renderInput("Visit Date", "visit_date", "date", true)}
-                {renderInput("Follow-up Date", "follow_up_date", "date", false)}
-              </div>
-            </div>
-          );
-        } else {
-          return (
-            <div className="space-y-6">
-              <div className="text-center mb-4 sm:mb-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Vital Signs & Notes</h3>
-                <p className="text-xs sm:text-sm text-gray-600">Patient vital measurements and additional notes</p>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {renderInput("Temperature", "vitals.temperature", "text", false, "e.g., 98.6°F")}
-                {renderInput("Blood Pressure", "vitals.blood_pressure", "text", false, "e.g., 120/80")}
-                {renderInput("Pulse Rate", "vitals.pulse", "text", false, "e.g., 72 bpm")}
-                {renderInput("Weight", "vitals.weight", "text", false, "e.g., 70 kg")}
-                <div className="md:col-span-2">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                    Additional Notes
-                  </label>
-                  <textarea
-                    name="notes"
-                    value={formData.notes}
-                    onChange={handleChange}
-                    rows={3}
-                    placeholder="Any additional observations or instructions"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
-                  />
-                </div>
-              </div>
-            </div>
-          );
-        }
-
-      case 5:
-        if (patientType === 'new') {
-          return (
-            <div className="space-y-6">
-              <div className="text-center mb-4 sm:mb-6">
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900">Visit Details</h3>
                 <p className="text-xs sm:text-sm text-gray-600">Medical examination information</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {renderInput("Visit Date", "visit_date", "date", true)}
+                {renderInput("Follow-up Date", "follow_up_date", "date", false)}
                 <div className="md:col-span-2">
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Chief Complaint <span className="text-red-500">*</span>
@@ -817,7 +886,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     name="diagnosis"
                     value={formData.diagnosis}
                     onChange={handleChange}
-                    rows={2}
+                    rows={3}
                     placeholder="Medical diagnosis"
                     className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
                   />
@@ -832,6 +901,93 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     onChange={handleChange}
                     rows={3}
                     placeholder="Medications and dosage instructions"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        } else {
+          return (
+            <div className="space-y-6">
+              <div className="text-center mb-4 sm:mb-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Vital Signs & Notes</h3>
+                <p className="text-xs sm:text-sm text-gray-600">Patient vital measurements and additional notes</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {renderInput("Temperature", "vitals.temperature", "text", false, "e.g., 98.6°F")}
+                {renderInput("Blood Pressure", "vitals.blood_pressure", "text", false, "e.g., 120/80")}
+                {renderInput("Pulse Rate", "vitals.pulse", "text", false, "e.g., 72 bpm")}
+                {renderInput("Weight", "vitals.weight", "text", false, "e.g., 70 kg")}
+                <div className="md:col-span-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Additional Notes
+                  </label>
+                  <textarea
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleChange}
+                    rows={3}
+                    placeholder="Any additional observations or instructions"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+      case 5:
+        if (patientType === 'new') {
+          return (
+            <div className="space-y-6">
+              <div className="text-center mb-4 sm:mb-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Vital Signs & Notes</h3>
+                <p className="text-xs sm:text-sm text-gray-600">Patient vital measurements and additional notes</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {renderInput("Temperature", "vitals.temperature", "text", false, "e.g., 98.6°F")}
+                {renderInput("Blood Pressure", "vitals.blood_pressure", "text", false, "e.g., 120/80")}
+                {renderInput("Pulse Rate", "vitals.pulse", "text", false, "e.g., 72 bpm")}
+                {renderInput("Weight", "vitals.weight", "text", false, "e.g., 70 kg")}
+                <div className="md:col-span-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Additional Notes
+                  </label>
+                  <textarea
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleChange}
+                    rows={3}
+                    placeholder="Any additional observations or instructions"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        } else {
+          return (
+            <div className="space-y-6">
+              <div className="text-center mb-4 sm:mb-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Vital Signs & Notes</h3>
+                <p className="text-xs sm:text-sm text-gray-600">Patient vital measurements and additional notes</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {renderInput("Temperature", "vitals.temperature", "text", false, "e.g., 98.6°F")}
+                {renderInput("Blood Pressure", "vitals.blood_pressure", "text", false, "e.g., 120/80")}
+                {renderInput("Pulse Rate", "vitals.pulse", "text", false, "e.g., 72 bpm")}
+                {renderInput("Weight", "vitals.weight", "text", false, "e.g., 70 kg")}
+                <div className="md:col-span-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Additional Notes
+                  </label>
+                  <textarea
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleChange}
+                    rows={3}
+                    placeholder="Any additional observations or instructions"
                     className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
                   />
                 </div>
@@ -922,7 +1078,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     <span>Patient Type</span>
                     <span>Basic Info</span>
                     <span>Medical Info</span>
-                    <span>Visit Dates</span>
+                    <span>Visit Details</span>
+                    <span>Vitals & Notes</span>
+                  </>
+                ) : preselectedPatientId ? (
+                  <>
                     <span>Visit Details</span>
                     <span>Vitals & Notes</span>
                   </>
@@ -937,8 +1097,10 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
               </div>
               <div className="sm:hidden text-center text-xs text-gray-500 mb-2">
                 Step {currentStep} of {totalSteps}: {patientType === 'new' 
-                  ? ['Patient Type', 'Basic Information', 'Medical Information', 'Visit Dates', 'Visit Details', 'Vital Signs & Notes'][currentStep - 1]
-                  : ['Patient Type', 'Patient Selection', 'Visit Details', 'Vital Signs & Notes'][currentStep - 1]}
+                  ? ['Patient Type', 'Basic Information', 'Medical Information', 'Visit Details', 'Vital Signs & Notes'][currentStep - 1]
+                  : preselectedPatientId 
+                    ? ['Visit Details', 'Vital Signs & Notes'][currentStep - 1]
+                    : ['Patient Type', 'Patient Selection', 'Visit Details', 'Vital Signs & Notes'][currentStep - 1]}
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 

@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import PatientDetailsModal from './PatientDetailsModal';
 import AddPatientModal from './AddPatientModalNew';
 import EditPatientModal from './EditPatientModal';
+import AddVisitModal from './AddVisitModal';
 
 interface Visit {
   id: number;
@@ -42,6 +44,8 @@ export default function AdminPatients() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+  const [showAddVisitModal, setShowAddVisitModal] = useState(false);
+  const [preselectedPatientId, setPreselectedPatientId] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -174,11 +178,20 @@ export default function AdminPatients() {
       });
       
       if (response.ok) {
+        toast.success('Patient deleted successfully!');
         fetchPatients(); // Refresh the list
+      } else {
+        toast.error('Failed to delete patient');
       }
     } catch (error) {
       console.error('Error deleting patient:', error);
+      toast.error('Failed to delete patient. Please try again.');
     }
+  };
+
+  const handleAddVisit = (patientId: number) => {
+    setPreselectedPatientId(patientId);
+    setShowAddVisitModal(true);
   };
 
   const formatDate = (dateString: string) => {
@@ -384,6 +397,7 @@ export default function AdminPatients() {
             setSelectedPatient(null);
           }}
           onUpdate={fetchPatients}
+          onAddVisit={handleAddVisit}
         />
       )}
 
@@ -404,6 +418,22 @@ export default function AdminPatients() {
             setEditingPatient(null);
           }}
           onSuccess={fetchPatients}
+        />
+      )}
+
+      {/* Add Visit Modal */}
+      {showAddVisitModal && (
+        <AddVisitModal
+          onClose={() => {
+            setShowAddVisitModal(false);
+            setPreselectedPatientId(null);
+          }}
+          onSuccess={() => {
+            fetchPatients(); // Refresh patients to update visit counts
+            setShowAddVisitModal(false);
+            setPreselectedPatientId(null);
+          }}
+          preselectedPatientId={preselectedPatientId || undefined}
         />
       )}
     </div>

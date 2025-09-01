@@ -36,9 +36,10 @@ interface PatientDetailsModalProps {
   patient: Patient;
   onClose: () => void;
   onUpdate: () => void;
+  onAddVisit?: (patientId: number) => void;
 }
 
-export default function PatientDetailsModal({ patient, onClose, onUpdate }: PatientDetailsModalProps) {
+export default function PatientDetailsModal({ patient, onClose, onUpdate, onAddVisit }: PatientDetailsModalProps) {
   const [activeTab, setActiveTab] = useState('details');
   const [mounted, setMounted] = useState(false);
 
@@ -199,7 +200,12 @@ export default function PatientDetailsModal({ patient, onClose, onUpdate }: Pati
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold text-gray-900">Visit History</h3>
                 <button
-                  onClick={onUpdate}
+                  onClick={() => {
+                    if (onAddVisit) {
+                      onClose(); // Close patient details modal first
+                      onAddVisit(patient.id); // Then open add visit modal with patient pre-selected
+                    }
+                  }}
                   className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
                 >
                   Add New Visit
