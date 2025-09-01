@@ -143,10 +143,21 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         }
       });
     } else {
-      setFormData({
-        ...formData,
-        [name]: value
-      });
+      // Special handling for phone number inputs - only allow digits
+      if (name === 'phone' || name === 'emergency_contact') {
+        const numericValue = value.replace(/\D/g, ''); // Remove all non-digits
+        if (numericValue.length <= 10) { // Limit to 10 digits
+          setFormData({
+            ...formData,
+            [name]: numericValue
+          });
+        }
+      } else {
+        setFormData({
+          ...formData,
+          [name]: value
+        });
+      }
     }
 
     // Validate on change if field has been touched
@@ -237,11 +248,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
 
       // Prepare vitals data
       const vitalsData = Object.entries(formData.vitals)
-        .filter(([key, value]) => value.trim() !== '')
+        .filter(([, value]) => value.trim() !== '')
         .reduce((acc, [key, value]) => {
           acc[key] = value;
           return acc;
-        }, {} as any);
+        }, {} as Record<string, string>);
 
       const response = await fetch('/api/visits', {
         method: 'POST',
@@ -271,7 +282,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         toast.error(result.error || 'Failed to create visit');
         setErrors({ general: result.error || 'Failed to create visit' });
       }
-    } catch (error) {
+    } catch {
       toast.error('Network error. Please try again.');
       setErrors({ general: 'Network error. Please try again.' });
     } finally {
@@ -617,7 +628,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
             <div className="space-y-6">
               <div className="text-center mb-4 sm:mb-6">
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900">Basic Information</h3>
-                <p className="text-xs sm:text-sm text-gray-600">New patient's personal details</p>
+                <p className="text-xs sm:text-sm text-gray-600">New patient&apos;s personal details</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {renderInput("First Name", "first_name", "text", true, "e.g., Rahul")}

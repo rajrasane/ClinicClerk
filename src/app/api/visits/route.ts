@@ -27,10 +27,10 @@ export async function GET(request: NextRequest) {
       FROM visits v
       JOIN patients p ON v.patient_id = p.id
     `;
-    const queryParams: any[] = [];
+    const queryParams: (string | number)[] = [];
     let paramCount = 0;
 
-    let conditions = [];
+    const conditions: string[] = [];
 
     if (patientId) {
       const patientIdNum = parseInt(patientId);

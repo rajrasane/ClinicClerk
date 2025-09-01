@@ -13,7 +13,7 @@ interface Visit {
   prescription: string;
   notes: string;
   follow_up_date: string;
-  vitals: any;
+  vitals: Record<string, string> | null;
   first_name: string;
   last_name: string;
   phone: string;

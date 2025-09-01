@@ -50,6 +50,25 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    
+    // Special handling for phone number inputs - only allow digits
+    if (name === 'phone' || name === 'emergency_contact') {
+      const numericValue = value.replace(/\D/g, ''); // Remove all non-digits
+      if (numericValue.length <= 10) { // Limit to 10 digits
+        setFormData(prev => ({ ...prev, [name]: numericValue }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -108,13 +127,8 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
         onSuccess();
         onClose();
       } else {
-        if (result.error === 'Phone number already exists') {
-          toast.error('This phone number is already registered with another patient');
-          setErrors({ phone: 'This phone number is already registered with another patient' });
-        } else {
-          toast.error(result.error || 'Failed to update patient');
-          setErrors({ general: result.error || 'Failed to update patient' });
-        }
+        toast.error(result.error || 'Failed to update patient');
+        setErrors({ general: result.error || 'Failed to update patient' });
       }
     } catch (error) {
       console.error('Error updating patient:', error);
@@ -125,15 +139,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  };
+  // Remove duplicate handleInputChange - using handleChange instead
 
   return (
     <div className="fixed inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center z-[99999] p-4">
@@ -172,7 +178,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                     type="text"
                     name="first_name"
                     value={formData.first_name}
-                    onChange={handleInputChange}
+                    onChange={handleChange}
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="e.g., Rahul"
                   />
@@ -187,7 +193,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                     type="text"
                     name="last_name"
                     value={formData.last_name}
-                    onChange={handleInputChange}
+                    onChange={handleChange}
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="e.g., Sharma"
                   />
@@ -202,7 +208,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                     type="date"
                     name="date_of_birth"
                     value={formData.date_of_birth}
-                    onChange={handleInputChange}
+                    onChange={handleChange}
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                   {errors.date_of_birth && (
@@ -215,7 +221,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                   <select
                     name="gender"
                     value={formData.gender}
-                    onChange={handleInputChange}
+                    onChange={handleChange}
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">Select</option>
@@ -240,7 +246,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                     type="tel"
                     name="phone"
                     value={formData.phone}
-                    onChange={handleInputChange}
+                    onChange={handleChange}
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="e.g., 9876543210"
                   />
@@ -254,7 +260,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                   <textarea
                     name="address"
                     value={formData.address}
-                    onChange={handleInputChange}
+                    onChange={handleChange}
                     rows={3}
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="e.g., Flat 203, Krishna Heights, Sector 12, Vashi, Navi Mumbai - 400703"
@@ -270,7 +276,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                     type="tel"
                     name="emergency_contact"
                     value={formData.emergency_contact}
-                    onChange={handleInputChange}
+                    onChange={handleChange}
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="e.g., 9876543211"
                   />
@@ -287,7 +293,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                   <select
                     name="blood_group"
                     value={formData.blood_group}
-                    onChange={handleInputChange}
+                    onChange={handleChange}
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">Select</option>
@@ -307,7 +313,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                   <textarea
                     name="allergies"
                     value={formData.allergies}
-                    onChange={handleInputChange}
+                    onChange={handleChange}
                     rows={3}
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="e.g., Penicillin allergy, Dust allergy (or 'None' if no allergies)"

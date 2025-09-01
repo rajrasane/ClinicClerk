@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       FROM patients
     `;
     let countQuery = 'SELECT COUNT(*) FROM patients';
-    const queryParams: any[] = [];
+    const queryParams: (string | number)[] = [];
     let paramCount = 0;
 
     if (search) {
@@ -140,13 +140,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating patient:', error);
     
-    // Handle unique constraint violation for phone
-    if (error instanceof Error && error.message.includes('duplicate key value violates unique constraint "patients_phone_key"')) {
-      return NextResponse.json(
-        { success: false, error: 'Phone number already exists' },
-        { status: 409 }
-      );
-    }
+    // Phone numbers can be shared by family members, so no unique constraint
 
     return NextResponse.json(
       { success: false, error: 'Failed to create patient' },

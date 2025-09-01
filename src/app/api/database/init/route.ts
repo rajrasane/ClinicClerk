@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { initializeDatabase, testConnection } from '@/lib/init-db';
 
 // POST /api/database/init - Initialize database with schema
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     const result = await initializeDatabase();
     
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/database/init - Test database connection
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const result = await testConnection();
     

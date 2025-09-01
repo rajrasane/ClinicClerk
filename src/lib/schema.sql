@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS patients (
     last_name VARCHAR(50) NOT NULL,
     date_of_birth DATE NOT NULL,
     gender VARCHAR(10) CHECK (gender IN ('Male', 'Female', 'Other')),
-    phone VARCHAR(15) UNIQUE,
+    phone VARCHAR(15),
     address TEXT,
     blood_group VARCHAR(5) CHECK (blood_group IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')),
     allergies TEXT,

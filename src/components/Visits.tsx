@@ -16,7 +16,7 @@ interface Visit {
   prescription: string;
   notes: string;
   follow_up_date: string;
-  vitals: any;
+  vitals: Record<string, string> | null;
   created_at: string;
   first_name: string;
   last_name: string;
@@ -87,8 +87,8 @@ export default function AdminVisits() {
           setVisits(data.data);
           setTotalPages(data.pagination.totalPages);
         }
-      } catch (error: any) {
-        if (error?.name !== 'AbortError' && isSubscribed) {
+      } catch (error: unknown) {
+        if ((error as Error)?.name !== 'AbortError' && isSubscribed) {
           console.error('Error fetching visits:', error);
         }
       } finally {
@@ -147,7 +147,9 @@ export default function AdminVisits() {
         toast.success('Visit deleted successfully!');
         fetchVisitsData(); // Refresh the list
       } else {
-        toast.error('Failed to delete visit');
+        const errorMessage = 'Failed to delete visit';
+        console.error('Error deleting visit:', response);
+        toast.error(errorMessage);
       }
     } catch (error) {
       console.error('Error deleting visit:', error);
@@ -159,7 +161,7 @@ export default function AdminVisits() {
     return new Date(dateString).toLocaleDateString('en-IN');
   };
 
-  const formatVitals = (vitals: any) => {
+  const formatVitals = (vitals: Record<string, string> | null) => {
     if (!vitals) return 'Not recorded';
     
     const vitalsArray = [];

@@ -4,11 +4,11 @@ import pool from '@/lib/db';
 // GET /api/patients/[id] - Get patient with visit history
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const params = await context.params;
-    const patientId = parseInt(params.id);
+    const { id } = await params;
+    const patientId = parseInt(id);
 
     if (isNaN(patientId)) {
       return NextResponse.json(
@@ -73,11 +73,11 @@ export async function GET(
 // PUT /api/patients/[id] - Update patient
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const params = await context.params;
-    const patientId = parseInt(params.id);
+    const { id } = await params;
+    const patientId = parseInt(id);
 
     if (isNaN(patientId)) {
       return NextResponse.json(
@@ -167,13 +167,7 @@ export async function PUT(
   } catch (error) {
     console.error('Error updating patient:', error);
     
-    // Handle unique constraint violation for phone
-    if (error instanceof Error && error.message.includes('duplicate key value violates unique constraint "patients_phone_key"')) {
-      return NextResponse.json(
-        { success: false, error: 'Phone number already exists' },
-        { status: 409 }
-      );
-    }
+    // Phone numbers can be shared by family members, so no unique constraint
 
     return NextResponse.json(
       { success: false, error: 'Failed to update patient' },
@@ -185,11 +179,11 @@ export async function PUT(
 // DELETE /api/patients/[id] - Delete patient
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const params = await context.params;
-    const patientId = parseInt(params.id);
+    const { id } = await params;
+    const patientId = parseInt(id);
 
     if (isNaN(patientId)) {
       return NextResponse.json(

@@ -81,9 +81,23 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
     return '';
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Special handling for phone number inputs - only allow digits
+    if (name === 'phone' || name === 'emergency_contact') {
+      const numericValue = value.replace(/\D/g, ''); // Remove all non-digits
+      if (numericValue.length <= 10) { // Limit to 10 digits
+        setFormData(prev => ({ ...prev, [name]: numericValue }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
     
     // If field has been touched and has a previous error, validate on change
     if (touchedFields.has(name)) {
@@ -195,18 +209,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
     }
   };
 
-  const handleFormKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
-    if (e.key === 'Enter') {
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' && currentStep < totalSteps) {
-        e.preventDefault();
-        if (canProceed()) nextStep();
-      } else if (currentStep < totalSteps) {
-        // Prevent form submission when not on the last step
-        e.preventDefault();
-      }
-    }
-  };
+  // Removed unused handleFormKeyDown function
 
   const handleOverlayKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Escape') {
@@ -283,7 +286,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
           <div className="space-y-6">
             <div className="text-center mb-4 sm:mb-6">
               <h3 className="text-base sm:text-lg font-semibold text-gray-900">Basic Information</h3>
-              <p className="text-xs sm:text-sm text-gray-600">Patient's personal details</p>
+              <p className="text-xs sm:text-sm text-gray-600">Patient&apos;s personal details</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

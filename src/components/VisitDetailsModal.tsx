@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
-import { X, Edit2, Printer, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Visit {
   id: number;
@@ -15,7 +14,7 @@ interface Visit {
   prescription: string;
   notes: string;
   follow_up_date: string;
-  vitals: any;
+  vitals: Record<string, string> | null;
   created_at: string;
   first_name: string;
   last_name: string;
@@ -28,10 +27,8 @@ interface VisitDetailsModalProps {
   onUpdate: () => void;
 }
 
-export default function VisitDetailsModal({ visit, onClose, onUpdate }: VisitDetailsModalProps) {
-  const [activeTab, setActiveTab] = useState('details');
+export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalProps) {
   const [mounted, setMounted] = useState(false);
-  const [isPrinting, setIsPrinting] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -45,28 +42,9 @@ export default function VisitDetailsModal({ visit, onClose, onUpdate }: VisitDet
     return new Date(dateString).toLocaleDateString('en-IN');
   };
 
-  const formatDateTime = (dateString: string) => {
-    if (!dateString) return 'Not set';
-    return new Date(dateString).toLocaleString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const formatVitals = (vitals: any) => {
+  const formatVitals = (vitals: Record<string, string> | null) => {
     if (!vitals) return {};
     return vitals;
-  };
-
-  const handlePrint = () => {
-    setIsPrinting(true);
-    setTimeout(() => {
-      window.print();
-      setIsPrinting(false);
-    }, 200);
   };
 
   const renderContent = () => (
@@ -155,9 +133,7 @@ export default function VisitDetailsModal({ visit, onClose, onUpdate }: VisitDet
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className={`bg-white/90 backdrop-blur-md rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden ${
-            isPrinting ? 'w-full h-full max-h-none max-w-none m-0 rounded-none' : ''
-          }`}
+          className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}

@@ -15,7 +15,7 @@ interface Visit {
   diagnosis: string;
   prescription: string;
   notes: string;
-  vitals: any;
+  vitals: Record<string, string> | null;
 }
 
 interface Patient {
@@ -85,8 +85,8 @@ export default function AdminPatients() {
           setPatients(data.data);
           setTotalPages(data.pagination.totalPages);
         }
-      } catch (error: any) {
-        if (error?.name !== 'AbortError' && isSubscribed) {
+      } catch (error: unknown) {
+        if ((error as Error)?.name !== 'AbortError' && isSubscribed) {
           console.error('Error fetching patients:', error);
         }
       } finally {
@@ -194,9 +194,7 @@ export default function AdminPatients() {
     setShowAddVisitModal(true);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN');
-  };
+  // Removed unused formatDate function
 
   const calculateAge = (birthDate: string) => {
     const today = new Date();

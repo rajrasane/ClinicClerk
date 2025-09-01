@@ -12,7 +12,7 @@ interface Visit {
   diagnosis: string;
   prescription: string;
   notes: string;
-  vitals: any;
+  vitals: Record<string, string> | null;
 }
 
 interface Patient {
@@ -39,7 +39,7 @@ interface PatientDetailsModalProps {
   onAddVisit?: (patientId: number) => void;
 }
 
-export default function PatientDetailsModal({ patient, onClose, onUpdate, onAddVisit }: PatientDetailsModalProps) {
+export default function PatientDetailsModal({ patient, onClose, onAddVisit }: PatientDetailsModalProps) {
   const [activeTab, setActiveTab] = useState('details');
   const [mounted, setMounted] = useState(false);
 
@@ -228,7 +228,7 @@ export default function PatientDetailsModal({ patient, onClose, onUpdate, onAddV
                               <div className="flex items-center whitespace-nowrap">
                                 <span className="w-11 sm:w-auto font-medium">Temp</span>
                                 <span className="mx-1">:</span>
-                                <span>{visit.vitals.temperature.includes('°F') ? visit.vitals.temperature : `${visit.vitals.temperature}°F`}</span>
+                                <span>{String(visit.vitals.temperature).includes('°F') ? visit.vitals.temperature : `${visit.vitals.temperature}°F`}</span>
                               </div>
                             )}
                             {/* Pulse */}
@@ -236,7 +236,7 @@ export default function PatientDetailsModal({ patient, onClose, onUpdate, onAddV
                               <div className="flex items-center whitespace-nowrap">
                                 <span className="w-11 sm:w-auto font-medium">Pulse</span>
                                 <span className="mx-1">:</span>
-                                <span>{visit.vitals.pulse.toLowerCase().includes('bpm') ? visit.vitals.pulse : `${visit.vitals.pulse} bpm`}</span>
+                                <span>{String(visit.vitals.pulse).toLowerCase().includes('bpm') ? visit.vitals.pulse : `${visit.vitals.pulse} bpm`}</span>
                               </div>
                             )}
                             {/* Blood Pressure */}
@@ -252,7 +252,7 @@ export default function PatientDetailsModal({ patient, onClose, onUpdate, onAddV
                               <div className="flex items-center whitespace-nowrap">
                                 <span className="w-11 sm:w-auto font-medium">Wt</span>
                                 <span className="mx-1">:</span>
-                                <span>{visit.vitals.weight.toLowerCase().includes('kg') ? visit.vitals.weight : `${visit.vitals.weight} kg`}</span>
+                                <span>{String(visit.vitals.weight).toLowerCase().includes('kg') ? visit.vitals.weight : `${visit.vitals.weight} kg`}</span>
                               </div>
                             )}
                           </div>
