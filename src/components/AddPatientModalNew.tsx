@@ -20,7 +20,6 @@ const validationPatterns = {
   first_name: /^[a-zA-Z\s.'-]+$/,
   last_name: /^[a-zA-Z\s.'-]+$/,
   phone: /^(\+91[\s-]?)?[6-9]\d{9}$/,
-  email: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
   address: /^[a-zA-Z0-9\s\-.,()&#]+$/,
   emergency_contact: /^(\+91[\s-]?)?[6-9]\d{9}$/,
 };
@@ -30,7 +29,6 @@ const validationMessages = {
   first_name: 'First name should contain only letters, spaces, dots, apostrophes, and hyphens',
   last_name: 'Last name should contain only letters, spaces, dots, apostrophes, and hyphens',
   phone: 'Phone number must be a valid Indian mobile number (10 digits)',
-  email: 'Please enter a valid email address',
   address: 'Address should contain only letters, numbers, spaces, and basic punctuation',
   blood_group: 'Blood group must be valid (e.g., A+, B-, AB+, O-)',
   emergency_contact: 'Emergency contact must be a valid Indian mobile number (10 digits)',
@@ -43,7 +41,6 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
     date_of_birth: '',
     gender: '',
     phone: '',
-    email: '',
     address: '',
     blood_group: '',
     allergies: '',
@@ -69,9 +66,6 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
 
     const pattern = validationPatterns[name as keyof typeof validationPatterns];
     if (pattern && value.trim() && !pattern.test(value.trim())) {
-      if (name === 'email' && !value.trim()) {
-        return ''; // Allow empty email
-      }
       return validationMessages[name as keyof typeof validationMessages];
     }
 
@@ -240,7 +234,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
         return hasValue && hasNoError;
       }
       
-      // Optional fields in first step (like email)
+      // Optional fields in first step
       return true;
     });
   };
@@ -248,7 +242,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
   const getCurrentStepFields = () => {
     switch (currentStep) {
       case 1:
-        return ['first_name', 'last_name', 'date_of_birth', 'gender', 'phone', 'email', 'address'];
+        return ['first_name', 'last_name', 'date_of_birth', 'gender', 'phone', 'address'];
       case 2:
         return ['blood_group', 'allergies', 'emergency_contact'];
       default:
@@ -321,7 +315,6 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
                 )}
               </div>
               {renderInput("Phone", "phone", "tel", true, "e.g., 9876543210")}
-              {renderInput("Email", "email", "email", false, "e.g., rahul.sharma@gmail.com")}
               <div className="md:col-span-2">
                 {renderInput("Address", "address", "text", true, "e.g., Flat 203, Krishna Heights, Sector 12, Vashi, Navi Mumbai - 400703")}
               </div>

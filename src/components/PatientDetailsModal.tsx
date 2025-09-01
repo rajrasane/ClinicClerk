@@ -22,11 +22,12 @@ interface Patient {
   date_of_birth: string;
   gender: string;
   phone: string;
-  email: string;
   address: string;
   blood_group?: string;
   allergies: string;
   emergency_contact?: string;
+  created_at: string;
+  updated_at: string;
   visits?: Visit[];
   visit_count?: number;
 }
@@ -168,10 +169,6 @@ export default function PatientDetailsModal({ patient, onClose, onUpdate }: Pati
                   <p className="mt-1 text-sm text-gray-900">{patient.phone}</p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Email</label>
-                  <p className="mt-1 text-sm text-gray-900">{patient.email || 'Not provided'}</p>
-                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Address</label>

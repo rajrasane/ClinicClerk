@@ -22,12 +22,12 @@ interface Patient {
   date_of_birth: string;
   gender: string;
   phone: string;
-  email: string;
   address: string;
   blood_group?: string;
   allergies: string;
   emergency_contact?: string;
   created_at: string;
+  updated_at: string;
   visits?: Visit[];
   visit_count?: number;
 }
@@ -248,9 +248,6 @@ export default function AdminPatients() {
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                   Phone
                 </th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
-                  Email
-                </th>
                 <th className="px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
@@ -259,7 +256,7 @@ export default function AdminPatients() {
             <tbody className="bg-white divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-3 sm:px-6 py-4 text-center">
+                  <td colSpan={4} className="px-3 sm:px-6 py-4 text-center">
                     <div className="flex justify-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                     </div>
@@ -267,7 +264,7 @@ export default function AdminPatients() {
                 </tr>
               ) : patients.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-3 sm:px-6 py-4 text-center text-gray-500">
+                  <td colSpan={4} className="px-3 sm:px-6 py-4 text-center text-gray-500">
                     No patients found
                   </td>
                 </tr>
@@ -300,11 +297,6 @@ export default function AdminPatients() {
                     </td>
                     <td className="px-3 sm:px-6 py-4 hidden md:table-cell">
                       <div className="text-sm text-gray-900">{patient.phone || '-'}</div>
-                    </td>
-                    <td className="px-3 sm:px-6 py-4 hidden lg:table-cell">
-                      <div className="text-sm text-gray-900 truncate max-w-xs" title={patient.email || ''}>
-                        {patient.email || '-'}
-                      </div>
                     </td>
                     <td className="px-3 sm:px-6 py-4 text-center">
                       <div className="flex justify-center items-center space-x-2 lg:space-x-3">

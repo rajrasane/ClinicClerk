@@ -21,7 +21,7 @@ export async function GET(
     const patientQuery = `
       SELECT 
         id, first_name, last_name, date_of_birth, gender, 
-        phone, email, address, blood_group, allergies, 
+        phone, address, blood_group, allergies, 
         emergency_contact, created_at, updated_at
       FROM patients 
       WHERE id = $1
@@ -93,7 +93,6 @@ export async function PUT(
       date_of_birth,
       gender,
       phone,
-      email,
       address,
       blood_group,
       allergies,
@@ -135,13 +134,12 @@ export async function PUT(
         date_of_birth = COALESCE($3, date_of_birth),
         gender = COALESCE($4, gender),
         phone = COALESCE($5, phone),
-        email = COALESCE($6, email),
-        address = COALESCE($7, address),
-        blood_group = COALESCE($8, blood_group),
-        allergies = COALESCE($9, allergies),
-        emergency_contact = COALESCE($10, emergency_contact),
+        address = COALESCE($6, address),
+        blood_group = COALESCE($7, blood_group),
+        allergies = COALESCE($8, allergies),
+        emergency_contact = COALESCE($9, emergency_contact),
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = $11
+      WHERE id = $10
       RETURNING *
     `;
 
@@ -151,7 +149,6 @@ export async function PUT(
       date_of_birth,
       gender,
       phone,
-      email,
       address,
       blood_group,
       allergies,

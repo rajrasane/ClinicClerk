@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     let query = `
       SELECT 
         id, first_name, last_name, date_of_birth, gender, 
-        phone, email, address, blood_group, allergies, 
+        phone, address, blood_group, allergies, 
         emergency_contact, created_at, updated_at
       FROM patients
     `;
@@ -24,13 +24,9 @@ export async function GET(request: NextRequest) {
     if (search) {
           const searchTerms = search.trim().split(/\s+/);
       const searchConditions = searchTerms.map((term) => {
-        const termParamIndexes = [++paramCount, ++paramCount, ++paramCount];
+        paramCount++;
         queryParams.push(`%${term}%`, `%${term}%`, `%${term}%`);
-        return `(
-          LOWER(first_name) LIKE LOWER($${termParamIndexes[0]}) OR 
-          LOWER(last_name) LIKE LOWER($${termParamIndexes[1]}) OR 
-          phone LIKE $${termParamIndexes[2]}
-        )`;
+        return `(first_name ILIKE $${paramCount} OR last_name ILIKE $${paramCount} OR phone ILIKE $${paramCount})`;
       });
       
       const searchCondition = ` WHERE ${searchConditions.join(' AND ')} `;
@@ -80,7 +76,6 @@ export async function POST(request: NextRequest) {
       date_of_birth,
       gender,
       phone,
-      email,
       address,
       blood_group,
       allergies,
@@ -115,8 +110,8 @@ export async function POST(request: NextRequest) {
     const query = `
       INSERT INTO patients (
         first_name, last_name, date_of_birth, gender, phone, 
-        email, address, blood_group, allergies, emergency_contact
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        address, blood_group, allergies, emergency_contact
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
     `;
 
@@ -126,7 +121,6 @@ export async function POST(request: NextRequest) {
       date_of_birth,
       gender,
       phone,
-      email,
       address,
       blood_group,
       allergies,
