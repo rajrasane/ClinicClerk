@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import VisitDetailsModal from '@/components/VisitDetailsModal';
 import AddVisitModal from '@/components/AddVisitModal';
+import EditVisitModal from '@/components/EditVisitModal';
 
 interface Visit {
   id: number;
@@ -28,6 +29,8 @@ export default function AdminVisits() {
   const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingVisit, setEditingVisit] = useState<Visit | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -122,6 +125,29 @@ export default function AdminVisits() {
   const handleViewVisit = (visit: Visit) => {
     setSelectedVisit(visit);
     setShowModal(true);
+  };
+
+  const handleEditVisit = (visit: Visit) => {
+    setEditingVisit(visit);
+    setShowEditModal(true);
+  };
+
+  const handleDeleteVisit = async (visitId: number, patientName: string) => {
+    if (!confirm(`Are you sure you want to delete this visit for ${patientName}?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/visits/${visitId}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        fetchVisitsData(); // Refresh the list
+      }
+    } catch (error) {
+      console.error('Error deleting visit:', error);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -335,13 +361,32 @@ export default function AdminVisits() {
                       </div>
                     </td>
                     <td className="px-3 sm:px-6 py-4 text-center">
-                      <button
-                        onClick={() => handleViewVisit(visit)}
-                        className="px-3 py-1.5 rounded-md bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors text-sm font-medium"
-                        title="View Details"
-                      >
-                        View
-                      </button>
+                      <div className="flex justify-center items-center space-x-2 lg:space-x-3">
+                        <button
+                          onClick={() => handleViewVisit(visit)}
+                          className="px-3 py-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors text-sm font-medium"
+                          title="View Details"
+                        >
+                          View
+                        </button>
+                        <button
+                          onClick={() => handleEditVisit(visit)}
+                          className="px-3 py-1.5 rounded-md bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors text-sm font-medium"
+                          title="Edit Visit"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteVisit(visit.id, `${visit.first_name} ${visit.last_name}`)}
+                          className="hidden sm:inline-flex items-center justify-center h-9 w-9 lg:h-auto lg:w-auto lg:px-3 lg:py-2 rounded-full lg:rounded-md bg-red-50 lg:bg-transparent text-red-600 hover:bg-red-100 lg:hover:bg-red-50 hover:text-red-700 transition-colors"
+                          title="Delete Visit"
+                        >
+                          <svg className="h-5 w-5 lg:h-4 lg:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          <span className="hidden lg:inline ml-2 text-red-700">Delete</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -392,6 +437,18 @@ export default function AdminVisits() {
       {showAddModal && (
         <AddVisitModal
           onClose={() => setShowAddModal(false)}
+          onSuccess={fetchVisitsData}
+        />
+      )}
+
+      {/* Edit Visit Modal */}
+      {showEditModal && editingVisit && (
+        <EditVisitModal
+          visit={editingVisit}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingVisit(null);
+          }}
           onSuccess={fetchVisitsData}
         />
       )}

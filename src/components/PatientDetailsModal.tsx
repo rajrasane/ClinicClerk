@@ -311,12 +311,7 @@ export default function PatientDetailsModal({ patient, onClose, onUpdate }: Pati
           >
             Close
           </button>
-          <button 
-            onClick={onUpdate}
-            className="px-4 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Edit Patient
-          </button>
+          
         </div>
         </motion.div>
       </motion.div>

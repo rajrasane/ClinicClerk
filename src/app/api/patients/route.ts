@@ -22,11 +22,13 @@ export async function GET(request: NextRequest) {
     let paramCount = 0;
 
     if (search) {
-          const searchTerms = search.trim().split(/\s+/);
+      const searchTerms = search.trim().split(/\s+/);
       const searchConditions = searchTerms.map((term) => {
-        paramCount++;
+        const firstNameParam = ++paramCount;
+        const lastNameParam = ++paramCount;
+        const phoneParam = ++paramCount;
         queryParams.push(`%${term}%`, `%${term}%`, `%${term}%`);
-        return `(first_name ILIKE $${paramCount} OR last_name ILIKE $${paramCount} OR phone ILIKE $${paramCount})`;
+        return `(first_name ILIKE $${firstNameParam} OR last_name ILIKE $${lastNameParam} OR phone ILIKE $${phoneParam})`;
       });
       
       const searchCondition = ` WHERE ${searchConditions.join(' AND ')} `;
@@ -39,7 +41,7 @@ export async function GET(request: NextRequest) {
 
     const [patientsResult, countResult] = await Promise.all([
       pool.query(query, queryParams),
-      pool.query(countQuery, search ? queryParams.slice(0, -2) : [])
+      pool.query(countQuery, search ? queryParams.slice(0, paramCount - 2) : [])
     ]);
 
     const totalCount = parseInt(countResult.rows[0].count);

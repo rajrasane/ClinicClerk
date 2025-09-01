@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import PatientDetailsModal from '@/components/PatientDetailsModal';
-import AddPatientModal from '@/components/AddPatientModalNew';
+import PatientDetailsModal from './PatientDetailsModal';
+import AddPatientModal from './AddPatientModalNew';
+import EditPatientModal from './EditPatientModal';
 
 interface Visit {
   id: number;
@@ -39,6 +40,8 @@ export default function AdminPatients() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -153,6 +156,11 @@ export default function AdminPatients() {
       console.error('Error fetching patient details:', error);
       setShowModal(false);
     }
+  };
+
+  const handleEditPatient = (patient: Patient) => {
+    setEditingPatient(patient);
+    setShowEditModal(true);
   };
 
   const handleDeletePatient = async (patientId: number, patientName: string) => {
@@ -308,6 +316,13 @@ export default function AdminPatients() {
                           View
                         </button>
                         <button
+                          onClick={() => handleEditPatient(patient)}
+                          className="px-3 py-1.5 rounded-md bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors text-sm font-medium"
+                          title="Edit Patient"
+                        >
+                          Edit
+                        </button>
+                        <button
                           onClick={() => handleDeletePatient(patient.id, `${patient.first_name} ${patient.last_name}`)}
                           className="hidden sm:inline-flex items-center justify-center h-9 w-9 lg:h-auto lg:w-auto lg:px-3 lg:py-2 rounded-full lg:rounded-md bg-red-50 lg:bg-transparent text-red-600 hover:bg-red-100 lg:hover:bg-red-50 hover:text-red-700 transition-colors"
                           title="Delete Patient"
@@ -376,6 +391,18 @@ export default function AdminPatients() {
       {showAddModal && (
         <AddPatientModal
           onClose={() => setShowAddModal(false)}
+          onSuccess={fetchPatients}
+        />
+      )}
+
+      {/* Edit Patient Modal */}
+      {showEditModal && editingPatient && (
+        <EditPatientModal
+          patient={editingPatient}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingPatient(null);
+          }}
           onSuccess={fetchPatients}
         />
       )}

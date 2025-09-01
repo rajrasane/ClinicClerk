@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
+import { X, Edit2, Printer, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Visit {
   id: number;
@@ -28,7 +29,9 @@ interface VisitDetailsModalProps {
 }
 
 export default function VisitDetailsModal({ visit, onClose, onUpdate }: VisitDetailsModalProps) {
+  const [activeTab, setActiveTab] = useState('details');
   const [mounted, setMounted] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -42,153 +45,221 @@ export default function VisitDetailsModal({ visit, onClose, onUpdate }: VisitDet
     return new Date(dateString).toLocaleDateString('en-IN');
   };
 
+  const formatDateTime = (dateString: string) => {
+    if (!dateString) return 'Not set';
+    return new Date(dateString).toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   const formatVitals = (vitals: any) => {
     if (!vitals) return {};
     return vitals;
   };
 
-  if (!mounted) return null;
+  const handlePrint = () => {
+    setIsPrinting(true);
+    setTimeout(() => {
+      window.print();
+      setIsPrinting(false);
+    }, 200);
+  };
+
+  const renderContent = () => (
+    <div className="flex-1 overflow-auto p-4 md:p-6">
+      {/* Patient Info Header */}
+      <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+        <h3 className="text-lg font-semibold text-gray-800">
+          {visit.first_name} {visit.last_name}
+        </h3>
+        <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-600 mt-2">
+          <div>Phone: {visit.phone || 'N/A'}</div>
+          <div>Visit Date: {formatDateTime(visit.visit_date)}</div>
+          {visit.follow_up_date && (
+            <div>Follow-up: {formatDate(visit.follow_up_date)}</div>
+          )}
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="border-b border-gray-200 mb-6">
+        <nav className="-mb-px flex space-x-6">
+          <button
+            onClick={() => setActiveTab('details')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'details'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Visit Details
+          </button>
+          <button
+            onClick={() => setActiveTab('vitals')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'vitals'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Vitals
+          </button>
+        </nav>
+      </div>
+
+      {/* Tab Content */}
+      <div className="space-y-6">
+        {activeTab === 'details' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <Section title="Chief Complaint">
+                <p className="text-gray-800">{visit.chief_complaint || 'Not specified'}</p>
+              </Section>
+              
+              <Section title="Symptoms">
+                <p className="whitespace-pre-line text-gray-800">
+                  {visit.symptoms || 'No symptoms recorded'}
+                </p>
+              </Section>
+            </div>
+            
+            <div className="space-y-4">
+              <Section title="Diagnosis">
+                <p className="whitespace-pre-line text-gray-800">
+                  {visit.diagnosis || 'No diagnosis recorded'}
+                </p>
+              </Section>
+              
+              <Section title="Prescription">
+                <p className="whitespace-pre-line text-gray-800">
+                  {visit.prescription || 'No prescription'}
+                </p>
+              </Section>
+              
+              <Section title="Notes">
+                <p className="whitespace-pre-line text-gray-800">
+                  {visit.notes || 'No additional notes'}
+                </p>
+              </Section>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white p-4 rounded-lg border border-gray-200">
+            {Object.keys(visit.vitals || {}).length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {Object.entries(formatVitals(visit.vitals)).map(([key, value]) => (
+                  <div key={key} className="p-3 bg-gray-50 rounded">
+                    <div className="text-sm font-medium text-gray-500 capitalize">
+                      {key.replace(/_/g, ' ')}
+                    </div>
+                    <div className="mt-1 text-lg font-semibold text-gray-900">
+                      {String(value) || '—'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-4">No vitals recorded for this visit</p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   return createPortal(
-    <AnimatePresence mode="wait">
-      <motion.div
-        key="modal-backdrop"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center z-[99999] p-4"
-        style={{ zIndex: 99999 }}
-        onClick={onClose}
-      >
+    <AnimatePresence>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/30 backdrop-blur-sm">
         <motion.div
-          key="modal-content"
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
-          onClick={(e) => e.stopPropagation()}
+          initial={{ opacity: 0, scale: 0.98, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.98, y: 20 }}
+          transition={{ type: 'spring', duration: 0.3 }}
+          className={`relative bg-white/90 backdrop-blur-md rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col ${
+            isPrinting ? 'w-full h-full max-h-none max-w-none m-0 rounded-none' : ''
+          }`}
         >
           {/* Header */}
-          <div className="flex justify-between items-center p-6 border-b">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Visit Details - #{visit.id}</h2>
-              <p className="text-sm text-gray-600 mt-1">
-                {visit.first_name} {visit.last_name} • {formatDate(visit.visit_date)}
-              </p>
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={onClose}
+                className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <h2 className="text-lg font-semibold text-gray-900">Visit Details</h2>
             </div>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl"
-            >
-              ×
-            </button>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={onUpdate}
+                className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
+                aria-label="Edit visit"
+              >
+                <Edit2 className="w-5 h-5" />
+              </button>
+              <button
+                onClick={handlePrint}
+                className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
+                aria-label="Print visit details"
+              >
+                <Printer className="w-5 h-5" />
+              </button>
+              <button
+                onClick={onClose}
+                className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto flex-1">
-          <div className="space-y-4">
-            {/* Patient Info */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Patient Name</label>
-                <p className="mt-1 text-sm text-gray-900">{visit.first_name} {visit.last_name}</p>
+          {/* Main Content */}
+          {renderContent()}
+
+          {/* Footer */}
+          <div className="border-t border-gray-200 px-4 py-3 flex justify-between items-center bg-gray-50/50">
+            <div className="flex-1 flex items-center justify-between sm:hidden">
+              <button
+                onClick={() => setActiveTab(activeTab === 'details' ? 'vitals' : 'details')}
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                {activeTab === 'vitals' ? 'Details' : 'Vitals'}
+              </button>
+              <div className="text-sm text-gray-500">
+                {activeTab === 'details' ? '1' : '2'} of 2
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Patient ID</label>
-                <p className="mt-1 text-sm text-gray-900">{visit.patient_id}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Phone</label>
-                <p className="mt-1 text-sm text-gray-900">{visit.phone}</p>
-              </div>
+              <button
+                onClick={() => setActiveTab(activeTab === 'details' ? 'vitals' : 'details')}
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                {activeTab === 'details' ? 'Vitals' : 'Details'}
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </button>
             </div>
-
-            {/* Visit Details */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Visit Date</label>
-                  <p className="mt-1 text-sm text-gray-900">{formatDate(visit.visit_date)}</p>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Follow-up Date</label>
-                  <p className="mt-1 text-sm text-gray-900">{formatDate(visit.follow_up_date)}</p>
-                </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700">Chief Complaint</label>
-                <p className="mt-1 text-sm text-gray-900 bg-blue-50 p-3 rounded-lg">{visit.chief_complaint}</p>
-              </div>
-
-              {visit.symptoms && (
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700">Symptoms</label>
-                  <p className="mt-1 text-sm text-gray-900 bg-gray-50 p-3 rounded-lg">{visit.symptoms}</p>
-                </div>
-              )}
-
-              {visit.diagnosis && (
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700">Diagnosis</label>
-                  <p className="mt-1 text-sm text-gray-900 bg-green-50 p-3 rounded-lg">{visit.diagnosis}</p>
-                </div>
-              )}
-
-              {visit.prescription && (
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700">Prescription</label>
-                  <p className="mt-1 text-sm text-gray-900 bg-purple-50 p-3 rounded-lg whitespace-pre-wrap">{visit.prescription}</p>
-                </div>
-              )}
-
-              {visit.notes && (
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700">Additional Notes</label>
-                  <p className="mt-1 text-sm text-gray-900 bg-gray-100 p-3 rounded-lg">{visit.notes}</p>
-                </div>
-              )}
-            </div>
-
-            {/* Vitals */}
-            {visit.vitals && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Vital Signs</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {Object.entries(formatVitals(visit.vitals)).map(([key, value]) => (
-                    <div key={key} className="bg-gray-50 p-3 rounded-lg text-center">
-                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        {key.replace('_', ' ')}
-                      </div>
-                      <div className="text-sm font-semibold text-gray-900 mt-1">
-                        {value as string}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="flex justify-end space-x-2 p-2 border-t bg-gray-50">
-          <button
-            onClick={onClose}
-            className="px-3 py-1 border border-gray-300 rounded text-gray-700 hover:bg-gray-100 transition-colors text-xs"
-          >
-            Close
-          </button>
-          <button 
-            onClick={onUpdate}
-            className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-xs"
-          >
-            Edit
-          </button>
-        </div>
         </motion.div>
-      </motion.div>
+      </div>
     </AnimatePresence>,
     document.body
+  );
+}
+
+// Reusable section component
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <h4 className="text-sm font-medium text-gray-500 mb-1">{title}</h4>
+      <div className="bg-white/50 p-3 rounded-lg border border-gray-200">
+        {children}
+      </div>
+    </div>
   );
 }
