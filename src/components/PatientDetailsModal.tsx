@@ -218,8 +218,12 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
                     <div key={visit.id} className="border rounded-lg p-3 sm:p-4 bg-gray-50">
                       <div className="flex flex-col sm:flex-row gap-2 sm:justify-between sm:items-start mb-3">
                         <div>
-                          <h4 className="font-medium text-gray-900 text-sm sm:text-base">Visit #{visit.id}</h4>
-                          <p className="text-xs sm:text-sm text-gray-500">{formatDate(visit.visit_date)}</p>
+                          <h4 className="font-medium text-gray-900 text-sm sm:text-base">
+                            {visit.chief_complaint.length > 40 ? `${visit.chief_complaint.substring(0, 40)}...` : visit.chief_complaint}
+                          </h4>
+                          <p className="text-xs sm:text-sm text-gray-500">
+                            {formatDate(visit.visit_date)} • Visit #{visit.id}
+                          </p>
                         </div>
                         {visit.vitals && (
                           <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-start gap-x-4 gap-y-2 text-xs sm:text-sm text-gray-600 bg-white/50 sm:bg-transparent p-2.5 sm:p-0 rounded-lg sm:rounded-none">

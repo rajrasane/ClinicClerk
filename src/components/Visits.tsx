@@ -279,9 +279,6 @@ export default function AdminVisits() {
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Visit
                 </th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Date
-                </th>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
                   Patient
                 </th>
@@ -319,8 +316,11 @@ export default function AdminVisits() {
                         <div className="text-sm font-medium text-gray-900">
                           Visit #{visit.id}
                         </div>
+                        <div className="text-xs text-gray-500">
+                          {formatDate(visit.visit_date)}
+                        </div>
                         
-                        <div className="sm:hidden space-y-1">
+                        <div className="sm:hidden space-y-1 mt-1">
                           <div className="text-xs text-gray-700 font-medium">
                             {visit.first_name} {visit.last_name}
                           </div>
@@ -333,11 +333,6 @@ export default function AdminVisits() {
                             </div>
                           )}
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-3 sm:px-6 py-4">
-                      <div className="text-sm text-gray-900">
-                        {formatDate(visit.visit_date)}
                       </div>
                     </td>
                     <td className="px-3 sm:px-6 py-4 hidden sm:table-cell">
