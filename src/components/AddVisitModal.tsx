@@ -55,11 +55,12 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     follow_up_date: '',
     vitals: {
       temperature: '',
-      blood_pressure: '',
+      bp: '',
       pulse: '',
       weight: '',
-      height: ''
+      o2: ''
     },
+    height: '',
     // New patient fields
     first_name: '',
     last_name: '',
@@ -563,6 +564,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                 {renderInput("Blood Pressure", "vitals.blood_pressure", "text", false, "e.g., 120/80")}
                 {renderInput("Pulse Rate", "vitals.pulse", "text", false, "e.g., 72 bpm")}
                 {renderInput("Weight", "vitals.weight", "text", false, "e.g., 70 kg")}
+                {renderInput("O2 Saturation", "vitals.o2", "text", false, "e.g., 98%")}
                 <div className="md:col-span-2">
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Additional Notes
@@ -930,6 +932,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                 {renderInput("Blood Pressure", "vitals.blood_pressure", "text", false, "e.g., 120/80")}
                 {renderInput("Pulse Rate", "vitals.pulse", "text", false, "e.g., 72 bpm")}
                 {renderInput("Weight", "vitals.weight", "text", false, "e.g., 70 kg")}
+                {renderInput("O2 Saturation", "vitals.o2", "text", false, "e.g., 98%")}
                 <div className="md:col-span-2">
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Additional Notes
@@ -961,6 +964,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                 {renderInput("Blood Pressure", "vitals.blood_pressure", "text", false, "e.g., 120/80")}
                 {renderInput("Pulse Rate", "vitals.pulse", "text", false, "e.g., 72 bpm")}
                 {renderInput("Weight", "vitals.weight", "text", false, "e.g., 70 kg")}
+                {renderInput("O2 Saturation", "vitals.o2", "text", false, "e.g., 98%")}
                 <div className="md:col-span-2">
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Additional Notes
@@ -989,6 +993,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                 {renderInput("Blood Pressure", "vitals.blood_pressure", "text", false, "e.g., 120/80")}
                 {renderInput("Pulse Rate", "vitals.pulse", "text", false, "e.g., 72 bpm")}
                 {renderInput("Weight", "vitals.weight", "text", false, "e.g., 70 kg")}
+                {renderInput("O2 Saturation", "vitals.o2", "text", false, "e.g., 98%")}
                 <div className="md:col-span-2">
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Additional Notes
@@ -1020,6 +1025,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                 {renderInput("Blood Pressure", "vitals.blood_pressure", "text", false, "e.g., 120/80")}
                 {renderInput("Pulse Rate", "vitals.pulse", "text", false, "e.g., 72 bpm")}
                 {renderInput("Weight", "vitals.weight", "text", false, "e.g., 70 kg")}
+                {renderInput("O2 Saturation", "vitals.o2", "text", false, "e.g., 98%")}
                 <div className="md:col-span-2">
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Additional Notes

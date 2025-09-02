@@ -259,6 +259,14 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
                                 <span>{String(visit.vitals.weight).toLowerCase().includes('kg') ? visit.vitals.weight : `${visit.vitals.weight} kg`}</span>
                               </div>
                             )}
+                            {/* O2 Saturation */}
+                            {visit.vitals.o2 && (
+                              <div className="flex items-center whitespace-nowrap">
+                                <span className="w-11 sm:w-auto font-medium">O2</span>
+                                <span className="mx-1">:</span>
+                                <span>{String(visit.vitals.o2).includes('%') ? visit.vitals.o2 : `${visit.vitals.o2}%`}</span>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
