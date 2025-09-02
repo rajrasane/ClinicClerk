@@ -97,7 +97,7 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
         {Object.keys(visit.vitals || {}).length > 0 && (
           <div>
             <h4 className="text-sm font-medium text-gray-500 mb-3">Vital Signs</h4>
-            <div className="bg-white/50 p-4 rounded-lg border border-gray-200">
+            <div className="bg-white p-4 rounded-lg border border-gray-200">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {Object.entries(formatVitals(visit.vitals)).map(([key, value]) => (
                   <div key={key} className="text-center">
@@ -140,7 +140,7 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white/90 backdrop-blur-md rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+          className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -183,7 +183,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <div>
       <h4 className="text-sm font-medium text-gray-500 mb-1">{title}</h4>
-      <div className="bg-white/50 p-3 rounded-lg border border-gray-200">
+      <div className="bg-white p-3 rounded-lg border border-gray-200">
         {children}
       </div>
     </div>
