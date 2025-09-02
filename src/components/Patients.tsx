@@ -328,20 +328,23 @@ export default function AdminPatients() {
                         </button>
                         <button
                           onClick={() => handleEditPatient(patient)}
-                          className="px-3 py-1.5 rounded-md bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors text-sm font-medium"
+                          className="inline-flex items-center justify-center h-9 w-9 sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 rounded-full sm:rounded-md bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors"
                           title="Edit Patient"
                         >
-                          Edit
+                          <svg className="h-4 w-4 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          <span className="hidden sm:inline sm:ml-2 text-sm font-medium">Edit</span>
                         </button>
                         <button
                           onClick={() => handleDeletePatient(patient.id, `${patient.first_name} ${patient.last_name}`)}
-                          className="hidden sm:inline-flex items-center justify-center h-9 w-9 lg:h-auto lg:w-auto lg:px-3 lg:py-2 rounded-full lg:rounded-md bg-red-50 lg:bg-transparent text-red-600 hover:bg-red-100 lg:hover:bg-red-50 hover:text-red-700 transition-colors"
+                          className="inline-flex items-center justify-center h-9 w-9 sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 rounded-full sm:rounded-md bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors"
                           title="Delete Patient"
                         >
-                          <svg className="h-5 w-5 lg:h-4 lg:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="h-4 w-4 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
-                          <span className="hidden lg:inline ml-2 text-red-700">Delete</span>
+                          <span className="hidden sm:inline sm:ml-2 text-sm font-medium">Delete</span>
                         </button>
                       </div>
                     </td>
