@@ -313,9 +313,6 @@ export default function AdminVisits() {
                   <tr key={visit.id} className="hover:bg-gray-50">
                     <td className="px-3 sm:px-6 py-3">
                       <div className="space-y-1">
-                        <div className="text-sm font-medium text-gray-900">
-                          Visit #{visit.id}
-                        </div>
                         <div className="text-xs text-gray-500">
                           {formatDate(visit.visit_date)}
                         </div>
