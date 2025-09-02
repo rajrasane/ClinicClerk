@@ -48,8 +48,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
       temperature: visit.vitals?.temperature || '',
       bp: visit.vitals?.bp || '',
       pulse: visit.vitals?.pulse || '',
-      weight: visit.vitals?.weight || '',
-      height: visit.vitals?.height || ''
+      weight: visit.vitals?.weight || ''
     }
   });
 
@@ -259,7 +258,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
               <div className="md:col-span-2 space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">Vitals</h3>
                 
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Temperature</label>
                     <input
@@ -308,17 +307,6 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Height</label>
-                    <input
-                      type="text"
-                      name="vitals.height"
-                      value={formData.vitals.height}
-                      onChange={handleInputChange}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="e.g., 175 cm"
-                    />
-                  </div>
                 </div>
               </div>
             </div>

@@ -44,7 +44,14 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
 
   const formatVitals = (vitals: Record<string, string> | null) => {
     if (!vitals) return {};
-    return vitals;
+    // Filter out empty values and return only non-empty vitals
+    const filtered: Record<string, string> = {};
+    Object.entries(vitals).forEach(([key, value]) => {
+      if (value && value.toString().trim() !== '') {
+        filtered[key] = value;
+      }
+    });
+    return filtered;
   };
 
   const renderContent = () => (
@@ -95,7 +102,7 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
                 {Object.entries(formatVitals(visit.vitals)).map(([key, value]) => (
                   <div key={key} className="text-center">
                     <div className="text-xs font-medium text-gray-500 capitalize mb-1">
-                      {key.replace(/_/g, ' ')}
+                      {key === 'bp' ? 'Blood Pressure' : key.replace(/_/g, ' ')}
                     </div>
                     <div className="text-lg font-semibold text-gray-900">
                       {String(value) || '—'}
