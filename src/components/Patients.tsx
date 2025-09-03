@@ -22,7 +22,8 @@ interface Patient {
   id: number;
   first_name: string;
   last_name: string;
-  date_of_birth: string;
+  age: number;
+  age_recorded_at: string;
   gender: string;
   phone: string;
   address: string;
@@ -196,18 +197,6 @@ export default function AdminPatients() {
 
   // Removed unused formatDate function
 
-  const calculateAge = (birthDate: string) => {
-    const today = new Date();
-    const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-    
-    return age;
-  };
 
   return (
     <div className="space-y-6">
@@ -300,7 +289,7 @@ export default function AdminPatients() {
                             {patient.first_name} {patient.last_name}
                           </div>
                           <div className="text-xs text-gray-500 sm:hidden">
-                            {calculateAge(patient.date_of_birth)}yrs • {patient.gender}
+                            {patient.age}yrs • {patient.gender}
                             {patient.phone && ` • ${patient.phone}`}
                           </div>
                         </div>
@@ -308,7 +297,7 @@ export default function AdminPatients() {
                     </td>
                     <td className="px-3 sm:px-6 py-4 hidden sm:table-cell">
                       <div className="text-sm text-gray-900">
-                        {calculateAge(patient.date_of_birth)} years
+                        {patient.age} years
                       </div>
                       <div className="text-sm text-gray-500">
                         {patient.gender}

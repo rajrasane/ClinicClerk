@@ -20,7 +20,7 @@ export async function GET(
     // Get patient details
     const patientQuery = `
       SELECT 
-        id, first_name, last_name, date_of_birth, gender, 
+        id, first_name, last_name, age, age_recorded_at, gender, 
         phone, address, blood_group, allergies, 
         emergency_contact, created_at, updated_at
       FROM patients 
@@ -90,7 +90,7 @@ export async function PUT(
     const {
       first_name,
       last_name,
-      date_of_birth,
+      age,
       gender,
       phone,
       address,
@@ -127,26 +127,36 @@ export async function PUT(
       );
     }
 
+    // Validate age if provided
+    if (age && (age <= 0 || age > 120)) {
+      return NextResponse.json(
+        { success: false, error: 'Age must be between 1 and 120' },
+        { status: 400 }
+      );
+    }
+
     const updateQuery = `
       UPDATE patients SET 
         first_name = COALESCE($1, first_name),
         last_name = COALESCE($2, last_name),
-        date_of_birth = COALESCE($3, date_of_birth),
-        gender = COALESCE($4, gender),
-        phone = COALESCE($5, phone),
-        address = COALESCE($6, address),
-        blood_group = $7,
-        allergies = COALESCE($8, allergies),
-        emergency_contact = $9,
+        age = COALESCE($3, age),
+        age_recorded_at = COALESCE($4, age_recorded_at),
+        gender = COALESCE($5, gender),
+        phone = COALESCE($6, phone),
+        address = COALESCE($7, address),
+        blood_group = $8,
+        allergies = COALESCE($9, allergies),
+        emergency_contact = $10,
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = $10
+      WHERE id = $11
       RETURNING *
     `;
 
     const values = [
       first_name,
       last_name,
-      date_of_birth,
+      age,
+      body.age_recorded_at,
       gender,
       phone,
       address,

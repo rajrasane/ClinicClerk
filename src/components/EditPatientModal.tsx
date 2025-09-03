@@ -7,7 +7,8 @@ interface Patient {
   id: number;
   first_name: string;
   last_name: string;
-  date_of_birth: string;
+  age: number;
+  age_recorded_at: string;
   gender: string;
   phone: string;
   address: string;
@@ -25,20 +26,10 @@ interface EditPatientModalProps {
 }
 
 export default function EditPatientModal({ patient, onClose, onSuccess }: EditPatientModalProps) {
-  // Format date to YYYY-MM-DD for date input
-  const formatDateForInput = (dateString: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    // Adjust for timezone offset to prevent date shifting
-    const offset = date.getTimezoneOffset();
-    const adjustedDate = new Date(date.getTime() - (offset * 60 * 1000));
-    return adjustedDate.toISOString().split('T')[0];
-  };
-
   const [formData, setFormData] = useState({
     first_name: patient.first_name,
     last_name: patient.last_name,
-    date_of_birth: formatDateForInput(patient.date_of_birth),
+    age: patient.age.toString(),
     gender: patient.gender,
     phone: patient.phone,
     address: patient.address,
@@ -80,8 +71,13 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
       newErrors.last_name = 'Last name is required';
     }
 
-    if (!formData.date_of_birth) {
-      newErrors.date_of_birth = 'Date of birth is required';
+    if (!formData.age.trim()) {
+      newErrors.age = 'Age is required';
+    } else {
+      const age = parseInt(formData.age);
+      if (isNaN(age) || age <= 0 || age > 120) {
+        newErrors.age = 'Please enter a valid age (1-120)';
+      }
     }
 
     if (!formData.gender) {
@@ -113,8 +109,11 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
 
     try {
       // Prepare form data with null for empty blood group
+      // Update age_recorded_at only if age has changed
       const submitData = {
         ...formData,
+        age: parseInt(formData.age),
+        age_recorded_at: parseInt(formData.age) !== patient.age ? new Date().toISOString() : undefined,
         blood_group: formData.blood_group.trim() || null,
         allergies: formData.allergies.trim() || 'None',
         emergency_contact: formData.emergency_contact.trim() || null
@@ -209,16 +208,22 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Date of Birth</label>
+                  <label className="block text-sm font-medium text-gray-700">Age</label>
                   <input
-                    type="date"
-                    name="date_of_birth"
-                    value={formData.date_of_birth}
+                    type="number"
+                    name="age"
+                    value={formData.age}
                     onChange={handleChange}
+                    min="1"
+                    max="120"
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="e.g., 35"
                   />
-                  {errors.date_of_birth && (
-                    <p className="mt-1 text-sm text-red-600">{errors.date_of_birth}</p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Current age as reported by patient
+                  </p>
+                  {errors.age && (
+                    <p className="mt-1 text-sm text-red-600">{errors.age}</p>
                   )}
                 </div>
 

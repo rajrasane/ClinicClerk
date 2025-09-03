@@ -64,7 +64,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     // New patient fields
     first_name: '',
     last_name: '',
-    date_of_birth: '',
+    age: '',
     gender: '',
     phone: '',
     address: '',
@@ -107,7 +107,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
   // Validation function
   const validateField = (name: string, value: string): string => {
     // Validate new patient fields
-    if (['first_name', 'last_name', 'date_of_birth', 'phone', 'gender', 'address'].includes(name)) {
+    if (['first_name', 'last_name', 'age', 'phone', 'gender', 'address'].includes(name)) {
       if (!value.trim()) {
         return 'This field is required';
       }
@@ -115,11 +115,10 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
       if (pattern && value.trim() && !pattern.test(value.trim())) {
         return validationMessages[name as keyof typeof validationMessages];
       }
-      if (name === 'date_of_birth' && value) {
-        const dob = new Date(value);
-        const today = new Date();
-        if (dob > today) {
-          return 'Date of birth cannot be in the future';
+      if (name === 'age' && value) {
+        const age = parseInt(value);
+        if (isNaN(age) || age <= 0 || age > 120) {
+          return 'Please enter a valid age (1-120)';
         }
       }
     }
@@ -191,7 +190,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     // Validate required fields
     const newErrors: FormErrors = {};
     const requiredFields = patientType === 'new' 
-      ? ['first_name', 'last_name', 'date_of_birth', 'phone', 'gender', 'address', 'visit_date', 'chief_complaint']
+      ? ['first_name', 'last_name', 'age', 'phone', 'gender', 'address', 'visit_date', 'chief_complaint']
       : ['patient_id', 'visit_date', 'chief_complaint'];
     
     requiredFields.forEach(key => {
@@ -220,7 +219,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         const patientData = {
           first_name: formData.first_name,
           last_name: formData.last_name,
-          date_of_birth: formData.date_of_birth,
+          age: parseInt(formData.age),
           gender: formData.gender,
           phone: formData.phone,
           address: formData.address,
@@ -355,7 +354,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
   const canProceed = () => {
     const currentStepFields = getCurrentStepFields();
     const requiredFields = patientType === 'new' && currentStep <= 2
-      ? ['first_name', 'last_name', 'date_of_birth', 'phone', 'gender', 'address']
+      ? ['first_name', 'last_name', 'age', 'phone', 'gender', 'address']
       : ['patient_id', 'visit_date', 'chief_complaint'];
     
     return currentStepFields.every(field => {
@@ -404,7 +403,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         case 1:
           return ['patient_type'];
         case 2:
-          return ['first_name', 'last_name', 'date_of_birth', 'gender', 'phone', 'address'];
+          return ['first_name', 'last_name', 'age', 'gender', 'phone', 'address'];
         case 3:
           return ['blood_group', 'allergies', 'emergency_contact'];
         case 4:
@@ -635,7 +634,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {renderInput("First Name", "first_name", "text", true, "e.g., Rahul")}
                 {renderInput("Last Name", "last_name", "text", true, "e.g., Sharma")}
-                {renderInput("Date of Birth", "date_of_birth", "date", true)}
+                {renderInput("Age", "age", "number", true, "e.g., 35")}
                 <div>
                   <label htmlFor="gender" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Gender <span className="text-red-500">*</span>

@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     let query = `
       SELECT 
-        id, first_name, last_name, date_of_birth, gender, 
+        id, first_name, last_name, age, age_recorded_at, gender, 
         phone, address, blood_group, allergies, 
         emergency_contact, created_at, updated_at
       FROM patients
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     const {
       first_name,
       last_name,
-      date_of_birth,
+      age,
       gender,
       phone,
       address,
@@ -85,9 +85,17 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!first_name || !last_name || !date_of_birth) {
+    if (!first_name || !last_name || !age) {
       return NextResponse.json(
-        { success: false, error: 'First name, last name, and date of birth are required' },
+        { success: false, error: 'First name, last name, and age are required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate age
+    if (age <= 0 || age > 120) {
+      return NextResponse.json(
+        { success: false, error: 'Age must be between 1 and 120' },
         { status: 400 }
       );
     }
@@ -111,7 +119,7 @@ export async function POST(request: NextRequest) {
 
     const query = `
       INSERT INTO patients (
-        first_name, last_name, date_of_birth, gender, phone, 
+        first_name, last_name, age, gender, phone, 
         address, blood_group, allergies, emergency_contact
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
@@ -120,7 +128,7 @@ export async function POST(request: NextRequest) {
     const values = [
       first_name,
       last_name,
-      date_of_birth,
+      age,
       gender,
       phone,
       address,

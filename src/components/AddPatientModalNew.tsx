@@ -38,7 +38,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
-    date_of_birth: '',
+    age: '',
     gender: '',
     phone: '',
     address: '',
@@ -60,8 +60,16 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
 
   // Validation function
   const validateField = (name: string, value: string): string => {
-    if (!value.trim() && ['first_name', 'last_name', 'date_of_birth', 'phone', 'gender', 'address'].includes(name)) {
+    if (!value.trim() && ['first_name', 'last_name', 'age', 'phone', 'gender', 'address'].includes(name)) {
       return 'This field is required';
+    }
+    
+    // Validate age is a positive number
+    if (name === 'age' && value.trim()) {
+      const age = parseInt(value);
+      if (isNaN(age) || age <= 0 || age > 120) {
+        return 'Please enter a valid age (1-120)';
+      }
     }
     
     // Skip further validation for empty optional fields
@@ -72,15 +80,6 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
     const pattern = validationPatterns[name as keyof typeof validationPatterns];
     if (pattern && value.trim() && !pattern.test(value.trim())) {
       return validationMessages[name as keyof typeof validationMessages];
-    }
-
-    // Special validation for date of birth
-    if (name === 'date_of_birth' && value) {
-      const dob = new Date(value);
-      const today = new Date();
-      if (dob > today) {
-        return 'Date of birth cannot be in the future';
-      }
     }
 
     return '';
@@ -134,7 +133,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
     
     // Validate required fields only
     const newErrors: FormErrors = {};
-    const requiredFields = ['first_name', 'last_name', 'date_of_birth', 'gender', 'phone', 'address'];
+    const requiredFields = ['first_name', 'last_name', 'age', 'gender', 'phone', 'address'];
     
     requiredFields.forEach(key => {
       const error = validateField(key, formData[key as keyof typeof formData]);
@@ -152,6 +151,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
     // Prepare form data with defaults for empty fields and convert empty strings to null for optional fields
     const submitData = {
       ...formData,
+      age: parseInt(formData.age),
       blood_group: formData.blood_group.trim() || null,
       allergies: formData.allergies.trim() || 'None',
       emergency_contact: formData.emergency_contact.trim() || null
@@ -226,7 +226,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
 
   const canProceed = () => {
     const currentStepFields = getCurrentStepFields();
-    const requiredFields = ['first_name', 'last_name', 'date_of_birth', 'gender', 'phone', 'address'];
+    const requiredFields = ['first_name', 'last_name', 'age', 'gender', 'phone', 'address'];
     
     return currentStepFields.every(field => {
       // For second step (medical information), all fields are optional
@@ -251,7 +251,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
   const getCurrentStepFields = () => {
     switch (currentStep) {
       case 1:
-        return ['first_name', 'last_name', 'date_of_birth', 'gender', 'phone', 'address'];
+        return ['first_name', 'last_name', 'age', 'gender', 'phone', 'address'];
       case 2:
         return ['blood_group', 'allergies', 'emergency_contact'];
       default:
@@ -298,7 +298,31 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {renderInput("First Name", "first_name", "text", true, "e.g., Rahul")}
               {renderInput("Last Name", "last_name", "text", true, "e.g., Sharma")}
-              {renderInput("Date of Birth", "date_of_birth", "date", true)}
+              <div>
+                <label htmlFor="age" className="block text-sm font-medium text-gray-700 mb-2">
+                  Age <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  id="age"
+                  name="age"
+                  value={formData.age}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  min="1"
+                  max="120"
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                    errors.age ? 'border-red-300 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                  }`}
+                  placeholder="e.g., 35"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Current age as reported by patient
+                </p>
+                {errors.age && (
+                  <p className="mt-1 text-sm text-red-600">{errors.age}</p>
+                )}
+              </div>
               <div>
                 <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-2">
                   Gender <span className="text-red-500">*</span>

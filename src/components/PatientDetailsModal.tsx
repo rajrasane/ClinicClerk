@@ -19,7 +19,8 @@ interface Patient {
   id: number;
   first_name: string;
   last_name: string;
-  date_of_birth: string;
+  age: number;
+  age_recorded_at: string;
   gender: string;
   phone: string;
   address: string;
@@ -52,18 +53,6 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
     return new Date(dateString).toLocaleDateString('en-IN');
   };
 
-  const calculateAge = (birthDate: string) => {
-    const today = new Date();
-    const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-    
-    return age;
-  };
 
   if (!mounted) return null;
 
@@ -91,7 +80,7 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
             <div>
               <h2 className="text-2xl font-bold text-gray-900">{patient.first_name} {patient.last_name}</h2>
               <p className="text-sm text-gray-600 mt-1">
-                {calculateAge(patient.date_of_birth)} years • {patient.gender}{patient.blood_group ? ` • ${patient.blood_group}` : ''}
+                {patient.age} years • {patient.gender}{patient.blood_group ? ` • ${patient.blood_group}` : ''}
               </p>
             </div>
             <button
@@ -141,9 +130,12 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Date of Birth</label>
+                  <label className="block text-sm font-medium text-gray-700">Age</label>
                   <p className="mt-1 text-sm text-gray-900">
-                    {formatDate(patient.date_of_birth)} ({calculateAge(patient.date_of_birth)} years old)
+                    {patient.age} years old
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Recorded on {formatDate(patient.age_recorded_at)}
                   </p>
                 </div>
 
