@@ -63,6 +63,11 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
     if (!value.trim() && ['first_name', 'last_name', 'date_of_birth', 'phone', 'gender', 'address'].includes(name)) {
       return 'This field is required';
     }
+    
+    // Skip further validation for empty optional fields
+    if (!value.trim() && name === 'blood_group') {
+      return '';
+    }
 
     const pattern = validationPatterns[name as keyof typeof validationPatterns];
     if (pattern && value.trim() && !pattern.test(value.trim())) {
@@ -129,13 +134,12 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
     
     // Validate required fields only
     const newErrors: FormErrors = {};
-    Object.keys(formData).forEach(key => {
-      // Only validate required fields
-      if (['first_name', 'last_name', 'date_of_birth', 'gender', 'phone', 'address'].includes(key)) {
-        const error = validateField(key, formData[key as keyof typeof formData]);
-        if (error) {
-          newErrors[key] = error;
-        }
+    const requiredFields = ['first_name', 'last_name', 'date_of_birth', 'gender', 'phone', 'address'];
+    
+    requiredFields.forEach(key => {
+      const error = validateField(key, formData[key as keyof typeof formData]);
+      if (error) {
+        newErrors[key] = error;
       }
     });
 
@@ -145,10 +149,12 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
       return;
     }
 
-    // Prepare form data with defaults for empty fields
+    // Prepare form data with defaults for empty fields and convert empty strings to null for optional fields
     const submitData = {
       ...formData,
+      blood_group: formData.blood_group.trim() || null,
       allergies: formData.allergies.trim() || 'None',
+      emergency_contact: formData.emergency_contact.trim() || null
     };
 
     setLoading(true);
