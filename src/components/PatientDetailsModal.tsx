@@ -91,7 +91,7 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
             <div>
               <h2 className="text-2xl font-bold text-gray-900">{patient.first_name} {patient.last_name}</h2>
               <p className="text-sm text-gray-600 mt-1">
-                {calculateAge(patient.date_of_birth)} years • {patient.gender} • {patient.blood_group || 'Blood group not recorded'}
+                {calculateAge(patient.date_of_birth)} years • {patient.gender}{patient.blood_group ? ` • ${patient.blood_group}` : ''}
               </p>
             </div>
             <button

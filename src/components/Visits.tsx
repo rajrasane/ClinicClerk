@@ -336,9 +336,11 @@ export default function AdminVisits() {
                       <div className="text-sm font-medium text-gray-900">
                         {visit.first_name} {visit.last_name}
                       </div>
+                      {/*
                       <div className="text-xs text-gray-500">
                         ID: {visit.patient_id}
                       </div>
+                      */}
                       <div className="text-xs text-gray-500">
                         {visit.phone}
                       </div>

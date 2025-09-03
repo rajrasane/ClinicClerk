@@ -135,9 +135,9 @@ export async function PUT(
         gender = COALESCE($4, gender),
         phone = COALESCE($5, phone),
         address = COALESCE($6, address),
-        blood_group = COALESCE($7, blood_group),
+        blood_group = $7,
         allergies = COALESCE($8, allergies),
-        emergency_contact = COALESCE($9, emergency_contact),
+        emergency_contact = $9,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = $10
       RETURNING *

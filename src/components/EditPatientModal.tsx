@@ -112,12 +112,20 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
     setLoading(true);
 
     try {
+      // Prepare form data with null for empty blood group
+      const submitData = {
+        ...formData,
+        blood_group: formData.blood_group.trim() || null,
+        allergies: formData.allergies.trim() || 'None',
+        emergency_contact: formData.emergency_contact.trim() || null
+      };
+
       const response = await fetch(`/api/patients/${patient.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submitData),
       });
 
       const result = await response.json();
@@ -138,8 +146,6 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
       setLoading(false);
     }
   };
-
-  // Remove duplicate handleInputChange - using handleChange instead
 
   return (
     <div className="fixed inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center z-[99999] p-4">
@@ -292,11 +298,14 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                   <label className="block text-sm font-medium text-gray-700">Blood Group</label>
                   <select
                     name="blood_group"
-                    value={formData.blood_group}
-                    onChange={handleChange}
+                    value={formData.blood_group || ''}
+                    onChange={(e) => {
+                      const value = e.target.value === '' ? '' : e.target.value;
+                      setFormData(prev => ({ ...prev, blood_group: value }));
+                    }}
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="">Select</option>
+                    <option value="">Not specified</option>
                     <option value="A+">A+</option>
                     <option value="A-">A-</option>
                     <option value="B+">B+</option>
