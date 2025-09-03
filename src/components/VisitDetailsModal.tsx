@@ -44,13 +44,6 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
 
   const formatVitals = (vitals: Record<string, string> | null) => {
     if (!vitals) return {};
-    const vitalsLabels: Record<string, string> = {
-      temperature: 'Temperature',
-      bp: 'Blood Pressure',
-      pulse: 'Pulse',
-      weight: 'Weight',
-      o2: 'O2 Saturation'
-    };
     // Filter out empty values and return only non-empty vitals
     const filtered: Record<string, string> = {};
     Object.entries(vitals).forEach(([key, value]) => {
