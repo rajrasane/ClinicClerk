@@ -29,16 +29,22 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
   // Format date to YYYY-MM-DD for date input, handling timezone correctly
   const formatDateForInput = (dateString: string) => {
     if (!dateString) return '';
-    const date = new Date(dateString);
-    // Adjust for timezone offset to prevent date shifting
-    const offset = date.getTimezoneOffset();
-    const adjustedDate = new Date(date.getTime() - (offset * 60 * 1000));
-    return adjustedDate.toISOString().split('T')[0];
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '';
+      // Adjust for timezone offset to prevent date shifting
+      const offset = date.getTimezoneOffset();
+      const adjustedDate = new Date(date.getTime() - (offset * 60 * 1000));
+      return adjustedDate.toISOString().split('T')[0];
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return '';
+    }
   };
 
   const [formData, setFormData] = useState({
     visit_date: formatDateForInput(visit.visit_date),
-    chief_complaint: visit.chief_complaint,
+    chief_complaint: visit.chief_complaint || '',
     symptoms: visit.symptoms || '',
     diagnosis: visit.diagnosis || '',
     prescription: visit.prescription || '',
@@ -81,12 +87,26 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
     setLoading(true);
 
     try {
+      // Prepare vitals data - only include non-empty values
+      const vitalsData = Object.entries(formData.vitals)
+        .filter(([, value]) => value.trim() !== '')
+        .reduce((acc, [key, value]) => {
+          acc[key] = value;
+          return acc;
+        }, {} as Record<string, string>);
+
+      const submitData = {
+        ...formData,
+        follow_up_date: formData.follow_up_date || null,
+        vitals: Object.keys(vitalsData).length > 0 ? vitalsData : null
+      };
+
       const response = await fetch(`/api/visits/${visit.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submitData),
       });
 
       const result = await response.json();
@@ -101,8 +121,8 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
       }
     } catch (error) {
       console.error('Error updating visit:', error);
-      toast.error('Failed to update visit. Please try again.');
-      setErrors({ general: 'Failed to update visit. Please try again.' });
+      toast.error('Network error. Please try again.');
+      setErrors({ general: 'Network error. Please try again.' });
     } finally {
       setLoading(false);
     }
@@ -111,19 +131,23 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    if (name.startsWith('vitals.')) {
-      const vitalField = name.split('.')[1];
-      setFormData(prev => ({
-        ...prev,
-        vitals: { ...prev.vitals, [vitalField]: value }
-      }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+    try {
+      if (name.startsWith('vitals.')) {
+        const vitalField = name.split('.')[1];
+        setFormData(prev => ({
+          ...prev,
+          vitals: { ...prev.vitals, [vitalField]: value }
+        }));
+      } else {
+        setFormData(prev => ({ ...prev, [name]: value }));
+      }
+      
+      // Clear error when user starts typing
+      if (errors[name]) {
+        setErrors(prev => ({ ...prev, [name]: '' }));
+      }
+    } catch (error) {
+      console.error('Input change error:', error);
     }
   };
 
@@ -166,7 +190,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                     name="visit_date"
                     value={formData.visit_date}
                     onChange={handleInputChange}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   />
                   {errors.visit_date && (
                     <p className="mt-1 text-sm text-red-600">{errors.visit_date}</p>
@@ -180,7 +204,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                     value={formData.chief_complaint}
                     onChange={handleInputChange}
                     rows={3}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                     placeholder="e.g., Fever and headache for 2 days"
                   />
                   {errors.chief_complaint && (
@@ -195,7 +219,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                     value={formData.symptoms}
                     onChange={handleInputChange}
                     rows={3}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                     placeholder="Detailed symptoms description"
                   />
                 </div>
@@ -207,7 +231,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                     name="follow_up_date"
                     value={formData.follow_up_date}
                     onChange={handleInputChange}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -224,7 +248,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                     value={formData.diagnosis}
                     onChange={handleInputChange}
                     rows={3}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                     placeholder="Clinical diagnosis"
                   />
                 </div>
@@ -236,7 +260,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                     value={formData.prescription}
                     onChange={handleInputChange}
                     rows={3}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                     placeholder="Medications and dosage"
                   />
                 </div>
@@ -248,7 +272,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                     value={formData.notes}
                     onChange={handleInputChange}
                     rows={3}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                     placeholder="Additional notes"
                   />
                 </div>
@@ -267,7 +291,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                       name="vitals.temperature"
                       value={formData.vitals.temperature}
                       onChange={handleInputChange}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                       placeholder="e.g., 98.6°F"
                     />
                   </div>
@@ -279,7 +303,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                       name="vitals.bp"
                       value={formData.vitals.bp}
                       onChange={handleInputChange}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                       placeholder="e.g., 120/80"
                     />
                   </div>
@@ -291,7 +315,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                       name="vitals.pulse"
                       value={formData.vitals.pulse}
                       onChange={handleInputChange}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                       placeholder="e.g., 72 bpm"
                     />
                   </div>
@@ -303,7 +327,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                       name="vitals.weight"
                       value={formData.vitals.weight}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                       placeholder="e.g., 70 kg"
                     />
                   </div>
@@ -314,7 +338,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                       name="vitals.o2"
                       value={formData.vitals.o2}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                       placeholder="e.g., 98%"
                     />
                   </div>
@@ -326,21 +350,31 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end space-x-3 p-2 border-t bg-gray-50">
+        <div className="flex justify-end space-x-3 p-6 border-t bg-gray-50">
           <button
             type="button"
             onClick={onClose}
-            className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
           >
             Cancel
           </button>
           <button
-            type="submit"
+            type="button"
             disabled={loading}
-            className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors"
+            className="px-4 py-2 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors"
             onClick={handleSubmit}
           >
-            {loading ? 'Updating...' : 'Update Visit'}
+            {loading ? (
+              <span className="flex items-center">
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Updating...
+              </span>
+            ) : (
+              'Update Visit'
+            )}
           </button>
         </div>
       </div>
