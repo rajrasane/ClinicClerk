@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
-import PatientDetailsModal from './PatientDetailsModal';
-import AddPatientModal from './AddPatientModalNew';
-import EditPatientModal from './EditPatientModal';
-import AddVisitModal from './AddVisitModal';
+import PatientDetailsModal from '@/components/PatientDetailsModal';
+import AddPatientModalNew from '@/components/AddPatientModalNew';
+import EditPatientModal from '@/components/EditPatientModal';
+import AddVisitModal from '@/components/AddVisitModal';
+import { usePatients } from '@/hooks/usePatients';
+import { apiCache } from '@/lib/cache';
 
 interface Visit {
   id: number;
@@ -37,9 +39,12 @@ interface Patient {
 }
 
 export default function AdminPatients() {
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [loading, setLoading] = useState(false);
+  // Use the custom hook for data management
+  const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const { patients, loading, pagination, refetch, removePatient } = usePatients(currentPage, searchTerm, 5);
+
+  // Component state for modals
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -47,105 +52,8 @@ export default function AdminPatients() {
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [showAddVisitModal, setShowAddVisitModal] = useState(false);
   const [preselectedPatientId, setPreselectedPatientId] = useState<number | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
-  // Effect for filter changes to reset pagination
-  useEffect(() => {
-    if (searchTerm) {
-      setCurrentPage(1);
-    }
-  }, [searchTerm]);
-
-  // Main data fetching effect
-  useEffect(() => {
-    let isSubscribed = true;
-    const controller = new AbortController();
-
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        const params = new URLSearchParams({
-          page: currentPage.toString(),
-          limit: '10'
-        });
-        
-        // Only add search param if we have a search term
-        if (searchTerm.trim()) {
-          params.append('search', searchTerm.trim());
-        }
-
-        const response = await fetch(`/api/patients?${params}`, {
-          signal: controller.signal
-        });
-        
-        if (!isSubscribed) return;
-        
-        const data = await response.json();
-        if (data.success) {
-          setPatients(data.data);
-          setTotalPages(data.pagination.totalPages);
-        }
-      } catch (error: unknown) {
-        if ((error as Error)?.name !== 'AbortError' && isSubscribed) {
-          console.error('Error fetching patients:', error);
-        }
-      } finally {
-        if (isSubscribed) {
-          setLoading(false);
-        }
-      }
-    };
-
-    // Start loading immediately for page changes only
-    if (!searchTerm) {
-      loadData();
-      return () => {
-        isSubscribed = false;
-        controller.abort();
-      };
-    }
-
-    // Debounce search changes
-    const timeoutId = setTimeout(loadData, 300);
-    
-    return () => {
-      isSubscribed = false;
-      controller.abort();
-      clearTimeout(timeoutId);
-    };
-  }, [currentPage, searchTerm]);
-
-  const fetchPatients = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: '10'
-      });
-      
-      if (searchTerm.trim()) {
-        params.append('search', searchTerm.trim());
-      }
-
-      const response = await fetch(`/api/patients?${params}`, {
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
-      const data = await response.json();
-
-      if (data.success) {
-        setPatients(data.data);
-        setTotalPages(data.pagination.totalPages);
-      }
-    } catch (error) {
-      console.error('Error fetching patients:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const totalPages = pagination?.totalPages || 1;
 
   const handleViewPatient = (patient: Patient) => {
     // Show modal immediately with existing patient data
@@ -170,7 +78,9 @@ export default function AdminPatients() {
       
       if (response.ok) {
         toast.success('Patient deleted successfully!');
-        fetchPatients(); // Refresh the list
+        // Clear cache and refresh
+        apiCache.invalidate('/api/patients');
+        removePatient(patientId); // Optimistic update
       } else {
         toast.error('Failed to delete patient');
       }
@@ -376,16 +286,19 @@ export default function AdminPatients() {
             setShowModal(false);
             setSelectedPatient(null);
           }}
-          onUpdate={fetchPatients}
+          onUpdate={refetch}
           onAddVisit={handleAddVisit}
         />
       )}
 
       {/* Add Patient Modal */}
       {showAddModal && (
-        <AddPatientModal
+        <AddPatientModalNew
           onClose={() => setShowAddModal(false)}
-          onSuccess={fetchPatients}
+          onSuccess={() => {
+            apiCache.invalidate('/api/patients');
+            refetch();
+          }}
         />
       )}
 
@@ -397,7 +310,10 @@ export default function AdminPatients() {
             setShowEditModal(false);
             setEditingPatient(null);
           }}
-          onSuccess={fetchPatients}
+          onSuccess={() => {
+            apiCache.invalidate('/api/patients');
+            refetch();
+          }}
         />
       )}
 
@@ -409,7 +325,8 @@ export default function AdminPatients() {
             setPreselectedPatientId(null);
           }}
           onSuccess={() => {
-            fetchPatients(); // Refresh patients to update visit counts
+            apiCache.invalidate('/api/patients');
+            refetch(); // Refresh patients to update visit counts
             setShowAddVisitModal(false);
             setPreselectedPatientId(null);
           }}

@@ -81,7 +81,8 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
 
   const handleVisitsTab = () => {
     setActiveTab('visits');
-    if (!visitsLoaded) {
+    // Only load visits if we haven't loaded them AND there are visits to load
+    if (!visitsLoaded && Number(patient.visit_count) > 0) {
       loadVisits();
     }
   };

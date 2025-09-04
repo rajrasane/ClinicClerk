@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import toast from 'react-hot-toast';
+import { apiCache } from '@/lib/cache';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
-import toast from 'react-hot-toast';
 import { XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 interface Patient {
@@ -94,7 +95,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
 
   const fetchPatients = async () => {
     try {
-      const response = await fetch('/api/patients?limit=100');
+      // Only fetch first 20 patients with search capability
+      const response = await fetch('/api/patients?limit=20');
       const data = await response.json();
       if (data.success) {
         setPatients(data.data);
@@ -276,6 +278,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
 
       if (result.success) {
         toast.success('Visit added successfully!');
+        // Clear cache before calling onSuccess
+        apiCache.invalidate('/api/visits');
         onSuccess();
         onClose();
       } else {

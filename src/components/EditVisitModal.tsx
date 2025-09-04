@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { apiCache } from '@/lib/cache';
 
 interface Visit {
   id: number;
@@ -113,6 +114,8 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
 
       if (result.success) {
         toast.success('Visit updated successfully!');
+        // Clear cache before calling onSuccess
+        apiCache.invalidate('/api/visits');
         onSuccess();
         onClose();
       } else {

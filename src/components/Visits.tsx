@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import VisitDetailsModal from '@/components/VisitDetailsModal';
 import AddVisitModal from '@/components/AddVisitModal';
 import EditVisitModal from '@/components/EditVisitModal';
+import { useVisits } from '@/hooks/useVisits';
+import { apiCache } from '@/lib/cache';
 
 interface Visit {
   id: number;
@@ -24,129 +26,31 @@ interface Visit {
 }
 
 export default function AdminVisits() {
-  // Component state
-  const [visits, setVisits] = useState<Visit[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
-  const [showModal, setShowModal] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingVisit, setEditingVisit] = useState<Visit | null>(null);
+  // State for filters and pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showDateFilter, setShowDateFilter] = useState(false);
   const [dateRange, setDateRange] = useState({
     startDate: '',
     endDate: ''
   });
 
-  // Effect for filter changes to reset pagination
-  useEffect(() => {
-    if (searchQuery || dateRange.startDate || dateRange.endDate) {
-      setCurrentPage(1);
-    }
-  }, [searchQuery, dateRange.startDate, dateRange.endDate]);
+  // Use the custom hook for data management
+  const { visits, loading, pagination, refetch, removeVisit } = useVisits(currentPage, searchQuery, dateRange, 5);
 
-  // Main data fetching effect
-  useEffect(() => {
-    // Skip invalid date ranges
-    if ((dateRange.startDate && !dateRange.endDate) || (!dateRange.startDate && dateRange.endDate)) {
-      return;
-    }
+  // Modal state
+  const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingVisit, setEditingVisit] = useState<Visit | null>(null);
+  const [showDateFilter, setShowDateFilter] = useState(false);
 
-    let isSubscribed = true;
-    const controller = new AbortController();
-    setLoading(true);
+  const totalPages = pagination?.totalPages || 1;
 
-    const fetchVisits = async () => {
-      try {
-        const params = new URLSearchParams({
-          page: currentPage.toString(),
-          limit: '10'
-        });
-
-        if (searchQuery.trim()) {
-          params.append('search', searchQuery.trim());
-        }
-
-        if (dateRange.startDate && dateRange.endDate) {
-          params.append('startDate', dateRange.startDate);
-          params.append('endDate', dateRange.endDate);
-        }
-
-        const response = await fetch(`/api/visits?${params}`, {
-          signal: controller.signal
-        });
-        
-        if (!isSubscribed) return;
-        
-        const data = await response.json();
-
-        if (data.success && isSubscribed) {
-          setVisits(data.data);
-          setTotalPages(data.pagination.totalPages);
-        }
-      } catch (error: unknown) {
-        if ((error as Error)?.name !== 'AbortError' && isSubscribed) {
-          console.error('Error fetching visits:', error);
-        }
-      } finally {
-        if (isSubscribed) {
-          setLoading(false);
-        }
-      }
-    };
-
-    // Start loading immediately for page changes only
-    if (!searchQuery && !dateRange.startDate && !dateRange.endDate) {
-      fetchVisits();
-      return () => {
-        isSubscribed = false;
-        controller.abort();
-      };
-    }
-
-    // Debounce filter changes
-    const timeoutId = setTimeout(fetchVisits, 300);
-    
-    return () => {
-      isSubscribed = false;
-      controller.abort();
-      clearTimeout(timeoutId);
-    };
-  }, [currentPage, searchQuery, dateRange.startDate, dateRange.endDate]);
-
-  // Fetch function for component callbacks
-  const fetchVisitsData = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: '10'
-      });
-
-      if (searchQuery.trim()) {
-        params.append('search', searchQuery.trim());
-      }
-
-      if (dateRange.startDate && dateRange.endDate) {
-        params.append('startDate', dateRange.startDate);
-        params.append('endDate', dateRange.endDate);
-      }
-
-      const response = await fetch(`/api/visits?${params}`);
-      const data = await response.json();
-
-      if (data.success) {
-        setVisits(data.data);
-        setTotalPages(data.pagination.totalPages);
-      }
-    } catch (error) {
-      console.error('Error fetching visits:', error);
-    } finally {
-      setLoading(false);
-    }
+  // Refetch function for callbacks - now uses the hook
+  const fetchVisitsData = () => {
+    apiCache.invalidate('/api/visits');
+    refetch();
   };
 
   const handleViewVisit = (visit: Visit) => {
@@ -171,7 +75,8 @@ export default function AdminVisits() {
       
       if (response.ok) {
         toast.success('Visit deleted successfully!');
-        fetchVisitsData(); // Refresh the list
+        apiCache.invalidate('/api/visits');
+        removeVisit(visitId); // Optimistic update
       } else {
         const errorMessage = 'Failed to delete visit';
         console.error('Error deleting visit:', response);

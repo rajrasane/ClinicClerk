@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
+import { apiCache } from '@/lib/cache';
 import { XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 interface AddPatientModalProps {
@@ -171,6 +172,8 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
       
       if (response.ok) {
         toast.success('Patient added successfully!');
+        // Clear cache before calling onSuccess
+        apiCache.invalidate('/api/patients');
         onSuccess();
         onClose();
       } else {
