@@ -223,9 +223,9 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           gender: formData.gender,
           phone: formData.phone,
           address: formData.address,
-          blood_group: formData.blood_group.trim() || 'None',
+          blood_group: formData.blood_group.trim() || null,
           allergies: formData.allergies.trim() || 'None',
-          emergency_contact: formData.emergency_contact.trim() || ''
+          emergency_contact: formData.emergency_contact.trim() || null
         };
 
         const patientResponse = await fetch('/api/patients', {
