@@ -95,14 +95,13 @@ export function useVisits(
   // Optimistic updates
   const updateVisit = useCallback((id: number, updates: Partial<Visit>) => {
     setVisits(prev => prev.map(v => v.id === id ? { ...v, ...updates } : v));
-    apiCache.invalidate(`/api/visits/${id}`);
+    // Only invalidate list cache - individual visit cache not needed for optimistic updates
     apiCache.invalidate('/api/visits?');
   }, []);
 
   const removeVisit = useCallback((id: number) => {
     setVisits(prev => prev.filter(v => v.id !== id));
-    apiCache.invalidate(`/api/visits/${id}`);
-    apiCache.invalidate('/api/visits?');
+    // No cache invalidation needed - UI is already updated optimistically
   }, []);
 
   const addVisit = useCallback((visit: Visit) => {

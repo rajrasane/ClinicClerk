@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { apiCache } from '@/lib/cache';
+import { DatePicker } from '@/components/ui/date-picker';
 
 interface Visit {
   id: number;
@@ -28,29 +29,15 @@ interface EditVisitModalProps {
 
 export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitModalProps) {
   // Format date to YYYY-MM-DD for date input, handling timezone correctly
-  const formatDateForInput = (dateString: string) => {
-    if (!dateString) return '';
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return '';
-      // Adjust for timezone offset to prevent date shifting
-      const offset = date.getTimezoneOffset();
-      const adjustedDate = new Date(date.getTime() - (offset * 60 * 1000));
-      return adjustedDate.toISOString().split('T')[0];
-    } catch (error) {
-      console.error('Date formatting error:', error);
-      return '';
-    }
-  };
 
   const [formData, setFormData] = useState({
-    visit_date: formatDateForInput(visit.visit_date),
+    visit_date: visit.visit_date ? new Date(visit.visit_date) : new Date(),
     chief_complaint: visit.chief_complaint || '',
     symptoms: visit.symptoms || '',
     diagnosis: visit.diagnosis || '',
     prescription: visit.prescription || '',
     notes: visit.notes || '',
-    follow_up_date: formatDateForInput(visit.follow_up_date),
+    follow_up_date: visit.follow_up_date ? new Date(visit.follow_up_date) : undefined,
     vitals: {
       temperature: visit?.vitals?.temperature || '',
       bp: visit?.vitals?.bp || '',
@@ -78,6 +65,15 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleDateChange = (name: string, date: Date | undefined) => {
+    setFormData(prev => ({ ...prev, [name]: date }));
+    
+    // Clear error when date is selected
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -97,8 +93,13 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
         }, {} as Record<string, string>);
 
       const submitData = {
-        ...formData,
-        follow_up_date: formData.follow_up_date || null,
+        visit_date: formData.visit_date.toISOString().split('T')[0],
+        chief_complaint: formData.chief_complaint,
+        symptoms: formData.symptoms,
+        diagnosis: formData.diagnosis,
+        prescription: formData.prescription,
+        notes: formData.notes,
+        follow_up_date: formData.follow_up_date ? formData.follow_up_date.toISOString().split('T')[0] : null,
         vitals: Object.keys(vitalsData).length > 0 ? vitalsData : null
       };
 
@@ -114,7 +115,8 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
 
       if (result.success) {
         toast.success('Visit updated successfully!');
-        // Clear cache before calling onSuccess
+        // Clear cache for both patients and visits
+        apiCache.invalidate('/api/patients');
         apiCache.invalidate('/api/visits');
         onSuccess();
         onClose();
@@ -188,13 +190,12 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Visit Date</label>
-                  <input
-                    type="date"
-                    name="visit_date"
-                    value={formData.visit_date}
-                    onChange={handleInputChange}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Select date"
+                  <DatePicker
+                    date={formData.visit_date}
+                    onDateChange={(date) => handleDateChange('visit_date', date)}
+                    placeholder="Select visit date"
+                    error={!!errors.visit_date}
+                    className={errors.visit_date ? 'border-red-500' : ''}
                   />
                   {errors.visit_date && (
                     <p className="mt-1 text-sm text-red-600">{errors.visit_date}</p>
@@ -230,13 +231,10 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Follow-up Date</label>
-                  <input
-                    type="date"
-                    name="follow_up_date"
-                    value={formData.follow_up_date}
-                    onChange={handleInputChange}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Select date"
+                  <DatePicker
+                    date={formData.follow_up_date}
+                    onDateChange={(date) => handleDateChange('follow_up_date', date)}
+                    placeholder="Select follow-up date (optional)"
                   />
                 </div>
               </div>

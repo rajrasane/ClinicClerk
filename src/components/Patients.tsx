@@ -103,7 +103,7 @@ export default function AdminPatients() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Patient Management</h2>
+          <h2 className="text-2xl font-bold text-gray-700">Patient Management</h2>
           <p className="text-gray-600">Manage patient records and information</p>
         </div>
         <button
@@ -124,7 +124,7 @@ export default function AdminPatients() {
             placeholder="Search patients by name or phone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base"
+            className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base"
           />
           <svg
             className="absolute left-3 top-2.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400"
@@ -139,6 +139,17 @@ export default function AdminPatients() {
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
             />
           </svg>
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-2.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="Clear search"
+            >
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
       </div>
 
       {/* Patients Table */}
@@ -288,7 +299,6 @@ export default function AdminPatients() {
           onClose={() => setShowAddModal(false)}
           onSuccess={() => {
             apiCache.invalidate('/api/patients');
-            refetch();
           }}
         />
       )}
@@ -303,7 +313,6 @@ export default function AdminPatients() {
           }}
           onSuccess={() => {
             apiCache.invalidate('/api/patients');
-            refetch();
           }}
         />
       )}
@@ -317,7 +326,6 @@ export default function AdminPatients() {
           }}
           onSuccess={() => {
             apiCache.invalidate('/api/patients');
-            refetch(); // Refresh patients to update visit counts
             setShowAddVisitModal(false);
             setPreselectedPatientId(null);
           }}

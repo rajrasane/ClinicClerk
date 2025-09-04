@@ -85,16 +85,13 @@ export function usePatients(page: number = 1, searchTerm: string = '', limit: nu
   // Optimistic updates to avoid unnecessary refetches
   const updatePatient = useCallback((id: number, updates: Partial<Patient>) => {
     setPatients(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
-    // Invalidate cache for this patient
-    apiCache.invalidate(`/api/patients/${id}`);
+    // Only invalidate list cache - individual patient cache not needed for optimistic updates
     apiCache.invalidate('/api/patients?');
   }, []);
 
   const removePatient = useCallback((id: number) => {
     setPatients(prev => prev.filter(p => p.id !== id));
-    // Invalidate cache
-    apiCache.invalidate(`/api/patients/${id}`);
-    apiCache.invalidate('/api/patients?');
+    // No cache invalidation needed - UI is already updated optimistically
   }, []);
 
   const addPatient = useCallback((patient: Patient) => {

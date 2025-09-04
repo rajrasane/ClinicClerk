@@ -6,6 +6,7 @@ import { apiCache } from '@/lib/cache';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { DatePicker } from '@/components/ui/date-picker';
 
 interface Patient {
   id: number;
@@ -47,13 +48,13 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
   const [patients, setPatients] = useState<Patient[]>([]);
   const [formData, setFormData] = useState({
     patient_id: preselectedPatientId?.toString() || '',
-    visit_date: new Date().toISOString().split('T')[0],
+    visit_date: new Date(),
     chief_complaint: '',
     symptoms: '',
     diagnosis: '',
     prescription: '',
     notes: '',
-    follow_up_date: '',
+    follow_up_date: undefined as Date | undefined,
     vitals: {
       temperature: '',
       bp: '',
@@ -107,18 +108,29 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
   };
 
   // Validation function
-  const validateField = (name: string, value: string): string => {
+  const validateField = (name: string, value: unknown): string => {
+    // Handle date validation
+    if (name === 'visit_date') {
+      if (!value || !(value instanceof Date)) {
+        return 'Visit date is required';
+      }
+      return '';
+    }
+
+    // Convert value to string for other validations
+    const stringValue = typeof value === 'string' ? value : '';
+
     // Validate new patient fields
     if (['first_name', 'last_name', 'age', 'phone', 'gender', 'address'].includes(name)) {
-      if (!value.trim()) {
+      if (!stringValue.trim()) {
         return 'This field is required';
       }
       const pattern = validationPatterns[name as keyof typeof validationPatterns];
-      if (pattern && value.trim() && !pattern.test(value.trim())) {
+      if (pattern && stringValue.trim() && !pattern.test(stringValue.trim())) {
         return validationMessages[name as keyof typeof validationMessages];
       }
-      if (name === 'age' && value) {
-        const age = parseInt(value);
+      if (name === 'age' && stringValue) {
+        const age = parseInt(stringValue);
         if (isNaN(age) || age <= 0 || age > 120) {
           return 'Please enter a valid age (1-120)';
         }
@@ -126,7 +138,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     }
 
     // Validate visit fields
-    if (!value.trim() && ['patient_id', 'visit_date', 'chief_complaint'].includes(name)) {
+    if (!stringValue.trim() && ['patient_id', 'chief_complaint'].includes(name)) {
       return 'This field is required';
     }
     return '';
@@ -169,6 +181,19 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     }
   };
 
+  const handleDateChange = (name: string, date: Date | undefined) => {
+    setFormData({
+      ...formData,
+      [name]: date
+    });
+
+    // Validate on change if field has been touched
+    if (touchedFields.has(name)) {
+      const error = validateField(name, date);
+      setErrors(prev => ({ ...prev, [name]: error || '' }));
+    }
+  };
+
   const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
@@ -197,8 +222,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     
     requiredFields.forEach(key => {
       const value = formData[key as keyof typeof formData];
-      // Skip validation for non-string values (like the vitals object)
-      if (typeof value === 'string') {
+      // Skip vitals object validation in this context
+      if (key !== 'vitals') {
         const error = validateField(key, value);
         if (error) {
           newErrors[key] = error;
@@ -263,13 +288,13 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         },
         body: JSON.stringify({
           patient_id: patientId,
-          visit_date: formData.visit_date,
+          visit_date: formData.visit_date.toISOString().split('T')[0],
           chief_complaint: formData.chief_complaint,
           symptoms: formData.symptoms,
           diagnosis: formData.diagnosis,
           prescription: formData.prescription,
           notes: formData.notes,
-          follow_up_date: formData.follow_up_date || null,
+          follow_up_date: formData.follow_up_date ? formData.follow_up_date.toISOString().split('T')[0] : null,
           vitals: Object.keys(vitalsData).length > 0 ? vitalsData : null
         }),
       });
@@ -278,7 +303,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
 
       if (result.success) {
         toast.success('Visit added successfully!');
-        // Clear cache before calling onSuccess
+        // Clear cache for both patients and visits
+        apiCache.invalidate('/api/patients');
         apiCache.invalidate('/api/visits');
         onSuccess();
         onClose();
@@ -307,10 +333,12 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     // Validate all fields in current step
     const newErrors: FormErrors = {};
     currentStepFields.forEach(field => {
-      let value: string | undefined;
+      let value: string | Date | undefined;
       if (field.startsWith('vitals.')) {
         const vitalsKey = field.split('.')[1] as keyof typeof formData.vitals;
         value = formData.vitals?.[vitalsKey]?.toString();
+      } else if (field === 'visit_date' || field === 'follow_up_date') {
+        value = formData[field as keyof typeof formData] as Date | undefined;
       } else {
         const formValue = formData[field as keyof typeof formData];
         value = formValue !== undefined && formValue !== null ? formValue.toString() : '';
@@ -356,49 +384,77 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
   };
 
   const canProceed = () => {
-    const currentStepFields = getCurrentStepFields();
-    const requiredFields = patientType === 'new' && currentStep <= 2
-      ? ['first_name', 'last_name', 'age', 'phone', 'gender', 'address']
-      : ['patient_id', 'visit_date', 'chief_complaint'];
+    // Step 1: Patient type selection
+    if (currentStep === 1 && patientType === null) {
+      return false;
+    }
     
-    return currentStepFields.every(field => {
-      if (currentStep === 1 && patientType === null) {
-        return patientType !== null;
-      }
-      
-      if (patientType === 'new' && currentStep <= 2) {
-        if (requiredFields.includes(field)) {
+    // For new patient flow
+    if (patientType === 'new') {
+      if (currentStep === 2) {
+        // Basic info step - check required fields
+        const requiredFields = ['first_name', 'last_name', 'age', 'phone', 'gender', 'address'];
+        return requiredFields.every(field => {
           const value = formData[field as keyof typeof formData];
           const hasValue = field === 'gender' || (value && (value as string).trim() !== '');
           const hasNoError = !errors[field];
           return hasValue && hasNoError;
-        }
+        });
+      }
+      if (currentStep === 3) {
+        // Medical info step - all optional
         return true;
       }
-      
-      if (patientType === 'existing' && currentStep === 2) {
-        if (requiredFields.includes(field)) {
-          const value = formData[field as keyof typeof formData];
-          const hasValue = value && (value as string).trim() !== '';
-          const hasNoError = !errors[field];
-          return hasValue && hasNoError;
-        }
+      if (currentStep === 4) {
+        // Visit details step - check required fields
+        const hasVisitDate = formData.visit_date instanceof Date;
+        const hasChiefComplaint = formData.chief_complaint.trim() !== '';
+        const hasNoErrors = !errors.visit_date && !errors.chief_complaint;
+        return hasVisitDate && hasChiefComplaint && hasNoErrors;
+      }
+      if (currentStep === 5) {
+        // Vitals step - all optional
         return true;
       }
-      
-      if (field.startsWith('vitals.')) {
-        return true; // Vitals are optional
+    }
+    
+    // For existing patient flow
+    if (patientType === 'existing') {
+      if (currentStep === 2) {
+        // Patient selection and visit details - only check patient and visit date
+        const hasPatient = formData.patient_id.trim() !== '';
+        const hasVisitDate = formData.visit_date instanceof Date;
+        const hasNoErrors = !errors.patient_id && !errors.visit_date;
+        return hasPatient && hasVisitDate && hasNoErrors;
       }
-      
-      if (requiredFields.includes(field)) {
-        const value = formData[field as keyof typeof formData];
-        const hasValue = value && (value as string).trim() !== '';
-        const hasNoError = !errors[field];
-        return hasValue && hasNoError;
+      if (currentStep === 3) {
+        // Visit details step - check chief complaint
+        const hasChiefComplaint = formData.chief_complaint.trim() !== '';
+        const hasNoErrors = !errors.chief_complaint;
+        return hasChiefComplaint && hasNoErrors;
       }
-      
-      return true;
-    });
+      if (currentStep === 4) {
+        // Vitals step - all optional
+        return true;
+      }
+    }
+    
+    // For preselected patient flow
+    if (preselectedPatientId) {
+      if (currentStep === 1) {
+        // Visit details step - check required fields
+        const hasVisitDate = formData.visit_date instanceof Date;
+        const hasChiefComplaint = formData.chief_complaint.trim() !== '';
+        const hasNoErrors = !errors.visit_date && !errors.chief_complaint;
+        return hasVisitDate && hasChiefComplaint && hasNoErrors;
+      }
+      if (currentStep === 2) {
+        // Vitals step - all optional
+        return true;
+      }
+    }
+    
+    return true;
   };
 
   const getCurrentStepFields = () => {
@@ -489,8 +545,31 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                 <p className="text-xs sm:text-sm text-gray-600">Medical examination information</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {renderInput("Visit Date", "visit_date", "date", true)}
-                {renderInput("Follow-up Date", "follow_up_date", "date", false)}
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Visit Date <span className="text-red-500">*</span>
+                  </label>
+                  <DatePicker
+                    date={formData.visit_date}
+                    onDateChange={(date) => handleDateChange('visit_date', date)}
+                    placeholder="Select visit date"
+                    error={!!errors.visit_date}
+                    className={errors.visit_date ? 'border-red-500' : ''}
+                  />
+                  {errors.visit_date && (
+                    <p className="mt-1 text-sm text-red-600">{errors.visit_date}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Follow-up Date
+                  </label>
+                  <DatePicker
+                    date={formData.follow_up_date}
+                    onDateChange={(date) => handleDateChange('follow_up_date', date)}
+                    placeholder="Select follow-up date (optional)"
+                  />
+                </div>
                 <div className="md:col-span-2">
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Chief Complaint <span className="text-red-500">*</span>
@@ -717,8 +796,31 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     )}
                   </div>
                 )}
-                {renderInput("Visit Date", "visit_date", "date", true)}
-                {renderInput("Follow-up Date", "follow_up_date", "date", false)}
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Visit Date <span className="text-red-500">*</span>
+                  </label>
+                  <DatePicker
+                    date={formData.visit_date}
+                    onDateChange={(date) => handleDateChange('visit_date', date)}
+                    placeholder="Select visit date"
+                    error={!!errors.visit_date}
+                    className={errors.visit_date ? 'border-red-500' : ''}
+                  />
+                  {errors.visit_date && (
+                    <p className="mt-1 text-sm text-red-600">{errors.visit_date}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Follow-up Date
+                  </label>
+                  <DatePicker
+                    date={formData.follow_up_date}
+                    onDateChange={(date) => handleDateChange('follow_up_date', date)}
+                    placeholder="Select follow-up date (optional)"
+                  />
+                </div>
               </div>
             </div>
           );
@@ -857,8 +959,31 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                 <p className="text-xs sm:text-sm text-gray-600">Medical examination information</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {renderInput("Visit Date", "visit_date", "date", true)}
-                {renderInput("Follow-up Date", "follow_up_date", "date", false)}
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Visit Date <span className="text-red-500">*</span>
+                  </label>
+                  <DatePicker
+                    date={formData.visit_date}
+                    onDateChange={(date) => handleDateChange('visit_date', date)}
+                    placeholder="Select visit date"
+                    error={!!errors.visit_date}
+                    className={errors.visit_date ? 'border-red-500' : ''}
+                  />
+                  {errors.visit_date && (
+                    <p className="mt-1 text-sm text-red-600">{errors.visit_date}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Follow-up Date
+                  </label>
+                  <DatePicker
+                    date={formData.follow_up_date}
+                    onDateChange={(date) => handleDateChange('follow_up_date', date)}
+                    placeholder="Select follow-up date (optional)"
+                  />
+                </div>
                 <div className="md:col-span-2">
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Chief Complaint <span className="text-red-500">*</span>

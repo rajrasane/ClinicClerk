@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import VisitDetailsModal from '@/components/VisitDetailsModal';
-import AddVisitModal from '@/components/AddVisitModal';
-import EditVisitModal from '@/components/EditVisitModal';
 import { useVisits } from '@/hooks/useVisits';
 import { apiCache } from '@/lib/cache';
+import AddVisitModal from './AddVisitModal';
+import VisitDetailsModal from './VisitDetailsModal';
+import EditVisitModal from './EditVisitModal';
+import { DatePicker } from '@/components/ui/date-picker';
 
 interface Visit {
   id: number;
@@ -30,12 +31,18 @@ export default function AdminVisits() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [dateRange, setDateRange] = useState({
-    startDate: '',
-    endDate: ''
+    startDate: undefined as Date | undefined,
+    endDate: undefined as Date | undefined
   });
 
+  // Convert dates to strings for API
+  const dateRangeForAPI = {
+    startDate: dateRange.startDate ? dateRange.startDate.toISOString().split('T')[0] : '',
+    endDate: dateRange.endDate ? dateRange.endDate.toISOString().split('T')[0] : ''
+  };
+
   // Use the custom hook for data management
-  const { visits, loading, pagination, refetch, removeVisit } = useVisits(currentPage, searchQuery, dateRange, 5);
+  const { visits, loading, pagination, refetch, removeVisit } = useVisits(currentPage, searchQuery, dateRangeForAPI, 5);
 
   // Modal state
   const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
@@ -75,7 +82,8 @@ export default function AdminVisits() {
       
       if (response.ok) {
         toast.success('Visit deleted successfully!');
-        apiCache.invalidate('/api/visits');
+        apiCache.invalidate('/api/patients'); // Clear patients cache to update visit counts
+        apiCache.invalidate('/api/visits'); // Clear visits cache
         removeVisit(visitId); // Optimistic update
       } else {
         const errorMessage = 'Failed to delete visit';
@@ -99,7 +107,7 @@ export default function AdminVisits() {
         {/* Header and Add Button */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Visit Management</h2>
+            <h2 className="text-2xl font-bold text-gray-700">Visit Management</h2>
             <p className="text-gray-600">Record and manage patient visits</p>
           </div>
           <div className="flex items-center gap-4 sm:gap-6 md:justify-end">
@@ -123,16 +131,16 @@ export default function AdminVisits() {
               <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              <span>Add New Visit</span>
+              <span>Add Visit</span>
             </button>
           </div>
         </div>
 
         {/* Search and Date Filters */}
-        <div className='mt-2'>
+        <div className='mt-2 mb-[-8]'>
           {/* Search Input with Filter Button on Mobile */}
           <div className="relative w-full flex items-center">
-            <div className="relative flex-grow">
+            <div className="relative flex-grow mr-1 sm:mr-2 md:mr-0">
               <input
                 type="text"
                 placeholder="Search by patient name or complaint..."
@@ -153,13 +161,36 @@ export default function AdminVisits() {
                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-2.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-gray-600 transition-colors z-10"
+                  aria-label="Clear search"
+                >
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
             </div>
             <button
-              onClick={() => setShowDateFilter(!showDateFilter)}
-              className={`md:hidden ml-2 p-3 rounded-lg transition-colors ${
-                showDateFilter 
-                  ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              onClick={() => {
+                if (dateRange.startDate && dateRange.endDate) {
+                  // If both dates are selected, do nothing
+                  return;
+                } else {
+                  setShowDateFilter(!showDateFilter);
+                }
+              }}
+              disabled={!!(dateRange.startDate && dateRange.endDate)}
+              className={`md:hidden ml-1 sm:ml-2 p-[11px] rounded-lg transition-colors ${
+                dateRange.startDate && dateRange.endDate
+                  ? 'bg-red-100 text-red-700 cursor-not-allowed opacity-75'
+                  : showDateFilter 
+                    ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
+                    : (dateRange.startDate || dateRange.endDate)
+                      ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -171,31 +202,34 @@ export default function AdminVisits() {
           {/* Date Inputs */}
           <div className="space-y-4 mt-2">
             {showDateFilter && (
-              <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs md:text-sm lg:text-sm font-medium text-gray-700 mb-1">
-                    From Date
-                  </label>
-                  <input
-                    type="date"
-                    value={dateRange.startDate}
-                    onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <DatePicker
+                    date={dateRange.startDate}
+                    onDateChange={(date) => setDateRange(prev => ({ ...prev, startDate: date }))}
+                    placeholder="Start date"
+                    className="text-xs"
+                  />
+                  <DatePicker
+                    date={dateRange.endDate}
+                    onDateChange={(date) => setDateRange(prev => ({ ...prev, endDate: date }))}
+                    placeholder="End date"
+                    className="text-xs"
+                    disabled={!dateRange.startDate}
                   />
                 </div>
-
-                <div>
-                  <label className="block text-xs md:text-sm lg:text-sm font-medium text-gray-700 mb-1">
-                    To Date
-                  </label>
-                  <input
-                    type="date"
-                    value={dateRange.endDate}
-                    min={dateRange.startDate}
-                    onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+                
+                {/* Clear Date Filters Button */}
+                {(dateRange.startDate || dateRange.endDate) && (
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => setDateRange({ startDate: undefined, endDate: undefined })}
+                      className="text-sm text-gray-600 hover:text-gray-800 underline transition-colors"
+                    >
+                      Clear date filters
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
