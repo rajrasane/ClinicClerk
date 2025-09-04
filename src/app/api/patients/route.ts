@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     let query = `
       SELECT 
-        p.id, p.first_name, p.last_name, p.age, p.age_recorded_at, p.gender, 
+        p.id, p.first_name, p.middle_name, p.last_name, p.age, p.age_recorded_at, p.gender, 
         p.phone, p.address, p.blood_group, p.allergies, 
         p.emergency_contact, p.created_at, p.updated_at,
         COUNT(v.id) as visit_count
@@ -27,10 +27,11 @@ export async function GET(request: NextRequest) {
       const searchTerms = search.trim().split(/\s+/);
       const searchConditions = searchTerms.map((term) => {
         const firstNameParam = ++paramCount;
+        const middleNameParam = ++paramCount;
         const lastNameParam = ++paramCount;
         const phoneParam = ++paramCount;
-        queryParams.push(`%${term}%`, `%${term}%`, `%${term}%`);
-        return `(first_name ILIKE $${firstNameParam} OR last_name ILIKE $${lastNameParam} OR phone ILIKE $${phoneParam})`;
+        queryParams.push(`%${term}%`, `%${term}%`, `%${term}%`, `%${term}%`);
+        return `(first_name ILIKE $${firstNameParam} OR middle_name ILIKE $${middleNameParam} OR last_name ILIKE $${lastNameParam} OR phone ILIKE $${phoneParam})`;
       });
       
       const searchCondition = ` WHERE ${searchConditions.join(' AND ')} `;
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
       countQuery += searchCondition;
     }
 
-    query += ` GROUP BY p.id, p.first_name, p.last_name, p.age, p.age_recorded_at, p.gender, p.phone, p.address, p.blood_group, p.allergies, p.emergency_contact, p.created_at, p.updated_at ORDER BY p.created_at DESC LIMIT $${++paramCount} OFFSET $${++paramCount}`;
+    query += ` GROUP BY p.id, p.first_name, p.middle_name, p.last_name, p.age, p.age_recorded_at, p.gender, p.phone, p.address, p.blood_group, p.allergies, p.emergency_contact, p.created_at, p.updated_at ORDER BY p.created_at DESC LIMIT $${++paramCount} OFFSET $${++paramCount}`;
     queryParams.push(limit, offset);
 
     const [patientsResult, countResult] = await Promise.all([
@@ -76,6 +77,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       first_name,
+      middle_name,
       last_name,
       age,
       gender,
@@ -103,9 +105,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate gender
-    if (gender && !['Male', 'Female', 'Other'].includes(gender)) {
+    if (gender && !['M', 'F', 'O'].includes(gender)) {
       return NextResponse.json(
-        { success: false, error: 'Gender must be Male, Female, or Other' },
+        { success: false, error: 'Gender must be M, F, or O' },
         { status: 400 }
       );
     }
@@ -121,14 +123,15 @@ export async function POST(request: NextRequest) {
 
     const query = `
       INSERT INTO patients (
-        first_name, last_name, age, gender, phone, 
+        first_name, middle_name, last_name, age, gender, phone, 
         address, blood_group, allergies, emergency_contact
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *
     `;
 
     const values = [
       first_name,
+      middle_name || null,
       last_name,
       age,
       gender,

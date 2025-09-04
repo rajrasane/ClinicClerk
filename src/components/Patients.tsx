@@ -9,32 +9,22 @@ import AddVisitModal from '@/components/AddVisitModal';
 import { usePatients } from '@/hooks/usePatients';
 import { apiCache } from '@/lib/cache';
 
-interface Visit {
-  id: number;
-  visit_date: string;
-  chief_complaint: string;
-  symptoms: string;
-  diagnosis: string;
-  prescription: string;
-  notes: string;
-  vitals: Record<string, string> | null;
-}
 
 interface Patient {
   id: number;
   first_name: string;
+  middle_name?: string;
   last_name: string;
   age: number;
   age_recorded_at: string;
-  gender: string;
+  gender: 'M' | 'F' | 'O';
   phone: string;
   address: string;
-  blood_group?: string;
+  blood_group: string;
   allergies: string;
-  emergency_contact?: string;
+  emergency_contact: string;
   created_at: string;
   updated_at: string;
-  visits?: Visit[];
   visit_count?: number;
 }
 
@@ -60,6 +50,7 @@ export default function AdminPatients() {
     setSelectedPatient(patient);
     setShowModal(true);
   };
+
 
   const handleEditPatient = (patient: Patient) => {
     setEditingPatient(patient);
@@ -197,10 +188,10 @@ export default function AdminPatients() {
                         </div>
                         <div className="ml-3">
                           <div className="text-sm font-medium text-gray-900">
-                            {patient.first_name} {patient.last_name}
+                            {patient.first_name} {patient.middle_name ? `${patient.middle_name} ` : ''}{patient.last_name}
                           </div>
                           <div className="text-xs text-gray-500 sm:hidden">
-                            {patient.age}yrs • {patient.gender}
+                            {patient.age}yrs • {patient.gender === 'M' ? 'Male' : patient.gender === 'F' ? 'Female' : 'Other'}
                             {patient.phone && ` • ${patient.phone}`}
                           </div>
                         </div>
@@ -211,7 +202,7 @@ export default function AdminPatients() {
                         {patient.age} years
                       </div>
                       <div className="text-sm text-gray-500">
-                        {patient.gender}
+                        {patient.gender === 'M' ? 'Male' : patient.gender === 'F' ? 'Female' : 'Other'}
                       </div>
                     </td>
                     <td className="px-3 sm:px-6 py-4 hidden md:table-cell">

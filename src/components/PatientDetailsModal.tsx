@@ -18,18 +18,18 @@ interface Visit {
 interface Patient {
   id: number;
   first_name: string;
+  middle_name?: string;
   last_name: string;
   age: number;
   age_recorded_at: string;
-  gender: string;
+  gender: 'M' | 'F' | 'O';
   phone: string;
   address: string;
-  blood_group?: string;
+  blood_group: string;
   allergies: string;
-  emergency_contact?: string;
+  emergency_contact: string;
   created_at: string;
   updated_at: string;
-  visits?: Visit[];
   visit_count?: number;
 }
 
@@ -46,14 +46,26 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
   const [visits, setVisits] = useState<Visit[]>([]);
   const [visitsLoading, setVisitsLoading] = useState(false);
   const [visitsLoaded, setVisitsLoaded] = useState(false);
+  
+  // Touch/swipe handling
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
   useEffect(() => {
     setMounted(true);
-    return () => setMounted(false);
+    
+    // Prevent background scrolling when modal is open
+    document.body.style.overflow = 'hidden';
+    
+    return () => {
+      setMounted(false);
+      // Restore background scrolling when modal closes
+      document.body.style.overflow = 'unset';
+    };
   }, []);
 
   const loadVisits = async () => {
-    if (visitsLoaded || visitsLoading) return;
+    if (visitsLoaded || visitsLoading || typeof window === 'undefined') return;
     
     // Skip API call if we know there are no visits
     const visitCount = Number(patient.visit_count);
@@ -65,8 +77,9 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
     
     setVisitsLoading(true);
     try {
-      const response = await fetch(`/api/visits?patient_id=${patient.id}`);
-      const data = await response.json();
+      // Use cached fetch for visit history
+      const { cachedFetch } = await import('@/lib/cache');
+      const data = await cachedFetch(`/api/visits?patient_id=${patient.id}`, undefined, 5); // 5 min cache
       
       if (data.success && data.data) {
         setVisits(data.data);
@@ -84,6 +97,34 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
     // Only load visits if we haven't loaded them AND there are visits to load
     if (!visitsLoaded && Number(patient.visit_count) > 0) {
       loadVisits();
+    }
+  };
+
+  // Swipe detection
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe && activeTab === 'details') {
+      // Swipe left: details -> visits
+      handleVisitsTab();
+    } else if (isRightSwipe && activeTab === 'visits') {
+      // Swipe right: visits -> details
+      setActiveTab('details');
     }
   };
 
@@ -112,13 +153,16 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
           exit={{ scale: 0.9, opacity: 0 }}
           className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
           onClick={(e) => e.stopPropagation()}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
         >
           {/* Header */}
           <div className="flex justify-between items-center p-6 border-b">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">{patient.first_name} {patient.last_name}</h2>
               <p className="text-sm text-gray-600 mt-1">
-                {patient.age} years • {patient.gender}{patient.blood_group ? ` • ${patient.blood_group}` : ''}
+                {patient.age} years • {patient.gender === 'M' ? 'Male' : patient.gender === 'F' ? 'Female' : 'Other'}
               </p>
             </div>
             <button
@@ -157,8 +201,16 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
 
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[60vh]">
-          {activeTab === 'details' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <AnimatePresence mode="wait">
+            {activeTab === 'details' && (
+              <motion.div
+                key="details"
+                initial={{ x: -10, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: 10, opacity: 0 }}
+                transition={{ duration: 0.1 }}
+                className="grid grid-cols-1 md:grid-cols-2 gap-6"
+              >
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
                 
@@ -179,7 +231,13 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Gender</label>
-                  <p className="mt-1 text-sm text-gray-900">{patient.gender}</p>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    patient.gender === 'M' ? 'bg-blue-100 text-blue-800' : 
+                    patient.gender === 'F' ? 'bg-pink-100 text-pink-800' : 
+                    'bg-purple-100 text-purple-800'
+                  }`}>
+                    {patient.gender === 'M' ? 'Male' : patient.gender === 'F' ? 'Female' : 'Other'}
+                  </span>
                 </div>
 
                 <div>
@@ -222,11 +280,18 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
                   <p className="mt-1 text-sm text-gray-900">{patient.allergies || 'None reported'}</p>
                 </div>
               </div>
-            </div>
-          )}
+              </motion.div>
+            )}
 
-          {activeTab === 'visits' && (
-            <div className="space-y-4">
+            {activeTab === 'visits' && (
+              <motion.div
+                key="visits"
+                initial={{ x: 10, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -10, opacity: 0 }}
+                transition={{ duration: 0.1 }}
+                className="space-y-4"
+              >
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold text-gray-900">Visit History</h3>
                 <button
@@ -248,15 +313,17 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
                 </div>
               ) : visits && visits.length > 0 ? (
                 <div className="space-y-4">
-                  {visits.map((visit) => (
-                    <div key={visit.id} className="border rounded-lg p-3 sm:p-4 bg-gray-50">
+                  {visits.map((visit, index) => (
+                    <div key={visit.id}>
+                      {index > 0 && <hr className="sm:hidden border-gray-300 my-3" />}
+                      <div className="border rounded-lg p-3 sm:p-4 bg-gray-50">
                       <div className="flex flex-col sm:flex-row gap-2 sm:justify-between sm:items-start mb-3">
                         <div>
                           <h4 className="font-medium text-gray-900 text-sm sm:text-base">
                             {visit.chief_complaint.length > 40 ? `${visit.chief_complaint.substring(0, 40)}...` : visit.chief_complaint}
                           </h4>
                           <p className="text-xs sm:text-sm text-gray-500">
-                            {formatDate(visit.visit_date)} • Visit #{visit.id}
+                            {formatDate(visit.visit_date)}
                           </p>
                         </div>
                         {visit.vitals && (
@@ -340,6 +407,7 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
                         </div>
                       )}
                     </div>
+                    </div>
                   ))}
                 </div>
               ) : (
@@ -359,8 +427,9 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
                   </button>
                 </div>
               )}
-            </div>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Footer */}

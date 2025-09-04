@@ -32,7 +32,15 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
 
   useEffect(() => {
     setMounted(true);
-    return () => setMounted(false);
+    
+    // Prevent background scrolling when modal is open
+    document.body.style.overflow = 'hidden';
+    
+    return () => {
+      setMounted(false);
+      // Restore background scrolling when modal closes
+      document.body.style.overflow = 'unset';
+    };
   }, []);
 
   if (!mounted || !visit) return null;
@@ -60,65 +68,78 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
         {/* Visit Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
-            <Section title="Chief Complaint">
-              <p className="text-gray-800">{visit.chief_complaint || 'Not specified'}</p>
-            </Section>
+            <h3 className="text-lg font-semibold text-gray-900">Clinical Assessment</h3>
             
-            <Section title="Symptoms">
-              <p className="whitespace-pre-line text-gray-800">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Chief Complaint</label>
+              <p className="mt-1 text-sm text-gray-900">{visit.chief_complaint || 'Not specified'}</p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Symptoms</label>
+              <p className="mt-1 text-sm text-gray-900 whitespace-pre-line">
                 {visit.symptoms || 'No symptoms recorded'}
               </p>
-            </Section>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Diagnosis</label>
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                {visit.diagnosis || 'No diagnosis recorded'}
+              </span>
+            </div>
           </div>
           
+          <hr className="md:hidden border-gray-200" />
+          
           <div className="space-y-4">
-            <Section title="Diagnosis">
-              <p className="whitespace-pre-line text-gray-800">
-                {visit.diagnosis || 'No diagnosis recorded'}
-              </p>
-            </Section>
+            <h3 className="text-lg font-semibold text-gray-900">Treatment Plan</h3>
             
-            <Section title="Prescription">
-              <p className="whitespace-pre-line text-gray-800">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Prescription</label>
+              <p className="mt-1 text-sm text-gray-900 whitespace-pre-line">
                 {visit.prescription || 'No prescription'}
               </p>
-            </Section>
+            </div>
+            
+            {visit.follow_up_date && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Follow-up Date</label>
+                <p className="mt-1 text-sm text-gray-900">{formatDate(visit.follow_up_date)}</p>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Notes */}
-        {visit.notes && (
-          <Section title="Notes">
-            <p className="whitespace-pre-line text-gray-800">{visit.notes}</p>
-          </Section>
-        )}
-
-        {/* Vitals */}
+        {/* Vital Signs - Separate Section */}
         {Object.keys(visit.vitals || {}).length > 0 && (
-          <div>
-            <h4 className="text-sm font-medium text-gray-500 mb-3">Vital Signs</h4>
-            <div className="bg-white p-4 rounded-lg border border-gray-200">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {Object.entries(formatVitals(visit.vitals)).map(([key, value]) => (
-                  <div key={key} className="text-center">
-                    <div className="text-xs font-medium text-gray-500 capitalize mb-1">
-                      {key === 'bp' ? 'Blood Pressure' : key.replace(/_/g, ' ')}
-                    </div>
-                    <div className="text-lg font-semibold text-gray-900">
-                      {String(value) || '—'}
-                    </div>
-                  </div>
-                ))}
-              </div>
+          <div className="space-y-4">
+            <hr className="border-gray-200" />
+            <h3 className="text-lg font-semibold text-gray-900">Vital Signs</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {Object.entries(formatVitals(visit.vitals)).map(([key, value]) => (
+                <div key={key}>
+                  <label className="block text-xs font-medium text-gray-500 capitalize mb-1">
+                    {key === 'bp' ? 'Blood Pressure' : key.replace(/_/g, ' ')}
+                  </label>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                    {String(value) || '—'}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Follow-up Date */}
-        {visit.follow_up_date && (
-          <Section title="Follow-up Date">
-            <p className="text-gray-800">{formatDate(visit.follow_up_date)}</p>
-          </Section>
+        {/* Notes */}
+        {visit.notes && (
+          <div className="md:col-span-2 space-y-4">
+            <hr className="border-gray-200" />
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Additional Notes</label>
+              <p className="mt-1 text-sm text-gray-900 whitespace-pre-line">{visit.notes}</p>
+            </div>
+          </div>
         )}
       </div>
     </div>
@@ -178,14 +199,3 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
   );
 }
 
-// Reusable section component
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <h4 className="text-sm font-medium text-gray-500 mb-1">{title}</h4>
-      <div className="bg-white p-3 rounded-lg border border-gray-200">
-        {children}
-      </div>
-    </div>
-  );
-}

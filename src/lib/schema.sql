@@ -5,10 +5,11 @@
 CREATE TABLE IF NOT EXISTS patients (
     id SERIAL PRIMARY KEY,
     first_name VARCHAR(50) NOT NULL,
+    middle_name VARCHAR(50),
     last_name VARCHAR(50) NOT NULL,
     age INTEGER NOT NULL CHECK (age > 0 AND age <= 120),
     age_recorded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    gender VARCHAR(10) CHECK (gender IN ('Male', 'Female', 'Other')),
+    gender CHAR(1) CHECK (gender IN ('M', 'F', 'O')),
     phone VARCHAR(15),
     address TEXT,
     blood_group VARCHAR(5) CHECK (blood_group IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')),

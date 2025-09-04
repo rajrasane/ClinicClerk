@@ -1,22 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 
 interface Patient {
   id: number;
   first_name: string;
+  middle_name?: string;
   last_name: string;
   age: number;
   age_recorded_at: string;
-  gender: string;
+  gender: 'M' | 'F' | 'O';
   phone: string;
   address: string;
-  blood_group?: string;
+  blood_group: string;
   allergies: string;
-  emergency_contact?: string;
+  emergency_contact: string;
   created_at: string;
   updated_at: string;
+  visit_count?: number;
 }
 
 interface EditPatientModalProps {
@@ -27,19 +29,46 @@ interface EditPatientModalProps {
 
 export default function EditPatientModal({ patient, onClose, onSuccess }: EditPatientModalProps) {
   const [formData, setFormData] = useState({
-    first_name: patient.first_name,
-    last_name: patient.last_name,
-    age: patient.age.toString(),
-    gender: patient.gender,
-    phone: patient.phone,
-    address: patient.address,
-    blood_group: patient.blood_group || '',
-    allergies: patient.allergies,
-    emergency_contact: patient.emergency_contact || ''
+    first_name: '',
+    middle_name: '',
+    last_name: '',
+    age: '',
+    gender: '',
+    phone: '',
+    address: '',
+    blood_group: '',
+    allergies: '',
+    emergency_contact: ''
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+
+  // Pre-populate form with patient data
+  useEffect(() => {
+    if (patient) {
+      setFormData({
+        first_name: patient.first_name || '',
+        middle_name: patient.middle_name || '',
+        last_name: patient.last_name || '',
+        age: patient.age?.toString() || '',
+        gender: patient.gender || '',
+        phone: patient.phone || '',
+        address: patient.address || '',
+        blood_group: patient.blood_group || '',
+        allergies: patient.allergies || '',
+        emergency_contact: patient.emergency_contact || ''
+      });
+    }
+  }, [patient]);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -48,6 +77,13 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
     if (name === 'phone' || name === 'emergency_contact') {
       const numericValue = value.replace(/\D/g, ''); // Remove all non-digits
       if (numericValue.length <= 10) { // Limit to 10 digits
+        setFormData(prev => ({ ...prev, [name]: numericValue }));
+      }
+    } else if (name === 'age') {
+      // Special handling for age - only allow digits, max 3 digits, max value 120
+      const numericValue = value.replace(/\D/g, ''); // Remove all non-digits
+      const ageNumber = parseInt(numericValue);
+      if (numericValue === '' || (numericValue.length <= 3 && ageNumber <= 120)) {
         setFormData(prev => ({ ...prev, [name]: numericValue }));
       }
     } else {
@@ -108,12 +144,11 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
     setLoading(true);
 
     try {
-      // Prepare form data with null for empty blood group
-      // Update age_recorded_at only if age has changed
+      // Prepare form data with null for empty values
       const submitData = {
         ...formData,
         age: parseInt(formData.age),
-        age_recorded_at: parseInt(formData.age) !== patient.age ? new Date().toISOString() : undefined,
+        middle_name: formData.middle_name.trim() || null,
         blood_group: formData.blood_group.trim() || null,
         allergies: formData.allergies.trim() || 'None',
         emergency_contact: formData.emergency_contact.trim() || null
@@ -153,9 +188,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
         <div className="flex justify-between items-center p-6 border-b">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Edit Patient</h2>
-            <p className="text-sm text-gray-600 mt-1">
-              {patient.first_name} {patient.last_name}
-            </p>
+            <p className="text-sm text-gray-600 mt-1">Update patient information</p>
           </div>
           <button
             onClick={onClose}
@@ -177,6 +210,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
+                
                 <div>
                   <label className="block text-sm font-medium text-gray-700">First Name</label>
                   <input
@@ -190,6 +224,18 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                   {errors.first_name && (
                     <p className="mt-1 text-sm text-red-600">{errors.first_name}</p>
                   )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Middle Name</label>
+                  <input
+                    type="text"
+                    name="middle_name"
+                    value={formData.middle_name}
+                    onChange={handleChange}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="e.g., Kumar (optional)"
+                  />
                 </div>
 
                 <div>
@@ -236,9 +282,9 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">Select</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
+                    <option value="M">Male</option>
+                    <option value="F">Female</option>
+                    <option value="O">Other</option>
                   </select>
                   {errors.gender && (
                     <p className="mt-1 text-sm text-red-600">{errors.gender}</p>
@@ -349,7 +395,6 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
           </button>
           <button
             type="submit"
-            form="edit-patient-form"
             disabled={loading}
             className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors"
             onClick={handleSubmit}

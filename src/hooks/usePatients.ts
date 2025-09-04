@@ -4,10 +4,11 @@ import { cachedFetch, apiCache } from '@/lib/cache';
 interface Patient {
   id: number;
   first_name: string;
+  middle_name?: string;  // New optional field
   last_name: string;
   age: number;
   age_recorded_at: string;
-  gender: string;
+  gender: 'M' | 'F' | 'O';  // Optimized to single character
   phone: string;
   address: string;
   blood_group: string;
