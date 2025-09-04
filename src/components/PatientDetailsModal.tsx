@@ -43,11 +43,40 @@ interface PatientDetailsModalProps {
 export default function PatientDetailsModal({ patient, onClose, onAddVisit }: PatientDetailsModalProps) {
   const [activeTab, setActiveTab] = useState('details');
   const [mounted, setMounted] = useState(false);
+  const [visits, setVisits] = useState<Visit[]>([]);
+  const [visitsLoading, setVisitsLoading] = useState(false);
+  const [visitsLoaded, setVisitsLoaded] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
   }, []);
+
+  const loadVisits = async () => {
+    if (visitsLoaded || visitsLoading) return;
+    
+    setVisitsLoading(true);
+    try {
+      const response = await fetch(`/api/visits?patient_id=${patient.id}`);
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        setVisits(data.data);
+        setVisitsLoaded(true);
+      }
+    } catch (error) {
+      console.error('Error loading visits:', error);
+    } finally {
+      setVisitsLoading(false);
+    }
+  };
+
+  const handleVisitsTab = () => {
+    setActiveTab('visits');
+    if (!visitsLoaded) {
+      loadVisits();
+    }
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-IN');
@@ -105,7 +134,7 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
               Patient Details
             </button>
             <button
-              onClick={() => setActiveTab('visits')}
+              onClick={handleVisitsTab}
               className={`py-4 px-1 border-b-2 font-medium text-sm flex-1 sm:flex-none text-center ${
                 activeTab === 'visits'
                   ? 'border-blue-500 text-blue-600'
@@ -204,9 +233,13 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
                 </button>
               </div>
 
-              {patient.visits && patient.visits.length > 0 ? (
+              {visitsLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : visits && visits.length > 0 ? (
                 <div className="space-y-4">
-                  {patient.visits.map((visit) => (
+                  {visits.map((visit) => (
                     <div key={visit.id} className="border rounded-lg p-3 sm:p-4 bg-gray-50">
                       <div className="flex flex-col sm:flex-row gap-2 sm:justify-between sm:items-start mb-3">
                         <div>
@@ -304,7 +337,15 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
                 <div className="text-center py-8">
                   <div className="text-gray-400 text-4xl mb-2">🏥</div>
                   <p className="text-gray-500">No visits recorded yet</p>
-                  <button className="mt-2 text-blue-600 hover:text-blue-800 text-sm">
+                  <button 
+                    onClick={() => {
+                      if (onAddVisit) {
+                        onClose();
+                        onAddVisit(patient.id);
+                      }
+                    }}
+                    className="mt-2 text-blue-600 hover:text-blue-800 text-sm"
+                  >
                     Record first visit
                   </button>
                 </div>

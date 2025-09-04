@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
         v.id, v.patient_id, v.visit_date, v.chief_complaint, 
         v.symptoms, v.diagnosis, v.prescription, v.notes, 
         v.follow_up_date, v.vitals, v.created_at, v.updated_at,
-        p.first_name, p.last_name, p.phone
+        p.first_name, p.last_name, p.phone, p.age, p.gender
       FROM visits v
       JOIN patients p ON v.patient_id = p.id
     `;
@@ -79,6 +79,9 @@ export async function GET(request: NextRequest) {
     }
 
     query += ` ORDER BY v.visit_date DESC, v.created_at DESC LIMIT $${++paramCount} OFFSET $${++paramCount}`;
+    
+    // Add index hint for better performance
+    query = query.replace('FROM visits v', 'FROM visits v /*+ INDEX(v, visits_visit_date_idx) */');
     queryParams.push(limit, offset);
 
     // For count query, we don't need the limit and offset parameters
@@ -101,7 +104,9 @@ export async function GET(request: NextRequest) {
         totalCount,
         hasNext: page < totalPages,
         hasPrev: page > 1
-      }
+      },
+      cached: false,
+      timestamp: new Date().toISOString()
     });
 
   } catch (error) {

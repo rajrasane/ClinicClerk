@@ -12,12 +12,14 @@ export async function GET(request: NextRequest) {
 
     let query = `
       SELECT 
-        id, first_name, last_name, age, age_recorded_at, gender, 
-        phone, address, blood_group, allergies, 
-        emergency_contact, created_at, updated_at
-      FROM patients
+        p.id, p.first_name, p.last_name, p.age, p.age_recorded_at, p.gender, 
+        p.phone, p.address, p.blood_group, p.allergies, 
+        p.emergency_contact, p.created_at, p.updated_at,
+        COUNT(v.id) as visit_count
+      FROM patients p
+      LEFT JOIN visits v ON p.id = v.patient_id
     `;
-    let countQuery = 'SELECT COUNT(*) FROM patients';
+    let countQuery = 'SELECT COUNT(DISTINCT p.id) FROM patients p LEFT JOIN visits v ON p.id = v.patient_id';
     const queryParams: (string | number)[] = [];
     let paramCount = 0;
 
@@ -36,7 +38,7 @@ export async function GET(request: NextRequest) {
       countQuery += searchCondition;
     }
 
-    query += ` ORDER BY created_at DESC LIMIT $${++paramCount} OFFSET $${++paramCount}`;
+    query += ` GROUP BY p.id, p.first_name, p.last_name, p.age, p.age_recorded_at, p.gender, p.phone, p.address, p.blood_group, p.allergies, p.emergency_contact, p.created_at, p.updated_at ORDER BY p.created_at DESC LIMIT $${++paramCount} OFFSET $${++paramCount}`;
     queryParams.push(limit, offset);
 
     const [patientsResult, countResult] = await Promise.all([

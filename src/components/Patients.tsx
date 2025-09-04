@@ -128,7 +128,12 @@ export default function AdminPatients() {
         params.append('search', searchTerm.trim());
       }
 
-      const response = await fetch(`/api/patients?${params}`);
+      const response = await fetch(`/api/patients?${params}`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       const data = await response.json();
 
       if (data.success) {
@@ -142,25 +147,10 @@ export default function AdminPatients() {
     }
   };
 
-  const handleViewPatient = async (patientId: number) => {
-    // Show modal immediately with loading state
+  const handleViewPatient = (patient: Patient) => {
+    // Show modal immediately with existing patient data
+    setSelectedPatient(patient);
     setShowModal(true);
-    setSelectedPatient(null);
-    
-    try {
-      const response = await fetch(`/api/patients/${patientId}`);
-      const data = await response.json();
-      
-      if (data.success) {
-        setSelectedPatient(data.data);
-      } else {
-        setShowModal(false);
-        console.error('Failed to fetch patient details');
-      }
-    } catch (error) {
-      console.error('Error fetching patient details:', error);
-      setShowModal(false);
-    }
   };
 
   const handleEditPatient = (patient: Patient) => {
@@ -309,7 +299,7 @@ export default function AdminPatients() {
                     <td className="px-3 sm:px-6 py-4 text-center">
                       <div className="flex justify-center items-center space-x-2 lg:space-x-3">
                         <button
-                          onClick={() => handleViewPatient(patient.id)}
+                          onClick={() => handleViewPatient(patient)}
                           className="px-3 py-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors text-sm font-medium"
                           title="View Details"
                         >

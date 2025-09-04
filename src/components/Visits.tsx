@@ -118,9 +118,35 @@ export default function AdminVisits() {
   }, [currentPage, searchQuery, dateRange.startDate, dateRange.endDate]);
 
   // Fetch function for component callbacks
-  const fetchVisitsData = () => {
-    setCurrentPage(1);
-    // The main useEffect will handle the actual data fetching
+  const fetchVisitsData = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: '10'
+      });
+
+      if (searchQuery.trim()) {
+        params.append('search', searchQuery.trim());
+      }
+
+      if (dateRange.startDate && dateRange.endDate) {
+        params.append('startDate', dateRange.startDate);
+        params.append('endDate', dateRange.endDate);
+      }
+
+      const response = await fetch(`/api/visits?${params}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setVisits(data.data);
+        setTotalPages(data.pagination.totalPages);
+      }
+    } catch (error) {
+      console.error('Error fetching visits:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleViewVisit = (visit: Visit) => {
@@ -161,16 +187,16 @@ export default function AdminVisits() {
     return new Date(dateString).toLocaleDateString('en-IN');
   };
 
-  const formatVitals = (vitals: Record<string, string> | null) => {
-    if (!vitals) return 'Not recorded';
+  // const formatVitals = (vitals: Record<string, string> | null) => {
+  //   if (!vitals) return 'Not recorded';
     
-    const vitalsArray = [];
-    if (vitals.temperature) vitalsArray.push(`Temp: ${vitals.temperature}`);
-    if (vitals.bp) vitalsArray.push(`BP: ${vitals.bp}`);
-    if (vitals.pulse) vitalsArray.push(`Pulse: ${vitals.pulse}`);
+  //   const vitalsArray = [];
+  //   if (vitals.temperature) vitalsArray.push(`Temp: ${vitals.temperature}`);
+  //   if (vitals.bp) vitalsArray.push(`BP: ${vitals.bp}`);
+  //   if (vitals.pulse) vitalsArray.push(`Pulse: ${vitals.pulse}`);
     
-    return vitalsArray.length > 0 ? vitalsArray.join(' | ') : 'Not recorded';
-  };
+  //   return vitalsArray.length > 0 ? vitalsArray.join(' | ') : 'Not recorded';
+  // };
 
   return (
     <div className="space-y-6">
@@ -313,12 +339,12 @@ export default function AdminVisits() {
                   <tr key={visit.id} className="hover:bg-gray-50">
                     <td className="px-3 sm:px-6 py-3">
                       <div className="space-y-1">
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs md:text-sm text-gray-500">
                           {formatDate(visit.visit_date)}
                         </div>
                         
                         <div className="sm:hidden space-y-1 mt-1">
-                          <div className="text-xs text-gray-700 font-medium">
+                          <div className="text-sm text-gray-700 font-medium">
                             {visit.first_name} {visit.last_name}
                           </div>
                           <div className="text-xs text-gray-600">
@@ -333,7 +359,7 @@ export default function AdminVisits() {
                       </div>
                     </td>
                     <td className="px-3 sm:px-6 py-4 hidden sm:table-cell">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm sm:text-base font-medium text-gray-900">
                         {visit.first_name} {visit.last_name}
                       </div>
                       {/*
@@ -354,12 +380,12 @@ export default function AdminVisits() {
                       <div className="text-sm text-gray-900 max-w-xs truncate">
                         {visit.diagnosis || 'Not specified'}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
+                      {/* <div className="text-xs text-gray-500 mt-1">
                         {visit.vitals?.weight && (
                           <div>Weight: {visit.vitals.weight.toLowerCase().includes('kg') ? visit.vitals.weight : `${visit.vitals.weight} kg`}</div>
                         )}
                         {formatVitals(visit.vitals)}
-                      </div>
+                      </div> */}
                     </td>
                     <td className="px-3 sm:px-6 py-4 text-center">
                       <div className="flex justify-center items-center space-x-2 lg:space-x-3">
