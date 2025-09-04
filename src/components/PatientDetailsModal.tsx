@@ -55,6 +55,14 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
   const loadVisits = async () => {
     if (visitsLoaded || visitsLoading) return;
     
+    // Skip API call if we know there are no visits
+    const visitCount = Number(patient.visit_count);
+    if (visitCount === 0) {
+      setVisits([]);
+      setVisitsLoaded(true);
+      return;
+    }
+    
     setVisitsLoading(true);
     try {
       const response = await fetch(`/api/visits?patient_id=${patient.id}`);
