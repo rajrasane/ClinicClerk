@@ -92,17 +92,6 @@ export default function AdminVisits() {
     return new Date(dateString).toLocaleDateString('en-IN');
   };
 
-  // const formatVitals = (vitals: Record<string, string> | null) => {
-  //   if (!vitals) return 'Not recorded';
-    
-  //   const vitalsArray = [];
-  //   if (vitals.temperature) vitalsArray.push(`Temp: ${vitals.temperature}`);
-  //   if (vitals.bp) vitalsArray.push(`BP: ${vitals.bp}`);
-  //   if (vitals.pulse) vitalsArray.push(`Pulse: ${vitals.pulse}`);
-    
-  //   return vitalsArray.length > 0 ? vitalsArray.join(' | ') : 'Not recorded';
-  // };
-
   return (
     <div className="space-y-6">
       {/* Controls Section */}
@@ -113,10 +102,10 @@ export default function AdminVisits() {
             <h2 className="text-2xl font-bold text-gray-900">Visit Management</h2>
             <p className="text-gray-600">Record and manage patient visits</p>
           </div>
-          <div className="flex items-center gap-11">
+          <div className="flex items-center gap-4 sm:gap-6 md:justify-end">
             <button
               onClick={() => setShowDateFilter(!showDateFilter)}
-              className={`order-2 md:order-1 flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+              className={`hidden md:flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
                 showDateFilter 
                   ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -129,7 +118,7 @@ export default function AdminVisits() {
             </button>
             <button
               onClick={() => setShowAddModal(true)}
-              className="order-1 md:order-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm sm:text-base"
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm sm:text-base"
             >
               <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -141,34 +130,46 @@ export default function AdminVisits() {
 
         {/* Search and Date Filters */}
         <div className='mt-2'>
-          {/* Search Input */}
-          <div className="relative w-full">
-            <input
-              type="text"
-              placeholder="Search by patient name or complaint..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base"
-            />
-            <svg
-              className="absolute left-3 top-2.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+          {/* Search Input with Filter Button on Mobile */}
+          <div className="relative w-full flex items-center">
+            <div className="relative flex-grow">
+              <input
+                type="text"
+                placeholder="Search by patient name or complaint..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base"
               />
-            </svg>
+              <svg
+                className="absolute left-3 top-2.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+            <button
+              onClick={() => setShowDateFilter(!showDateFilter)}
+              className={`md:hidden ml-2 p-3 rounded-lg transition-colors ${
+                showDateFilter 
+                  ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+            </button>
           </div>
 
           {/* Date Inputs */}
           <div className="space-y-4 mt-2">
-
-            {/* Date Inputs */}
             {showDateFilter && (
               <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
                 <div>
@@ -267,11 +268,6 @@ export default function AdminVisits() {
                       <div className="text-sm sm:text-base font-medium text-gray-900">
                         {visit.first_name} {visit.last_name}
                       </div>
-                      {/*
-                      <div className="text-xs text-gray-500">
-                        ID: {visit.patient_id}
-                      </div>
-                      */}
                       <div className="text-xs text-gray-500">
                         {visit.phone}
                       </div>
@@ -285,12 +281,6 @@ export default function AdminVisits() {
                       <div className="text-sm text-gray-900 max-w-xs truncate">
                         {visit.diagnosis || 'Not specified'}
                       </div>
-                      {/* <div className="text-xs text-gray-500 mt-1">
-                        {visit.vitals?.weight && (
-                          <div>Weight: {visit.vitals.weight.toLowerCase().includes('kg') ? visit.vitals.weight : `${visit.vitals.weight} kg`}</div>
-                        )}
-                        {formatVitals(visit.vitals)}
-                      </div> */}
                     </td>
                     <td className="px-3 sm:px-6 py-4 text-center">
                       <div className="flex justify-center items-center space-x-2 lg:space-x-3">

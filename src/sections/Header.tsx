@@ -18,27 +18,24 @@ export const Header = ({ activeTab, setActiveTab }: HeaderProps) => {
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 sm:py-6 gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-2.5 sm:py-6 gap-2 sm:gap-4">
             <div>
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="flex-shrink-0">
                   <Image 
                     src="/logo.png" 
                     alt="ClinicClerk Logo" 
-                    width={40}
-                    height={40}
-                    className="w-7 h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 object-contain"
+                    width={36}
+                    height={36}
+                    className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 object-contain"
                     priority
                   />
                 </div>
-                <h1 className="text-xl xs:text-2xl sm:text-3xl font-bold truncate">
+                <h1 className="text-xl sm:text-3xl font-bold truncate">
                   <span className="text-gray-900">Clinic</span>
                   <span className="text-blue-800">Clerk</span>
                 </h1>
               </div>
-            </div>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
-              <span className="hidden sm:inline text-xs sm:text-sm text-gray-500">Patient Records Management</span>
             </div>
           </div>
         </div>
