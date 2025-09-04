@@ -53,7 +53,7 @@ export function usePatients(page: number = 1, searchTerm: string = '', limit: nu
         params.append('search', searchTerm.trim());
       }
 
-      const data = await cachedFetch(`/api/patients?${params}`, undefined, 2); // 2 min cache
+      const data = await cachedFetch(`/api/patients?${params}`, undefined, 10); // 10 min cache
       
       if (data.success) {
         setPatients(data.data);
