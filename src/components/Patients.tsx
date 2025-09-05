@@ -188,7 +188,7 @@ export default function AdminPatients() {
                         </div>
                         <div className="ml-3">
                           <div className="text-sm font-medium text-gray-900">
-                            {patient.first_name}{patient.last_name}
+                            {patient.first_name}{' '}{patient.last_name}
                           </div>
                           <div className="text-xs text-gray-500 sm:hidden">
                             {patient.age}yrs • {patient.gender === 'M' ? 'Male' : patient.gender === 'F' ? 'Female' : 'Other'}
