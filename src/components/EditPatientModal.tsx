@@ -27,6 +27,19 @@ interface EditPatientModalProps {
   onSuccess: () => void;
 }
 
+// Gender mapping utilities
+const GENDER_DISPLAY_TO_DB = {
+  'Male': 'M',
+  'Female': 'F',
+  'Other': 'O'
+} as const;
+
+const GENDER_DB_TO_DISPLAY = {
+  'M': 'Male',
+  'F': 'Female',
+  'O': 'Other'
+} as const;
+
 export default function EditPatientModal({ patient, onClose, onSuccess }: EditPatientModalProps) {
   const [formData, setFormData] = useState({
     first_name: '',
@@ -52,7 +65,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
         middle_name: patient.middle_name || '',
         last_name: patient.last_name || '',
         age: patient.age?.toString() || '',
-        gender: patient.gender || '',
+        gender: GENDER_DB_TO_DISPLAY[patient.gender] || patient.gender || '',
         phone: patient.phone || '',
         address: patient.address || '',
         blood_group: patient.blood_group || '',
@@ -148,6 +161,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
       const submitData = {
         ...formData,
         age: parseInt(formData.age),
+        gender: GENDER_DISPLAY_TO_DB[formData.gender as keyof typeof GENDER_DISPLAY_TO_DB] || formData.gender,
         middle_name: formData.middle_name.trim() || null,
         blood_group: formData.blood_group.trim() || null,
         allergies: formData.allergies.trim() || 'None',
@@ -282,9 +296,9 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">Select</option>
-                    <option value="M">Male</option>
-                    <option value="F">Female</option>
-                    <option value="O">Other</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
                   </select>
                   {errors.gender && (
                     <p className="mt-1 text-sm text-red-600">{errors.gender}</p>

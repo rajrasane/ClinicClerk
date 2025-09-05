@@ -46,6 +46,19 @@ const validationMessages = {
   emergency_contact: 'Emergency contact must be a valid Indian mobile number (10 digits)',
 };
 
+// Gender mapping utilities
+const GENDER_DISPLAY_TO_DB = {
+  'Male': 'M',
+  'Female': 'F',
+  'Other': 'O'
+} as const;
+
+const GENDER_DB_TO_DISPLAY = {
+  'M': 'Male',
+  'F': 'Female',
+  'O': 'Other'
+} as const;
+
 export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId }: AddVisitModalProps) {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [formData, setFormData] = useState({
@@ -276,7 +289,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           middle_name: formData.middle_name.trim() || null,
           last_name: formData.last_name,
           age: parseInt(formData.age),
-          gender: formData.gender,
+          gender: GENDER_DISPLAY_TO_DB[formData.gender as keyof typeof GENDER_DISPLAY_TO_DB] || formData.gender,
           phone: formData.phone,
           address: formData.address,
           blood_group: formData.blood_group.trim() || null,

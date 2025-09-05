@@ -111,9 +111,9 @@ export async function PUT(
     }
 
     // Validate gender if provided
-    if (gender && !['Male', 'Female', 'Other'].includes(gender)) {
+    if (gender && !['M', 'F', 'O'].includes(gender)) {
       return NextResponse.json(
-        { success: false, error: 'Gender must be Male, Female, or Other' },
+        { success: false, error: 'Gender must be M, F, or O' },
         { status: 400 }
       );
     }
