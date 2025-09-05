@@ -216,7 +216,7 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Full Name</label>
-                  <p className="mt-1 text-sm text-gray-900">{patient.first_name} {patient.last_name}</p>
+                  <p className="mt-1 text-sm text-gray-900">{patient.first_name} {patient.middle_name ? `${patient.middle_name} ` : ''}{patient.last_name}</p>
                 </div>
 
                 <div>
