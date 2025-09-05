@@ -21,7 +21,6 @@ interface Patient {
   middle_name?: string;
   last_name: string;
   age: number;
-  age_recorded_at: string;
   gender: 'M' | 'F' | 'O';
   phone: string;
   address: string;
@@ -225,7 +224,7 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
                     {patient.age} years old
                   </p>
                   <p className="mt-1 text-xs text-gray-500">
-                    Recorded on {formatDate(patient.age_recorded_at)}
+                    Recorded on {formatDate(patient.created_at)}
                   </p>
                 </div>
 
@@ -277,7 +276,7 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Allergies</label>
-                  <p className="mt-1 text-sm text-gray-900">{patient.allergies || 'None reported'}</p>
+                  <p className="mt-1 text-sm text-gray-900">{patient.allergies || 'None'}</p>
                 </div>
               </div>
               </motion.div>

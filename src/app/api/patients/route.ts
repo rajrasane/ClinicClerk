@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     let query = `
       SELECT 
-        p.id, p.first_name, p.middle_name, p.last_name, p.age, p.age_recorded_at, p.gender, 
+        p.id, p.first_name, p.middle_name, p.last_name, p.age, p.gender, 
         p.phone, p.address, p.blood_group, p.allergies, 
         p.emergency_contact, p.created_at, p.updated_at,
         COUNT(v.id) as visit_count
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       countQuery += searchCondition;
     }
 
-    query += ` GROUP BY p.id, p.first_name, p.middle_name, p.last_name, p.age, p.age_recorded_at, p.gender, p.phone, p.address, p.blood_group, p.allergies, p.emergency_contact, p.created_at, p.updated_at ORDER BY p.created_at DESC LIMIT $${++paramCount} OFFSET $${++paramCount}`;
+    query += ` GROUP BY p.id, p.first_name, p.middle_name, p.last_name, p.age, p.gender, p.phone, p.address, p.blood_group, p.allergies, p.emergency_contact, p.created_at, p.updated_at ORDER BY p.created_at DESC LIMIT $${++paramCount} OFFSET $${++paramCount}`;
     queryParams.push(limit, offset);
 
     const [patientsResult, countResult] = await Promise.all([
