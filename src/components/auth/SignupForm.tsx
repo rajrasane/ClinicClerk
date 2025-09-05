@@ -65,27 +65,27 @@ export default function SignupForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-6 px-4 sm:px-6 lg:px-8 animate-fade-in">
-      <div className="max-w-md w-full space-y-6 animate-slide-up">
+    <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4 sm:py-12 sm:px-6 lg:px-8 animate-fade-in">
+      <div className="max-w-md w-full space-y-5 sm:space-y-6 animate-slide-up">
         <div className="text-center">
-          <div className="flex justify-center mb-6">
+          <div className="flex justify-center mb-5 sm:mb-6">
             <Image
               src="/logo.png"
               alt="ClinicClerk Logo"
-              width={80}
-              height={80}
+              width={70}
+              height={70}
               className="rounded-xl shadow-lg"
               priority
             />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
             Create your account
           </h2>
           <p className="text-sm text-gray-600">
             Join as a doctor to manage your patients
           </p>
         </div>
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 sm:p-8 border border-white/20">
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-4 sm:p-5 lg:p-6 border border-white/20">
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
@@ -96,7 +96,7 @@ export default function SignupForm() {
                 name="firstName"
                 type="text"
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
                 placeholder="e.g Rahul"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
@@ -111,7 +111,7 @@ export default function SignupForm() {
                 id="middleName"
                 name="middleName"
                 type="text"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
                 placeholder="e.g Manoj"
                 value={middleName}
                 onChange={(e) => setMiddleName(e.target.value)}
@@ -127,7 +127,7 @@ export default function SignupForm() {
                 name="lastName"
                 type="text"
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
                 placeholder="e.g Sharma"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
@@ -144,7 +144,7 @@ export default function SignupForm() {
                 type="email"
                 autoComplete="email"
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
                 placeholder="e.g doctor123@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -161,7 +161,7 @@ export default function SignupForm() {
                 type="password"
                 autoComplete="new-password"
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
                 placeholder="Minimum 6 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -172,7 +172,7 @@ export default function SignupForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm"
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2.5 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm"
             >
               {loading ? (
                 <div className="flex items-center justify-center">
