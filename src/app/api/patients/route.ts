@@ -1,58 +1,71 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { createSupabaseServerClient, getAuthenticatedUser } from '@/lib/supabase-server';
 
 // GET /api/patients - List all patients with optional search
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const search = searchParams.get('search');
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const offset = (page - 1) * limit;
-
-    let query = `
-      SELECT 
-        p.id, p.first_name, p.middle_name, p.last_name, p.age, p.gender, 
-        p.phone, p.address, p.blood_group, p.allergies, 
-        p.emergency_contact, p.created_at, p.updated_at,
-        COUNT(v.id) as visit_count
-      FROM patients p
-      LEFT JOIN visits v ON p.id = v.patient_id
-    `;
-    let countQuery = 'SELECT COUNT(DISTINCT p.id) FROM patients p LEFT JOIN visits v ON p.id = v.patient_id';
-    const queryParams: (string | number)[] = [];
-    let paramCount = 0;
-
-    if (search) {
-      const searchTerms = search.trim().split(/\s+/);
-      const searchConditions = searchTerms.map((term) => {
-        const firstNameParam = ++paramCount;
-        const middleNameParam = ++paramCount;
-        const lastNameParam = ++paramCount;
-        const phoneParam = ++paramCount;
-        queryParams.push(`%${term}%`, `%${term}%`, `%${term}%`, `%${term}%`);
-        return `(first_name ILIKE $${firstNameParam} OR middle_name ILIKE $${middleNameParam} OR last_name ILIKE $${lastNameParam} OR phone ILIKE $${phoneParam})`;
-      });
-      
-      const searchCondition = ` WHERE ${searchConditions.join(' AND ')} `;
-      query += searchCondition;
-      countQuery += searchCondition;
+    // Check authentication
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
-    query += ` GROUP BY p.id, p.first_name, p.middle_name, p.last_name, p.age, p.gender, p.phone, p.address, p.blood_group, p.allergies, p.emergency_contact, p.created_at, p.updated_at ORDER BY p.created_at DESC LIMIT $${++paramCount} OFFSET $${++paramCount}`;
-    queryParams.push(limit, offset);
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const search = searchParams.get('search') || '';
+    const offset = (page - 1) * limit;
 
-    const [patientsResult, countResult] = await Promise.all([
-      pool.query(query, queryParams),
-      pool.query(countQuery, search ? queryParams.slice(0, paramCount - 2) : [])
-    ]);
+    const supabase = createSupabaseServerClient(request);
 
-    const totalCount = parseInt(countResult.rows[0].count);
+    // Build query with RLS automatically filtering by doctor_id
+    let query = supabase
+      .from('patients')
+      .select(`
+        id, first_name, middle_name, last_name, age, gender, 
+        phone, address, blood_group, allergies, 
+        emergency_contact, created_at, updated_at,
+        visits(id)
+      `)
+      .order('created_at', { ascending: false });
+
+    // Add search filter if provided
+    if (search) {
+      const searchTerms = search.trim().split(/\s+/);
+      searchTerms.forEach(term => {
+        query = query.or(`first_name.ilike.%${term}%,middle_name.ilike.%${term}%,last_name.ilike.%${term}%,phone.ilike.%${term}%`);
+      });
+    }
+
+    // Get total count for pagination
+    const { count } = await supabase
+      .from('patients')
+      .select('*', { count: 'exact', head: true });
+
+    // Apply pagination
+    const { data: patients, error } = await query
+      .range(offset, offset + limit - 1);
+
+    if (error) {
+      throw error;
+    }
+
+    // Add visit count to each patient
+    const patientsWithVisitCount = patients?.map(patient => ({
+      ...patient,
+      visit_count: patient.visits?.length || 0,
+      visits: undefined // Remove the visits array from response
+    })) || [];
+
+    const totalCount = count || 0;
     const totalPages = Math.ceil(totalCount / limit);
 
     return NextResponse.json({
       success: true,
-      data: patientsResult.rows,
+      data: patientsWithVisitCount,
       pagination: {
         currentPage: page,
         totalPages,
@@ -74,6 +87,15 @@ export async function GET(request: NextRequest) {
 // POST /api/patients - Create new patient
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const {
       first_name,
@@ -121,40 +143,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const query = `
-      INSERT INTO patients (
-        first_name, middle_name, last_name, age, gender, phone, 
-        address, blood_group, allergies, emergency_contact
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-      RETURNING *
-    `;
+    const supabase = createSupabaseServerClient(request);
 
-    const values = [
-      first_name,
-      middle_name || null,
-      last_name,
-      age,
-      gender,
-      phone,
-      address,
-      blood_group,
-      allergies,
-      emergency_contact
-    ];
+    // Insert patient with doctor_id automatically set by RLS
+    const { data: patient, error } = await supabase
+      .from('patients')
+      .insert({
+        doctor_id: user.id,
+        first_name,
+        middle_name: middle_name || null,
+        last_name,
+        age,
+        gender,
+        phone,
+        address,
+        blood_group,
+        allergies,
+        emergency_contact
+      })
+      .select()
+      .single();
 
-    const result = await pool.query(query, values);
+    if (error) {
+      throw error;
+    }
 
     return NextResponse.json({
       success: true,
-      data: result.rows[0],
+      data: patient,
       message: 'Patient created successfully'
     }, { status: 201 });
 
   } catch (error) {
     console.error('Error creating patient:', error);
-    
-    // Phone numbers can be shared by family members, so no unique constraint
-
     return NextResponse.json(
       { success: false, error: 'Failed to create patient' },
       { status: 500 }

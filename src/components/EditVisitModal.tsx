@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { apiCache } from '@/lib/cache';
 import { DatePicker } from '@/components/ui/date-picker';
+import { supabase } from '@/lib/supabase';
 
 interface Visit {
   id: number;
@@ -113,10 +114,17 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
         vitals: Object.keys(vitalsData).length > 0 ? vitalsData : null
       };
 
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error('Authentication required');
+        return;
+      }
+
       const response = await fetch(`/api/visits/${visit.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify(submitData),
       });

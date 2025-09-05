@@ -3,8 +3,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
-import toast from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 import { apiCache } from '@/lib/cache';
+import { supabase } from '@/lib/supabase';
 import { XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 interface AddPatientModalProps {
@@ -191,11 +192,17 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
 
     setLoading(true);
     try {
+      // Get the current session token
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
       const response = await fetch('/api/patients', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
         },
+        credentials: 'include',
         body: JSON.stringify(submitData),
       });
 

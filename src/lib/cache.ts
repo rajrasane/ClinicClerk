@@ -48,8 +48,29 @@ export async function cachedFetch(url: string, options?: RequestInit, ttlMinutes
     return { ...cached, fromCache: true };
   }
 
+  // Get auth token if available
+  let authHeaders = {};
+  if (typeof window !== 'undefined') {
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        authHeaders = { 'Authorization': `Bearer ${session.access_token}` };
+      }
+    } catch (error) {
+      console.error('Error getting auth token:', error);
+    }
+  }
+
   // Fetch fresh data
-  const response = await fetch(url, options);
+  const response = await fetch(url, {
+    credentials: 'include',
+    ...options,
+    headers: {
+      ...authHeaders,
+      ...options?.headers
+    }
+  });
   const data = await response.json();
 
   // Cache successful GET requests

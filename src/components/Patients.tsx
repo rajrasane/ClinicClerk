@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import PatientDetailsModal from '@/components/PatientDetailsModal';
-import AddPatientModalNew from '@/components/AddPatientModalNew';
-import EditPatientModal from '@/components/EditPatientModal';
-import AddVisitModal from '@/components/AddVisitModal';
 import { usePatients } from '@/hooks/usePatients';
 import { apiCache } from '@/lib/cache';
+import AddPatientModalNew from './AddPatientModalNew';
+import PatientDetailsModal from './PatientDetailsModal';
+import EditPatientModal from './EditPatientModal';
+import AddVisitModal from './AddVisitModal';
+import { supabase } from '@/lib/supabase';
 
 
 interface Patient {
@@ -63,8 +64,17 @@ export default function AdminPatients() {
     }
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error('Authentication required');
+        return;
+      }
+
       const response = await fetch(`/api/patients/${patientId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
       });
       
       if (response.ok) {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { createSupabaseServerClient, getAuthenticatedUser } from '@/lib/supabase-server';
 
 // GET /api/patients/[id] - Get patient with visit history
 export async function GET(
@@ -7,6 +7,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
     const patientId = parseInt(id);
 
@@ -17,48 +26,41 @@ export async function GET(
       );
     }
 
-    // Get patient details
-    const patientQuery = `
-      SELECT 
-        id, first_name, last_name, age, age_recorded_at, gender, 
+    const supabase = createSupabaseServerClient(request);
+
+    // Get patient details with visits (RLS automatically filters by doctor_id)
+    const { data: patient, error } = await supabase
+      .from('patients')
+      .select(`
+        id, first_name, middle_name, last_name, age, gender, 
         phone, address, blood_group, allergies, 
-        emergency_contact, created_at, updated_at
-      FROM patients 
-      WHERE id = $1
-    `;
+        emergency_contact, created_at, updated_at,
+        visits(
+          id, visit_date, chief_complaint, symptoms, 
+          diagnosis, prescription, notes, follow_up_date, 
+          vitals, created_at, updated_at
+        )
+      `)
+      .eq('id', patientId)
+      .single();
 
-    // Get patient's visit history
-    const visitsQuery = `
-      SELECT 
-        id, visit_date, chief_complaint, symptoms, diagnosis, 
-        prescription, notes, follow_up_date, vitals, created_at, updated_at
-      FROM visits 
-      WHERE patient_id = $1 
-      ORDER BY visit_date DESC, created_at DESC
-    `;
-
-    const [patientResult, visitsResult] = await Promise.all([
-      pool.query(patientQuery, [patientId]),
-      pool.query(visitsQuery, [patientId])
-    ]);
-
-    if (patientResult.rows.length === 0) {
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(
+          { success: false, error: 'Patient not found' },
+          { status: 404 }
+        );
+      }
+      console.error('Error fetching patient:', error);
       return NextResponse.json(
-        { success: false, error: 'Patient not found' },
-        { status: 404 }
+        { success: false, error: 'Failed to fetch patient' },
+        { status: 500 }
       );
     }
 
-    const patient = patientResult.rows[0];
-    const visits = visitsResult.rows;
-
     return NextResponse.json({
       success: true,
-      data: {
-        ...patient,
-        visits: visits,
-        visit_count: visits.length
-      }
+      data: patient
     });
 
   } catch (error) {
@@ -76,6 +78,15 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
     const patientId = parseInt(id);
 
@@ -89,6 +100,7 @@ export async function PUT(
     const body = await request.json();
     const {
       first_name,
+      middle_name,
       last_name,
       age,
       gender,
@@ -98,17 +110,6 @@ export async function PUT(
       allergies,
       emergency_contact
     } = body;
-
-    // Check if patient exists
-    const checkQuery = 'SELECT id FROM patients WHERE id = $1';
-    const checkResult = await pool.query(checkQuery, [patientId]);
-
-    if (checkResult.rows.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Patient not found' },
-        { status: 404 }
-      );
-    }
 
     // Validate gender if provided
     if (gender && !['M', 'F', 'O'].includes(gender)) {
@@ -135,50 +136,50 @@ export async function PUT(
       );
     }
 
-    const updateQuery = `
-      UPDATE patients SET 
-        first_name = COALESCE($1, first_name),
-        last_name = COALESCE($2, last_name),
-        age = COALESCE($3, age),
-        age_recorded_at = COALESCE($4, age_recorded_at),
-        gender = COALESCE($5, gender),
-        phone = COALESCE($6, phone),
-        address = COALESCE($7, address),
-        blood_group = $8,
-        allergies = COALESCE($9, allergies),
-        emergency_contact = $10,
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = $11
-      RETURNING *
-    `;
+    const supabase = createSupabaseServerClient(request);
 
-    const values = [
-      first_name,
-      last_name,
-      age,
-      body.age_recorded_at,
-      gender,
-      phone,
-      address,
-      blood_group,
-      allergies,
-      emergency_contact,
-      patientId
-    ];
+    // Update patient (RLS automatically filters by doctor_id)
+    const updateData: Record<string, unknown> = {};
+    if (first_name !== undefined) updateData.first_name = first_name;
+    if (middle_name !== undefined) updateData.middle_name = middle_name;
+    if (last_name !== undefined) updateData.last_name = last_name;
+    if (age !== undefined) updateData.age = age;
+    if (gender !== undefined) updateData.gender = gender;
+    if (phone !== undefined) updateData.phone = phone;
+    if (address !== undefined) updateData.address = address;
+    if (blood_group !== undefined) updateData.blood_group = blood_group;
+    if (allergies !== undefined) updateData.allergies = allergies;
+    if (emergency_contact !== undefined) updateData.emergency_contact = emergency_contact;
 
-    const result = await pool.query(updateQuery, values);
+    const { data: updatedPatient, error } = await supabase
+      .from('patients')
+      .update(updateData)
+      .eq('id', patientId)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(
+          { success: false, error: 'Patient not found' },
+          { status: 404 }
+        );
+      }
+      console.error('Error updating patient:', error);
+      return NextResponse.json(
+        { success: false, error: 'Failed to update patient' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      data: result.rows[0],
+      data: updatedPatient,
       message: 'Patient updated successfully'
     });
 
   } catch (error) {
     console.error('Error updating patient:', error);
-    
-    // Phone numbers can be shared by family members, so no unique constraint
-
     return NextResponse.json(
       { success: false, error: 'Failed to update patient' },
       { status: 500 }
@@ -192,6 +193,15 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
     const patientId = parseInt(id);
 
@@ -202,25 +212,34 @@ export async function DELETE(
       );
     }
 
-    // Check if patient exists
-    const checkQuery = 'SELECT id FROM patients WHERE id = $1';
-    const checkResult = await pool.query(checkQuery, [patientId]);
+    const supabase = createSupabaseServerClient(request);
 
-    if (checkResult.rows.length === 0) {
+    // Delete patient (RLS automatically filters by doctor_id)
+    const { data: deletedPatient, error } = await supabase
+      .from('patients')
+      .delete()
+      .eq('id', patientId)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(
+          { success: false, error: 'Patient not found' },
+          { status: 404 }
+        );
+      }
+      console.error('Error deleting patient:', error);
       return NextResponse.json(
-        { success: false, error: 'Patient not found' },
-        { status: 404 }
+        { success: false, error: 'Failed to delete patient' },
+        { status: 500 }
       );
     }
 
-    // Delete patient (visits will be deleted automatically due to CASCADE)
-    const deleteQuery = 'DELETE FROM patients WHERE id = $1 RETURNING id, first_name, last_name';
-    const result = await pool.query(deleteQuery, [patientId]);
-
     return NextResponse.json({
       success: true,
-      data: result.rows[0],
-      message: 'Patient and all associated visits deleted successfully'
+      data: deletedPatient,
+      message: 'Patient deleted successfully'
     });
 
   } catch (error) {

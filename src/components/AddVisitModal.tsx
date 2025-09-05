@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { DatePicker } from '@/components/ui/date-picker';
+import { supabase } from '@/lib/supabase';
 
 interface Patient {
   id: number;
@@ -114,8 +115,18 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
 
   const fetchPatients = async () => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        console.error('No auth token available');
+        return;
+      }
+
       // Only fetch first 20 patients with search capability
-      const response = await fetch('/api/patients?limit=20');
+      const response = await fetch('/api/patients?limit=20', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
       const data = await response.json();
       if (data.success) {
         setPatients(data.data);
@@ -296,6 +307,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include',
           body: JSON.stringify(patientData),
         });
 
@@ -317,10 +329,17 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           return acc;
         }, {} as Record<string, string>);
 
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error('Authentication required');
+        return;
+      }
+
       const response = await fetch('/api/visits', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           patient_id: patientId,

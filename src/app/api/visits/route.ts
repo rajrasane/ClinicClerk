@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { createSupabaseServerClient, getAuthenticatedUser } from '@/lib/supabase-server';
 
 // GET /api/visits - List visits with optional patient filter
 export async function GET(request: NextRequest) {
   try {
+    // Check authentication
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const patientId = searchParams.get('patient_id');
     const search = searchParams.get('search');
@@ -13,100 +22,85 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = (page - 1) * limit;
 
-    let query = `
-      SELECT 
-        v.id, v.patient_id, v.visit_date, v.chief_complaint, 
-        v.symptoms, v.diagnosis, v.prescription, v.notes, 
-        v.follow_up_date, v.vitals, v.created_at, v.updated_at,
-        p.first_name, p.last_name, p.phone, p.age, p.gender
-      FROM visits v
-      JOIN patients p ON v.patient_id = p.id
-    `;
-    let countQuery = `
-      SELECT COUNT(*) 
-      FROM visits v
-      JOIN patients p ON v.patient_id = p.id
-    `;
-    const queryParams: (string | number)[] = [];
-    let paramCount = 0;
+    const supabase = createSupabaseServerClient(request);
 
-    const conditions: string[] = [];
+    // Build query with RLS automatically filtering by doctor_id
+    let query = supabase
+      .from('visits')
+      .select(`
+        id, patient_id, visit_date, chief_complaint, 
+        symptoms, diagnosis, prescription, notes, 
+        follow_up_date, vitals, created_at, updated_at,
+        patients(first_name, last_name, phone, age, gender)
+      `)
+      .order('visit_date', { ascending: false })
+      .order('created_at', { ascending: false });
 
+    // Add patient filter
     if (patientId) {
-      const patientIdNum = parseInt(patientId);
-      if (isNaN(patientIdNum)) {
-        return NextResponse.json(
-          { success: false, error: 'Invalid patient ID' },
-          { status: 400 }
-        );
-      }
-      conditions.push(`v.patient_id = $${++paramCount}`);
-      queryParams.push(patientIdNum);
+      query = query.eq('patient_id', parseInt(patientId));
     }
 
+    // Add search filter
     if (search) {
-      const searchTerms = search.trim().split(/\s+/);
-      const searchConditions = searchTerms.map(term => {
-        // For each term, we need to check it against all fields
-        paramCount += 4; // We'll use 4 parameters for each term
-        const termParams = Array(4).fill(`%${term}%`);
-        queryParams.push(...termParams);
-        return `(
-          p.first_name ILIKE $${paramCount-3} OR 
-          p.last_name ILIKE $${paramCount-2} OR 
-          v.chief_complaint ILIKE $${paramCount-1} OR 
-          v.diagnosis ILIKE $${paramCount}
-        )`;
-      });
-      
-      conditions.push(`(${searchConditions.join(' AND ')})`); // All terms must match
+      query = query.or(`chief_complaint.ilike.%${search}%,diagnosis.ilike.%${search}%`);
     }
 
+    // Add date range filter
     if (startDate) {
-      conditions.push(`DATE(v.visit_date) >= DATE($${++paramCount})`);
-      queryParams.push(startDate);
+      query = query.gte('visit_date', startDate);
     }
 
     if (endDate) {
-      conditions.push(`DATE(v.visit_date) <= DATE($${++paramCount})`);
-      queryParams.push(endDate);
+      query = query.lte('visit_date', endDate);
     }
 
-    if (conditions.length > 0) {
-      const whereClause = ` WHERE ${conditions.join(' AND ')}`;
-      query += whereClause;
-      countQuery += whereClause;
+    // Get total count for pagination
+    const { count } = await supabase
+      .from('visits')
+      .select('*', { count: 'exact', head: true });
+
+    // Apply pagination
+    query = query.range(offset, offset + limit - 1);
+
+    const { data: visits, error } = await query;
+
+    if (error) {
+      console.error('Error fetching visits:', error);
+      return NextResponse.json(
+        { success: false, error: 'Failed to fetch visits' },
+        { status: 500 }
+      );
     }
 
-    query += ` ORDER BY v.visit_date DESC, v.created_at DESC LIMIT $${++paramCount} OFFSET $${++paramCount}`;
-    
-    // Add index hint for better performance
-    query = query.replace('FROM visits v', 'FROM visits v /*+ INDEX(v, visits_visit_date_idx) */');
-    queryParams.push(limit, offset);
-
-    // For count query, we don't need the limit and offset parameters
-    const countQueryParams = queryParams.slice(0, -2);
-    
-    const [visitsResult, countResult] = await Promise.all([
-      pool.query(query, queryParams),
-      pool.query(countQuery, countQueryParams)
-    ]);
-
-    const totalCount = parseInt(countResult.rows[0].count);
+    const totalCount = count || 0;
     const totalPages = Math.ceil(totalCount / limit);
+
+    // Flatten the patient data for easier frontend consumption
+    const visitsWithPatientData = visits?.map((visit: Record<string, unknown>) => {
+      const patients = visit.patients as Record<string, unknown> | undefined;
+      return {
+        ...visit,
+        first_name: patients?.first_name || '',
+        last_name: patients?.last_name || '',
+        phone: patients?.phone || '',
+        age: patients?.age || 0,
+        gender: patients?.gender || '',
+        patients: undefined // Remove nested patients object
+      };
+    }) || [];
 
     return NextResponse.json({
       success: true,
-      data: visitsResult.rows,
+      data: visitsWithPatientData,
       pagination: {
-        currentPage: page,
-        totalPages,
+        page,
+        limit,
         totalCount,
+        totalPages,
         hasNext: page < totalPages,
         hasPrev: page > 1
-      },
-      cached: false,
-      timestamp: new Date().toISOString()
+      }
     });
 
   } catch (error) {
@@ -121,6 +115,15 @@ export async function GET(request: NextRequest) {
 // POST /api/visits - Create new visit
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const {
       patient_id,
@@ -135,72 +138,66 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!patient_id || !chief_complaint) {
+    if (!patient_id || !visit_date || !chief_complaint) {
       return NextResponse.json(
-        { success: false, error: 'Patient ID and chief complaint are required' },
+        { success: false, error: 'Patient ID, visit date, and chief complaint are required' },
         { status: 400 }
       );
     }
 
-    // Check if patient exists
-    const patientCheck = await pool.query('SELECT id FROM patients WHERE id = $1', [patient_id]);
-    if (patientCheck.rows.length === 0) {
+    // Validate date format
+    const visitDate = new Date(visit_date);
+    if (isNaN(visitDate.getTime())) {
       return NextResponse.json(
-        { success: false, error: 'Patient not found' },
-        { status: 404 }
+        { success: false, error: 'Invalid visit date format' },
+        { status: 400 }
       );
     }
 
-    // Validate vitals JSON if provided
-    if (vitals) {
-      try {
-        JSON.parse(JSON.stringify(vitals));
-      } catch {
+    // Validate follow-up date if provided
+    if (follow_up_date) {
+      const followUpDate = new Date(follow_up_date);
+      if (isNaN(followUpDate.getTime())) {
         return NextResponse.json(
-          { success: false, error: 'Invalid vitals format' },
+          { success: false, error: 'Invalid follow-up date format' },
           { status: 400 }
         );
       }
     }
 
-    const query = `
-      INSERT INTO visits (
-        patient_id, visit_date, chief_complaint, symptoms, 
-        diagnosis, prescription, notes, follow_up_date, vitals
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      RETURNING *
-    `;
+    const supabase = createSupabaseServerClient(request);
 
-    const values = [
-      patient_id,
-      visit_date || new Date().toISOString().split('T')[0], // Default to today
-      chief_complaint,
-      symptoms,
-      diagnosis,
-      prescription,
-      notes,
-      follow_up_date,
-      vitals ? JSON.stringify(vitals) : null
-    ];
+    // Insert visit with doctor_id from authenticated user
+    const { data: visit, error } = await supabase
+      .from('visits')
+      .insert({
+        doctor_id: user.id,
+        patient_id: parseInt(patient_id),
+        visit_date,
+        chief_complaint,
+        symptoms: symptoms || null,
+        diagnosis: diagnosis || null,
+        prescription: prescription || null,
+        notes: notes || null,
+        follow_up_date: follow_up_date || null,
+        vitals: vitals || null
+      })
+      .select()
+      .single();
 
-    const result = await pool.query(query, values);
-
-    // Get patient details for response
-    const patientQuery = `
-      SELECT first_name, last_name, phone 
-      FROM patients 
-      WHERE id = $1
-    `;
-    const patientResult = await pool.query(patientQuery, [patient_id]);
+    if (error) {
+      console.error('Error creating visit:', error);
+      return NextResponse.json(
+        { success: false, error: 'Failed to create visit' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      data: {
-        ...result.rows[0],
-        patient: patientResult.rows[0]
-      },
+      data: visit,
       message: 'Visit created successfully'
-    }, { status: 201 });
+    });
 
   } catch (error) {
     console.error('Error creating visit:', error);

@@ -1,6 +1,21 @@
--- Patients table 
+-- Doctors table linked to auth.users
+CREATE TABLE IF NOT EXISTS doctors (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    first_name VARCHAR(30) NOT NULL,
+    middle_name VARCHAR(30),
+    last_name VARCHAR(30) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    phone VARCHAR(10),
+    clinic_name VARCHAR(100),
+    clinic_address TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Patients table with doctor_id
 CREATE TABLE IF NOT EXISTS patients (
     id SERIAL PRIMARY KEY,
+    doctor_id UUID NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
     first_name VARCHAR(30) NOT NULL,
     middle_name VARCHAR(30),
     last_name VARCHAR(30) NOT NULL,
@@ -15,9 +30,10 @@ CREATE TABLE IF NOT EXISTS patients (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Visits table 
+-- Visits table with doctor_id
 CREATE TABLE IF NOT EXISTS visits (
     id SERIAL PRIMARY KEY,
+    doctor_id UUID NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
     patient_id INTEGER NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
     visit_date DATE NOT NULL,
     chief_complaint VARCHAR(300) NOT NULL,
@@ -32,8 +48,13 @@ CREATE TABLE IF NOT EXISTS visits (
 );
 
 -- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_doctors_email ON doctors(email);
+CREATE INDEX IF NOT EXISTS idx_doctors_name ON doctors(first_name, last_name);
+CREATE INDEX IF NOT EXISTS idx_doctors_phone ON doctors(phone);
+CREATE INDEX IF NOT EXISTS idx_patients_doctor_id ON patients(doctor_id);
 CREATE INDEX IF NOT EXISTS idx_patients_name ON patients(first_name, last_name);
 CREATE INDEX IF NOT EXISTS idx_patients_phone ON patients(phone);
+CREATE INDEX IF NOT EXISTS idx_visits_doctor_id ON visits(doctor_id);
 CREATE INDEX IF NOT EXISTS idx_visits_patient_id ON visits(patient_id);
 CREATE INDEX IF NOT EXISTS idx_visits_date ON visits(visit_date);
 
@@ -47,8 +68,38 @@ END;
 $$ language 'plpgsql';
 
 -- Triggers to automatically update updated_at
+CREATE TRIGGER update_doctors_updated_at BEFORE UPDATE ON doctors
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER update_patients_updated_at BEFORE UPDATE ON patients
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_visits_updated_at BEFORE UPDATE ON visits
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Enable Row Level Security (RLS)
+ALTER TABLE doctors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE patients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE visits ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for doctors table
+CREATE POLICY "Doctors can only see their own profile" ON doctors
+    FOR ALL USING (auth.uid() = id);
+
+-- RLS Policies for patients table
+CREATE POLICY "Doctors can only see their own patients" ON patients
+    FOR ALL USING (auth.uid() = doctor_id);
+
+-- RLS Policies for visits table  
+CREATE POLICY "Doctors can only see their own visits" ON visits
+    FOR ALL USING (auth.uid() = doctor_id);
+
+-- Additional policy to ensure visits belong to doctor's patients
+CREATE POLICY "Visits must belong to doctor's patients" ON visits
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM patients 
+            WHERE patients.id = visits.patient_id 
+            AND patients.doctor_id = auth.uid()
+        )
+    );

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { supabase } from '@/lib/supabase';
 
 interface Patient {
   id: number;
@@ -168,10 +169,17 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
         emergency_contact: formData.emergency_contact.trim() || null
       };
 
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error('Authentication required');
+        return;
+      }
+
       const response = await fetch(`/api/patients/${patient.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify(submitData),
       });

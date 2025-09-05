@@ -8,6 +8,7 @@ import AddVisitModal from './AddVisitModal';
 import VisitDetailsModal from './VisitDetailsModal';
 import EditVisitModal from './EditVisitModal';
 import { DatePicker } from '@/components/ui/date-picker';
+import { supabase } from '@/lib/supabase';
 
 interface Visit {
   id: number;
@@ -76,8 +77,17 @@ export default function AdminVisits() {
     }
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error('Authentication required');
+        return;
+      }
+
       const response = await fetch(`/api/visits/${visitId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
       });
       
       if (response.ok) {

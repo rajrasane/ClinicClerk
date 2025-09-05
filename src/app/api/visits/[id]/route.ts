@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { createSupabaseServerClient, getAuthenticatedUser } from '@/lib/supabase-server';
 
 // GET /api/visits/[id] - Get specific visit
 export async function GET(
@@ -7,6 +7,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
     const visitId = parseInt(id);
     
@@ -17,29 +26,37 @@ export async function GET(
       );
     }
 
-    const query = `
-      SELECT 
-        v.id, v.patient_id, v.visit_date, v.chief_complaint, 
-        v.symptoms, v.diagnosis, v.prescription, v.notes, 
-        v.follow_up_date, v.vitals, v.created_at, v.updated_at,
-        p.first_name, p.last_name, p.phone, p.date_of_birth, p.gender
-      FROM visits v
-      JOIN patients p ON v.patient_id = p.id
-      WHERE v.id = $1
-    `;
+    const supabase = createSupabaseServerClient(request);
 
-    const result = await pool.query(query, [visitId]);
+    // Get visit with patient details (RLS automatically filters by doctor_id)
+    const { data: visit, error } = await supabase
+      .from('visits')
+      .select(`
+        id, patient_id, visit_date, chief_complaint, 
+        symptoms, diagnosis, prescription, notes, 
+        follow_up_date, vitals, created_at, updated_at,
+        patients(first_name, last_name, phone, age, gender)
+      `)
+      .eq('id', visitId)
+      .single();
 
-    if (result.rows.length === 0) {
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(
+          { success: false, error: 'Visit not found' },
+          { status: 404 }
+        );
+      }
+      console.error('Error fetching visit:', error);
       return NextResponse.json(
-        { success: false, error: 'Visit not found' },
-        { status: 404 }
+        { success: false, error: 'Failed to fetch visit' },
+        { status: 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      data: result.rows[0]
+      data: visit
     });
 
   } catch (error) {
@@ -57,6 +74,15 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check authentication
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
     const visitId = parseInt(id);
     
@@ -87,15 +113,6 @@ export async function PUT(
       );
     }
 
-    // Check if visit exists
-    const visitCheck = await pool.query('SELECT id FROM visits WHERE id = $1', [visitId]);
-    if (visitCheck.rows.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Visit not found' },
-        { status: 404 }
-      );
-    }
-
     // Validate vitals JSON if provided
     if (vitals) {
       try {
@@ -108,38 +125,45 @@ export async function PUT(
       }
     }
 
-    const query = `
-      UPDATE visits SET 
-        visit_date = $1,
-        chief_complaint = $2,
-        symptoms = $3,
-        diagnosis = $4,
-        prescription = $5,
-        notes = $6,
-        follow_up_date = $7,
-        vitals = $8,
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = $9
-      RETURNING *
-    `;
+    const supabase = createSupabaseServerClient(request);
 
-    const values = [
-      visit_date,
-      chief_complaint,
-      symptoms,
-      diagnosis,
-      prescription,
-      notes,
-      follow_up_date,
-      vitals ? JSON.stringify(vitals) : null,
-      visitId
-    ];
+    // Update visit (RLS automatically filters by doctor_id)
+    const updateData: Record<string, unknown> = {};
+    if (visit_date !== undefined) updateData.visit_date = visit_date;
+    if (chief_complaint !== undefined) updateData.chief_complaint = chief_complaint;
+    if (symptoms !== undefined) updateData.symptoms = symptoms;
+    if (diagnosis !== undefined) updateData.diagnosis = diagnosis;
+    if (prescription !== undefined) updateData.prescription = prescription;
+    if (notes !== undefined) updateData.notes = notes;
+    if (follow_up_date !== undefined) updateData.follow_up_date = follow_up_date;
+    if (vitals !== undefined) updateData.vitals = vitals;
 
-    const result = await pool.query(query, values);
+    const { data: updatedVisit, error } = await supabase
+      .from('visits')
+      .update(updateData)
+      .eq('id', visitId)
+      .select(`
+        id, patient_id, visit_date, chief_complaint, 
+        symptoms, diagnosis, prescription, notes, 
+        follow_up_date, vitals, created_at, updated_at,
+        patients(first_name, last_name, phone, age, gender)
+      `)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    if (!updatedVisit) {
+      return NextResponse.json(
+        { success: false, error: 'Visit not found' },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      data: result.rows[0],
+      data: updatedVisit,
       message: 'Visit updated successfully'
     });
 
@@ -152,12 +176,18 @@ export async function PUT(
   }
 }
 
-// DELETE /api/visits/[id] - Delete visit
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// DELETE /api/visits/[id] - Delete a visit
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    // Check authentication
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
     const visitId = parseInt(id);
     
@@ -168,20 +198,30 @@ export async function DELETE(
       );
     }
 
-    // Check if visit exists
-    const visitCheck = await pool.query('SELECT id FROM visits WHERE id = $1', [visitId]);
-    if (visitCheck.rows.length === 0) {
+    const supabase = createSupabaseServerClient(request);
+
+    // Delete visit (RLS automatically filters by doctor_id)
+    const { data: deletedVisit, error } = await supabase
+      .from('visits')
+      .delete()
+      .eq('id', visitId)
+      .select()
+      .single();
+    
+    if (error) {
+      throw error;
+    }
+
+    if (!deletedVisit) {
       return NextResponse.json(
         { success: false, error: 'Visit not found' },
         { status: 404 }
       );
     }
 
-    const query = 'DELETE FROM visits WHERE id = $1';
-    await pool.query(query, [visitId]);
-
     return NextResponse.json({
       success: true,
+      data: deletedVisit,
       message: 'Visit deleted successfully'
     });
 
