@@ -97,7 +97,7 @@ export default function SignupForm() {
                 type="text"
                 required
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
-                placeholder="Rahul"
+                placeholder="e.g Rahul"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
               />
@@ -112,7 +112,7 @@ export default function SignupForm() {
                 name="middleName"
                 type="text"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
-                placeholder="Kumar"
+                placeholder="e.g Manoj"
                 value={middleName}
                 onChange={(e) => setMiddleName(e.target.value)}
               />
@@ -128,7 +128,7 @@ export default function SignupForm() {
                 type="text"
                 required
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
-                placeholder="Sharma"
+                placeholder="e.g Sharma"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
               />
@@ -145,7 +145,7 @@ export default function SignupForm() {
                 autoComplete="email"
                 required
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
-                placeholder="doctor@example.com"
+                placeholder="e.g doctor123@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
