@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { apiCache } from '@/lib/cache';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -49,6 +49,16 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Prevent background scrolling when modal is open
+    document.body.style.overflow = 'hidden';
+    
+    return () => {
+      // Restore background scrolling when modal closes
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
