@@ -21,7 +21,7 @@ if (process.env.NODE_ENV !== 'production') {
 let hasLogged = false;
 pool.on('connect', () => {
   if (!hasLogged) {
-    console.log('✅ Connected to PostgreSQL database');
+    console.log('✅ Connected to Supabase');
     hasLogged = true;
   }
 });
