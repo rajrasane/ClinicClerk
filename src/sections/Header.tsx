@@ -3,8 +3,6 @@
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -22,32 +20,16 @@ interface HeaderProps {
 }
 
 export const Header = ({ activeTab, setActiveTab }: HeaderProps) => {
-  const { user, signOut } = useAuth();
-  const [doctorName, setDoctorName] = useState<string>('');
+  const { user, doctor, doctorLoading, signOut } = useAuth();
   
   const tabs = [
     { id: 'patients', label: 'Patients', icon: '👥' },
     { id: 'visits', label: 'Visits', icon: '🏥' },
   ];
 
-  // Fetch doctor name when user is available
-  useEffect(() => {
-    const fetchDoctorName = async () => {
-      if (user?.id) {
-        const { data, error } = await supabase
-          .from('doctors')
-          .select('first_name, last_name')
-          .eq('id', user.id)
-          .single();
-        
-        if (data && !error) {
-          setDoctorName(`Dr. ${data.first_name} ${data.last_name}`);
-        }
-      }
-    };
-    
-    fetchDoctorName();
-  }, [user]);
+  // Get doctor display name
+  const doctorName = doctor ? `Dr. ${doctor.first_name} ${doctor.last_name}` : '';
+  const isLoadingDoctor = doctorLoading;
 
   // Get initials for avatar
   const getInitials = (name: string) => {
@@ -100,7 +82,11 @@ export const Header = ({ activeTab, setActiveTab }: HeaderProps) => {
                   Welcome back!
                 </div>
                 <div className="text-xs text-gray-600 max-w-32 truncate">
-                  {doctorName || user?.email}
+                  {isLoadingDoctor ? (
+                    <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+                  ) : (
+                    doctorName || user?.email
+                  )}
                 </div>
               </div>
 
@@ -111,7 +97,11 @@ export const Header = ({ activeTab, setActiveTab }: HeaderProps) => {
                     <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
                       <AvatarImage src="" alt={doctorName || user?.email || ''} />
                       <AvatarFallback className="bg-blue-600 text-white font-semibold text-sm">
-                        {doctorName ? getInitials(doctorName) : user?.email?.[0]?.toUpperCase() || 'U'}
+                        {isLoadingDoctor ? (
+                          <div className="h-4 w-4 bg-blue-400 rounded animate-pulse"></div>
+                        ) : (
+                          doctorName ? getInitials(doctorName) : user?.email?.[0]?.toUpperCase() || 'U'
+                        )}
                       </AvatarFallback>
                     </Avatar>
                   </button>
@@ -130,7 +120,13 @@ export const Header = ({ activeTab, setActiveTab }: HeaderProps) => {
                     className="px-2 py-2 text-sm text-gray-700 cursor-default focus:bg-transparent"
                   >
                     <User className="mr-2 h-4 w-4 text-gray-500" />
-                    <span className="truncate">{doctorName || user?.email}</span>
+                    <span className="truncate">
+                      {isLoadingDoctor ? (
+                        <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                      ) : (
+                        doctorName || user?.email
+                      )}
+                    </span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-gray-200" />
                   <DropdownMenuItem 
