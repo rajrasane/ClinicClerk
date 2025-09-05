@@ -177,6 +177,23 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
             [name]: numericValue
           });
         }
+      } else if (name === 'age') {
+        // Improved age validation - only allow digits, max 3 digits, max value 120
+        const numericValue = value.replace(/\D/g, ''); // Remove all non-digits
+        if (numericValue === '') {
+          setFormData({
+            ...formData,
+            [name]: ''
+          });
+        } else {
+          const ageNumber = parseInt(numericValue);
+          if (ageNumber >= 1 && ageNumber <= 120 && numericValue.length <= 3) {
+            setFormData({
+              ...formData,
+              [name]: numericValue
+            });
+          }
+        }
       } else {
         setFormData({
           ...formData,
