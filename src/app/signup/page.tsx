@@ -6,22 +6,14 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
 export default function SignupPage() {
-  const { user, loading } = useAuth()
+  const { user } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (user && !loading) {
+    if (user) {
       router.push('/')
     }
-  }, [user, loading, router])
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
-      </div>
-    )
-  }
+  }, [user, router])
 
   if (user) {
     return null // Will redirect

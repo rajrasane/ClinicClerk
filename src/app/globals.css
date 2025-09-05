@@ -9,6 +9,11 @@
   code {
     font-family: var(--font-geist-mono), monospace;
   }
+
+  body {
+    background: linear-gradient(to bottom right, rgb(239 246 255), rgb(224 231 255));
+    min-height: 100vh;
+  }
 }
 
 /* Ensure fonts are loaded properly */
@@ -18,4 +23,33 @@
 
 .font-mono {
   font-family: var(--font-geist-mono), 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+}
+
+/* Smooth page transitions for auth pages */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.35s ease-out 0.05s both;
 }
