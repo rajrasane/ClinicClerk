@@ -53,12 +53,6 @@ const GENDER_DISPLAY_TO_DB = {
   'Other': 'O'
 } as const;
 
-const GENDER_DB_TO_DISPLAY = {
-  'M': 'Male',
-  'F': 'Female',
-  'O': 'Other'
-} as const;
-
 export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId }: AddVisitModalProps) {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [formData, setFormData] = useState({
