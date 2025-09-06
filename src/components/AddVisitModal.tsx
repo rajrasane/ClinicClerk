@@ -558,8 +558,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
 
   const renderInput = (label: string, name: string, type = 'text', required = false, placeholder = '') => {
     const value = name.startsWith('vitals.') 
-      ? formData.vitals[name.split('.')[1] as keyof typeof formData.vitals] as string
-      : formData[name as keyof Omit<typeof formData, 'vitals'>] as string;
+      ? (formData.vitals[name.split('.')[1] as keyof typeof formData.vitals] as string) || ''
+      : (formData[name as keyof Omit<typeof formData, 'vitals'>] as string) || '';
       
     return (
       <div>

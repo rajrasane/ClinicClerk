@@ -9,6 +9,7 @@ import VisitDetailsModal from './VisitDetailsModal';
 import EditVisitModal from './EditVisitModal';
 import { DatePicker } from '@/components/ui/date-picker';
 import { supabase } from '@/lib/supabase';
+import { ExportDropdown } from '@/components/ui/export-dropdown';
 
 interface Visit {
   id: number;
@@ -120,20 +121,7 @@ export default function AdminVisits() {
             <h2 className="text-2xl font-bold text-gray-700">Visit Management</h2>
             <p className="text-gray-600">Record and manage patient visits</p>
           </div>
-          <div className="flex items-center gap-4 sm:gap-6 md:justify-end">
-            <button
-              onClick={() => setShowDateFilter(!showDateFilter)}
-              className={`hidden md:flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
-                showDateFilter 
-                  ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-              </svg>
-              Filter by Date
-            </button>
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
             <button
               onClick={() => setShowAddModal(true)}
               className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm sm:text-base"
@@ -143,14 +131,36 @@ export default function AdminVisits() {
               </svg>
               <span>Add Visit</span>
             </button>
+            <div className="md:hidden">
+              <ExportDropdown 
+                type="visits" 
+                filters={{ 
+                  search: searchQuery,
+                  startDate: dateRangeForAPI.startDate,
+                  endDate: dateRangeForAPI.endDate
+                }}
+                variant="icon"
+              />
+            </div>
+            <div className="hidden md:block">
+              <ExportDropdown 
+                type="visits" 
+                filters={{ 
+                  search: searchQuery,
+                  startDate: dateRangeForAPI.startDate,
+                  endDate: dateRangeForAPI.endDate
+                }}
+                buttonText="Export Visits"
+              />
+            </div>
           </div>
         </div>
 
         {/* Search and Date Filters */}
         <div className='mt-2 mb-[-8]'>
-          {/* Search Input with Filter Button on Mobile */}
+          {/* Search Input with Filter Button */}
           <div className="relative w-full flex items-center">
-            <div className="relative flex-grow mr-1 sm:mr-2 md:mr-0">
+            <div className="relative flex-grow mr-1 sm:mr-2">
               <input
                 type="text"
                 placeholder="Search by patient name or complaint..."
@@ -193,7 +203,7 @@ export default function AdminVisits() {
                 }
               }}
               disabled={!!(dateRange.startDate && dateRange.endDate)}
-              className={`md:hidden ml-1 sm:ml-2 p-[11px] rounded-lg transition-colors ${
+              className={`ml-1 sm:ml-2 p-[11px] rounded-lg transition-colors flex items-center gap-2 ${
                 dateRange.startDate && dateRange.endDate
                   ? 'bg-red-100 text-red-700 cursor-not-allowed opacity-75'
                   : showDateFilter 
@@ -206,6 +216,7 @@ export default function AdminVisits() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
               </svg>
+              <span className="hidden md:inline text-sm">Filter by Date</span>
             </button>
           </div>
 
