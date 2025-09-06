@@ -83,8 +83,25 @@ ALTER TABLE patients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE visits ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for doctors table
-CREATE POLICY "Doctors can only see their own profile" ON doctors
-    FOR ALL USING (auth.uid() = id);
+-- Policy: Users can read their own doctor profile
+CREATE POLICY "Users can read own doctor profile" 
+ON doctors FOR SELECT 
+USING (auth.uid() = id);
+
+-- Policy: Users can update their own doctor profile
+CREATE POLICY "Users can update own doctor profile" 
+ON doctors FOR UPDATE 
+USING (auth.uid() = id);
+
+-- Policy: Users can delete their own doctor profile
+CREATE POLICY "Users can delete own doctor profile" 
+ON doctors FOR DELETE 
+USING (auth.uid() = id);
+
+-- Policy: Allow users to insert their own doctor profile (for signup)
+CREATE POLICY "Users can insert own doctor profile" 
+ON doctors FOR INSERT 
+WITH CHECK (auth.uid() = id);
 
 -- RLS Policies for patients table
 CREATE POLICY "Doctors can only see their own patients" ON patients

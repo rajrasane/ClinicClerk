@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -12,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Settings } from 'lucide-react';
 
 interface HeaderProps {
   activeTab: string;
@@ -21,6 +22,7 @@ interface HeaderProps {
 
 export const Header = ({ activeTab, setActiveTab }: HeaderProps) => {
   const { user, doctor, doctorLoading, signOut } = useAuth();
+  const router = useRouter();
   
   const tabs = [
     { id: 'patients', label: 'Patients', icon: '👥' },
@@ -127,6 +129,14 @@ export const Header = ({ activeTab, setActiveTab }: HeaderProps) => {
                         doctorName || user?.email
                       )}
                     </span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-gray-200" />
+                  <DropdownMenuItem 
+                    onClick={() => router.push('/profile')} 
+                    className="px-2 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:bg-gray-50 cursor-pointer"
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>My Profile</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-gray-200" />
                   <DropdownMenuItem 

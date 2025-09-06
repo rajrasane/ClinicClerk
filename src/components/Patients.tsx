@@ -81,7 +81,9 @@ export default function AdminPatients() {
         toast.success('Patient deleted successfully!');
         // Clear cache and refresh
         apiCache.invalidate('/api/patients');
+        apiCache.invalidate('/api/visits'); // Clear visits cache since patient visits are deleted
         removePatient(patientId); // Optimistic update
+        refetch(); // Fetch fresh data and cache it
       } else {
         toast.error('Failed to delete patient');
       }
@@ -300,6 +302,7 @@ export default function AdminPatients() {
           onClose={() => setShowAddModal(false)}
           onSuccess={() => {
             apiCache.invalidate('/api/patients');
+            refetch();
           }}
         />
       )}
@@ -314,6 +317,8 @@ export default function AdminPatients() {
           }}
           onSuccess={() => {
             apiCache.invalidate('/api/patients');
+            apiCache.invalidate('/api/visits'); // Clear visits cache since patient data changed
+            refetch(); // Fetch fresh data and cache it
           }}
         />
       )}

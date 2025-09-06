@@ -8,8 +8,12 @@ import { apiCache } from '@/lib/cache'
 interface Doctor {
   id: string
   first_name: string
+  middle_name?: string
   last_name: string
   email: string
+  phone?: string
+  clinic_name?: string
+  clinic_address?: string
 }
 
 interface AuthContextType {
@@ -21,6 +25,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>
   signOut: () => Promise<void>
+  refreshDoctorData: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -38,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data, error } = await supabase
         .from('doctors')
-        .select('id, first_name, last_name, email')
+        .select('id, first_name, middle_name, last_name, email, phone, clinic_name, clinic_address')
         .eq('id', userId)
         .single()
       
@@ -117,6 +122,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut()
   }
 
+  const refreshDoctorData = async () => {
+    if (user?.id) {
+      await fetchDoctorData(user.id)
+    }
+  }
+
   const value = {
     user,
     session,
@@ -126,6 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn,
     signUp,
     signOut,
+    refreshDoctorData,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

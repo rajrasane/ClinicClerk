@@ -42,7 +42,7 @@ export function usePatients(page: number = 1, searchTerm: string = '', limit: nu
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState<PaginationData | null>(null);
 
-  const fetchPatients = useCallback(async () => {
+  const fetchPatients = useCallback(async (forceRefresh = false) => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -54,7 +54,24 @@ export function usePatients(page: number = 1, searchTerm: string = '', limit: nu
         params.append('search', searchTerm.trim());
       }
 
-      const data = await cachedFetch(`/api/patients?${params}`, undefined, 10); // 10 min cache
+      let data;
+      if (forceRefresh) {
+        // Bypass cache for forced refresh
+        const { supabase } = await import('@/lib/supabase');
+        const { data: { session } } = await supabase.auth.getSession();
+        const response = await fetch(`/api/patients?${params}`, {
+          credentials: 'include',
+          headers: session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}
+        });
+        data = await response.json();
+        
+        // Cache the fresh data for subsequent requests
+        if (data.success) {
+          apiCache.set(`/api/patients?${params}{}`, data, 10);
+        }
+      } else {
+        data = await cachedFetch(`/api/patients?${params}`, undefined, 10); // 10 min cache
+      }
       
       if (data.success) {
         setPatients(data.data);
@@ -105,7 +122,7 @@ export function usePatients(page: number = 1, searchTerm: string = '', limit: nu
     patients,
     loading,
     pagination,
-    refetch: fetchPatients,
+    refetch: () => fetchPatients(true), // Force refresh when manually called
     updatePatient,
     removePatient,
     addPatient
