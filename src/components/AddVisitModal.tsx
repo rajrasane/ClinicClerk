@@ -54,6 +54,14 @@ const GENDER_DISPLAY_TO_DB = {
   'Other': 'O'
 } as const;
 
+// Helper function to format date without timezone issues
+const formatDateForAPI = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId }: AddVisitModalProps) {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [formData, setFormData] = useState({
@@ -302,10 +310,19 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           emergency_contact: formData.emergency_contact.trim() || null
         };
 
+        // Get the current session token for patient creation
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+          toast.error('Authentication required');
+          setLoading(false);
+          return;
+        }
+
         const patientResponse = await fetch('/api/patients', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
           },
           credentials: 'include',
           body: JSON.stringify(patientData),
@@ -343,13 +360,13 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         },
         body: JSON.stringify({
           patient_id: patientId,
-          visit_date: formData.visit_date.toISOString().split('T')[0],
+          visit_date: formatDateForAPI(formData.visit_date),
           chief_complaint: formData.chief_complaint,
           symptoms: formData.symptoms,
           diagnosis: formData.diagnosis,
           prescription: formData.prescription,
           notes: formData.notes,
-          follow_up_date: formData.follow_up_date ? formData.follow_up_date.toISOString().split('T')[0] : null,
+          follow_up_date: formData.follow_up_date ? formatDateForAPI(formData.follow_up_date) : null,
           vitals: Object.keys(vitalsData).length > 0 ? vitalsData : null
         }),
       });
@@ -422,11 +439,16 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
   const handleFormKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
     if (e.key === 'Enter') {
       const target = e.target as HTMLElement;
+      
+      // Allow Enter in textarea fields for new lines
+      if (target.tagName === 'TEXTAREA') {
+        return; // Don't prevent default, allow new line
+      }
+      
+      // For INPUT fields, prevent default and move to next step
       if (target.tagName === 'INPUT' && currentStep < totalSteps) {
         e.preventDefault();
         if (canProceed()) nextStep();
-      } else if (currentStep < totalSteps) {
-        e.preventDefault();
       }
     }
   };
@@ -558,8 +580,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
 
   const renderInput = (label: string, name: string, type = 'text', required = false, placeholder = '') => {
     const value = name.startsWith('vitals.') 
-      ? (formData.vitals[name.split('.')[1] as keyof typeof formData.vitals] as string) || ''
-      : (formData[name as keyof Omit<typeof formData, 'vitals'>] as string) || '';
+      ? formData.vitals[name.split('.')[1] as keyof typeof formData.vitals] as string
+      : formData[name as keyof Omit<typeof formData, 'vitals'>] as string;
       
     return (
       <div>

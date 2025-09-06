@@ -37,10 +37,18 @@ export default function AdminVisits() {
     endDate: undefined as Date | undefined
   });
 
+  // Helper function to format date without timezone issues
+  const formatDateForAPI = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Convert dates to strings for API
   const dateRangeForAPI = {
-    startDate: dateRange.startDate ? dateRange.startDate.toISOString().split('T')[0] : '',
-    endDate: dateRange.endDate ? dateRange.endDate.toISOString().split('T')[0] : ''
+    startDate: dateRange.startDate ? formatDateForAPI(dateRange.startDate) : '',
+    endDate: dateRange.endDate ? formatDateForAPI(dateRange.endDate) : ''
   };
 
   // Use the custom hook for data management

@@ -111,15 +111,15 @@ export default function AdminPatients() {
           <p className="text-gray-600">Manage patient records and information</p>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm sm:text-base"
-          >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            <span>Add Patient</span>
-          </button>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm sm:text-base"
+        >
+          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          <span>Add Patient</span>
+        </button>
           <div className="md:hidden">
             <ExportDropdown 
               type="patients" 
@@ -349,6 +349,7 @@ export default function AdminPatients() {
           }}
           onSuccess={() => {
             apiCache.invalidate('/api/patients');
+            refetch(); // Refresh patient data to update visit counts
             setShowAddVisitModal(false);
             setPreselectedPatientId(null);
           }}
