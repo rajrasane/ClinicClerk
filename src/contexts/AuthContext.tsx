@@ -50,6 +50,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data && !error) {
         setDoctor(data)
       } else {
+        // If doctor record doesn't exist (account deleted), sign out the user
+        if (error?.code === 'PGRST116') {
+          console.log('Doctor record not found, signing out user')
+          // Clear tokens before signing out
+          if (typeof window !== 'undefined') {
+            localStorage.clear()
+            sessionStorage.clear()
+          }
+          await supabase.auth.signOut()
+          return
+        }
         setDoctor(null)
       }
     } catch (error) {
@@ -119,6 +130,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     // Clear all cached data before signing out
     apiCache.clear()
+    
+    // Clear any stored tokens
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('supabase.auth.token')
+      sessionStorage.removeItem('supabase.auth.token')
+    }
+    
     await supabase.auth.signOut()
   }
 

@@ -57,7 +57,7 @@ export default function SignupForm() {
           return
         }
 
-        toast.success('Account created successfully!Signing in.')
+        toast.success('Account created successfully! Signing in.')
       }
     } catch {
       toast.error('An unexpected error occurred')

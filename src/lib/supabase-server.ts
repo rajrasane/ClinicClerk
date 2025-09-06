@@ -1,5 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
 export function createSupabaseServerClient(request?: NextRequest) {
@@ -77,12 +77,53 @@ export async function getAuthenticatedUser(request: NextRequest) {
     const { data: { user }, error } = await supabase.auth.getUser(token)
     
     if (error || !user) {
-      console.error('Authentication error:', error)
+      // Only log non-user_not_found errors to reduce noise
+      if (error?.code !== 'user_not_found') {
+        console.error('Authentication error:', error)
+      }
+      
+      // If user doesn't exist, clear the session by setting expired cookies
+      if (error?.code === 'user_not_found') {
+        const response = NextResponse.json(
+          { success: false, error: 'User not found - session cleared' },
+          { status: 401 }
+        )
+        
+        // Clear all possible Supabase auth cookies with correct names
+        const cookieOptions = { 
+          expires: new Date(0),
+          path: '/',
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax' as const
+        }
+        
+        // Clear all possible Supabase cookie variations
+        const supabaseProject = process.env.NEXT_PUBLIC_SUPABASE_URL?.match(/https:\/\/([^.]+)/)?.[1] || 'localhost'
+        
+        // Clear project-specific cookies
+        response.cookies.set(`sb-${supabaseProject}-auth-token`, '', cookieOptions)
+        response.cookies.set(`sb-${supabaseProject}-auth-token.0`, '', cookieOptions)
+        response.cookies.set(`sb-${supabaseProject}-auth-token.1`, '', cookieOptions)
+        
+        // Clear generic auth cookies
+        response.cookies.set('sb-access-token', '', cookieOptions)
+        response.cookies.set('sb-refresh-token', '', cookieOptions)
+        response.cookies.set('supabase-auth-token', '', cookieOptions)
+        response.cookies.set('supabase.auth.token', '', cookieOptions)
+        
+        throw response
+      }
+      
       return null
     }
     
     return user
   } catch (error) {
+    // If it's our custom response, re-throw it
+    if (error instanceof NextResponse) {
+      throw error
+    }
     console.error('Authentication setup error:', error)
     return null
   }

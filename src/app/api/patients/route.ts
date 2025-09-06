@@ -12,6 +12,15 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       );
     }
+  } catch (error) {
+    // Handle custom response from getAuthenticatedUser (user_not_found)
+    if (error instanceof NextResponse) {
+      return error;
+    }
+    throw error;
+  }
+
+  try {
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -95,6 +104,15 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
+  } catch (error) {
+    // Handle custom response from getAuthenticatedUser (user_not_found)
+    if (error instanceof NextResponse) {
+      return error;
+    }
+    throw error;
+  }
+
+  try {
 
     const body = await request.json();
     const {
@@ -107,6 +125,7 @@ export async function POST(request: NextRequest) {
       address,
       blood_group,
       allergies,
+      medical_history,
       emergency_contact
     } = body;
 
@@ -144,14 +163,22 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createSupabaseServerClient(request);
+    
+    // Get user again since it's in a different try block
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
 
-    // Insert patient with doctor_id automatically set by RLS
+    // Create patient record
     const { data: patient, error } = await supabase
       .from('patients')
       .insert({
-        doctor_id: user.id,
         first_name,
-        middle_name: middle_name || null,
+        middle_name,
         last_name,
         age,
         gender,
@@ -159,7 +186,8 @@ export async function POST(request: NextRequest) {
         address,
         blood_group,
         allergies,
-        emergency_contact
+        medical_history,
+        doctor_id: user.id, // Associate with the authenticated doctor
       })
       .select()
       .single();
