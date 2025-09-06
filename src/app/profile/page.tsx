@@ -321,6 +321,8 @@ export default function ProfilePage() {
                 {loading ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
+            {/* Gray divider for small screens only */}
+            <div className="sm:hidden border-t border-gray-200 mt-6"></div>
           </div>
 
           {/* Actions Sidebar */}

@@ -9,6 +9,7 @@ import PatientDetailsModal from './PatientDetailsModal';
 import EditPatientModal from './EditPatientModal';
 import AddVisitModal from './AddVisitModal';
 import { supabase } from '@/lib/supabase';
+import { ExportDropdown } from '@/components/ui/export-dropdown';
 
 
 interface Patient {
@@ -109,15 +110,31 @@ export default function AdminPatients() {
           <h2 className="text-2xl font-bold text-gray-700">Patient Management</h2>
           <p className="text-gray-600">Manage patient records and information</p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm sm:text-base"
-        >
-          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          <span>Add Patient</span>
-        </button>
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm sm:text-base"
+          >
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Add Patient</span>
+          </button>
+          <div className="md:hidden">
+            <ExportDropdown 
+              type="patients" 
+              filters={{ search: searchTerm }}
+              variant="icon"
+            />
+          </div>
+          <div className="hidden md:block">
+            <ExportDropdown 
+              type="patients" 
+              filters={{ search: searchTerm }}
+              buttonText="Export Patients"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Search and Filter */}
@@ -202,7 +219,7 @@ export default function AdminPatients() {
                           <div className="text-sm font-medium text-gray-900">
                             {patient.first_name}{' '}{patient.last_name}
                           </div>
-                          <div className="text-xs text-gray-500 sm:hidden">
+                          <div className="text-[10px] text-gray-500 sm:hidden">
                             {patient.age}yrs • {patient.gender === 'M' ? 'Male' : patient.gender === 'F' ? 'Female' : 'Other'}
                             {patient.phone && ` • ${patient.phone}`}
                           </div>
