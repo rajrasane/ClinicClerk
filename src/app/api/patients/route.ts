@@ -187,6 +187,7 @@ export async function POST(request: NextRequest) {
         blood_group,
         allergies,
         medical_history,
+        emergency_contact,
         doctor_id: user.id, // Associate with the authenticated doctor
       })
       .select()
