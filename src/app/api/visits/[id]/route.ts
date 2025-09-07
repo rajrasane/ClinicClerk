@@ -34,7 +34,7 @@ export async function GET(
       .select(`
         id, patient_id, visit_date, chief_complaint, 
         symptoms, diagnosis, prescription, notes, 
-        follow_up_date, vitals, created_at, updated_at,
+        follow_up_date, vitals, images, created_at, updated_at,
         patients(first_name, last_name, phone, age, gender)
       `)
       .eq('id', visitId)
@@ -102,7 +102,8 @@ export async function PUT(
       prescription,
       notes,
       follow_up_date,
-      vitals
+      vitals,
+      images
     } = body;
 
     // Validate required fields
@@ -137,6 +138,7 @@ export async function PUT(
     if (notes !== undefined) updateData.notes = notes;
     if (follow_up_date !== undefined) updateData.follow_up_date = follow_up_date;
     if (vitals !== undefined) updateData.vitals = vitals;
+    if (images !== undefined) updateData.images = images;
 
     const { data: updatedVisit, error } = await supabase
       .from('visits')
@@ -145,7 +147,7 @@ export async function PUT(
       .select(`
         id, patient_id, visit_date, chief_complaint, 
         symptoms, diagnosis, prescription, notes, 
-        follow_up_date, vitals, created_at, updated_at,
+        follow_up_date, vitals, images, created_at, updated_at,
         patients(first_name, last_name, phone, age, gender)
       `)
       .single();
@@ -200,6 +202,49 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     const supabase = createSupabaseServerClient(request);
 
+    // First, get the visit to retrieve image URLs before deletion
+    const { data: visitToDelete, error: fetchError } = await supabase
+      .from('visits')
+      .select('images')
+      .eq('id', visitId)
+      .single();
+
+    if (fetchError) {
+      if (fetchError.code === 'PGRST116') {
+        return NextResponse.json(
+          { success: false, error: 'Visit not found' },
+          { status: 404 }
+        );
+      }
+      throw fetchError;
+    }
+
+    // Delete associated images from storage if they exist
+    if (visitToDelete?.images && Array.isArray(visitToDelete.images) && visitToDelete.images.length > 0) {
+      try {
+        const imagesToDelete = visitToDelete.images.map((image: any) => {
+          // Extract file path from URL: https://xxx.supabase.co/storage/v1/object/public/visit-images/doctor_id/filename
+          const url = image.url;
+          const pathMatch = url.match(/\/visit-images\/(.+)$/);
+          return pathMatch ? pathMatch[1] : null;
+        }).filter(Boolean);
+
+        if (imagesToDelete.length > 0) {
+          const { error: storageError } = await supabase.storage
+            .from('visit-images')
+            .remove(imagesToDelete);
+
+          if (storageError) {
+            console.error('Error deleting images from storage:', storageError);
+            // Continue with visit deletion even if image cleanup fails
+          }
+        }
+      } catch (imageError) {
+        console.error('Error processing images for deletion:', imageError);
+        // Continue with visit deletion even if image cleanup fails
+      }
+    }
+
     // Delete visit (RLS automatically filters by doctor_id)
     const { data: deletedVisit, error } = await supabase
       .from('visits')
@@ -222,7 +267,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return NextResponse.json({
       success: true,
       data: deletedVisit,
-      message: 'Visit deleted successfully'
+      message: 'Visit and associated images deleted successfully'
     });
 
   } catch (error) {

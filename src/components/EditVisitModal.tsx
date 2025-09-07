@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { apiCache } from '@/lib/cache';
 import { DatePicker } from '@/components/ui/date-picker';
 import { supabase } from '@/lib/supabase';
+import VisitImageUpload from './VisitImageUpload';
 
 // Helper function to format date without timezone issues
 const formatDateForAPI = (date: Date): string => {
@@ -25,6 +26,7 @@ interface Visit {
   notes: string;
   follow_up_date: string;
   vitals: Record<string, string> | null;
+  images: Array<{url: string, filename: string, uploaded_at: string}>;
   first_name: string;
   last_name: string;
   phone: string;
@@ -53,7 +55,8 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
       pulse: visit?.vitals?.pulse || '',
       weight: visit?.vitals?.weight || '',
       o2: visit?.vitals?.o2 || ''
-    }
+    },
+    images: visit.images || []
   });
 
   const originalData = {
@@ -70,11 +73,21 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
       pulse: visit?.vitals?.pulse || '',
       weight: visit?.vitals?.weight || '',
       o2: visit?.vitals?.o2 || ''
-    }
+    },
+    images: visit.images || []
   };
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user || null);
+    };
+    getUser();
+  }, []);
 
   // Check if form data has changed
   const hasChanges = () => {
@@ -156,7 +169,8 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
         prescription: formData.prescription,
         notes: formData.notes,
         follow_up_date: formData.follow_up_date ? formatDateForAPI(formData.follow_up_date) : null,
-        vitals: Object.keys(vitalsData).length > 0 ? vitalsData : null
+        vitals: Object.keys(vitalsData).length > 0 ? vitalsData : null,
+        images: formData.images
       };
 
       const { data: { session } } = await supabase.auth.getSession();
@@ -345,6 +359,17 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
               </div>
 
               <hr className="md:col-span-2 border-gray-200" />
+
+              <div className="md:col-span-2 space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Visit Images</h3>
+                <VisitImageUpload
+                  visitId={visit.id}
+                  doctorId={user?.id || "temp-doctor-id"}
+                  images={formData.images}
+                  onImagesChange={(images) => setFormData({...formData, images})}
+                  maxImages={5}
+                />
+              </div>
 
               <div className="md:col-span-2 space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">Vitals</h3>

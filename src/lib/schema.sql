@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS visits (
     notes VARCHAR(500),
     follow_up_date DATE,
     vitals JSONB,
+    images JSONB DEFAULT '[]'::jsonb, -- Array of image URLs for this visit
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

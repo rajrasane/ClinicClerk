@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       .select(`
         id, patient_id, visit_date, chief_complaint, 
         symptoms, diagnosis, prescription, notes, 
-        follow_up_date, vitals, created_at, updated_at,
+        follow_up_date, vitals, images, created_at, updated_at,
         patients(first_name, last_name, phone, age, gender)
       `)
       .order('visit_date', { ascending: false })
@@ -134,7 +134,8 @@ export async function POST(request: NextRequest) {
       prescription,
       notes,
       follow_up_date,
-      vitals
+      vitals,
+      images
     } = body;
 
     // Validate required fields
@@ -180,7 +181,8 @@ export async function POST(request: NextRequest) {
         prescription: prescription || null,
         notes: notes || null,
         follow_up_date: follow_up_date || null,
-        vitals: vitals || null
+        vitals: vitals || null,
+        images: images || []
       })
       .select()
       .single();

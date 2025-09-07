@@ -214,7 +214,40 @@ export async function DELETE(
 
     const supabase = createSupabaseServerClient(request);
 
+    // Optimized: Get all visits with images in a single query and delete images in bulk
+    const { data: visitsWithImages, error: visitsError } = await supabase
+      .from('visits')
+      .select('images')
+      .eq('patient_id', patientId)
+      .not('images', 'is', null);
+
+    // Collect and delete all associated images from storage in one operation
+    if (!visitsError && visitsWithImages && visitsWithImages.length > 0) {
+      try {
+        const allImagePaths = visitsWithImages
+          .flatMap((visit: any) => visit.images || [])
+          .map((image: any) => {
+            const pathMatch = image.url?.match(/\/visit-images\/(.+)$/);
+            return pathMatch ? pathMatch[1] : null;
+          })
+          .filter(Boolean);
+
+        if (allImagePaths.length > 0) {
+          const { error: storageError } = await supabase.storage
+            .from('visit-images')
+            .remove(allImagePaths);
+
+          if (storageError) {
+            console.error('Error deleting images from storage:', storageError);
+          }
+        }
+      } catch (imageError) {
+        console.error('Error processing images for deletion:', imageError);
+      }
+    }
+
     // Delete patient (RLS automatically filters by doctor_id)
+    // This will cascade delete all visits due to foreign key constraint
     const { data: deletedPatient, error } = await supabase
       .from('patients')
       .delete()
@@ -239,7 +272,7 @@ export async function DELETE(
     return NextResponse.json({
       success: true,
       data: deletedPatient,
-      message: 'Patient deleted successfully'
+      message: `Patient and all associated visits and images deleted successfully`
     });
 
   } catch (error) {

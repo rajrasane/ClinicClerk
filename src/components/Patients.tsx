@@ -394,7 +394,8 @@ export default function AdminPatients() {
             setSelectedVisit(null);
           }}
           onUpdate={() => {
-            // Refresh data if needed
+            // Refresh data to get updated visit with latest images
+            apiCache.invalidate('/api/visits');
             refetch();
           }}
         />
