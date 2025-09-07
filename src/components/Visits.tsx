@@ -26,6 +26,7 @@ interface Visit {
   first_name: string;
   last_name: string;
   phone: string;
+  images?: Array<{url: string, filename: string, uploaded_at: string}>;
 }
 
 export default function AdminVisits() {
@@ -419,7 +420,6 @@ export default function AdminVisits() {
             setShowModal(false);
             setSelectedVisit(null);
           }}
-          onUpdate={fetchVisitsData}
         />
       )}
 

@@ -222,12 +222,19 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     // Delete associated images from storage if they exist
     if (visitToDelete?.images && Array.isArray(visitToDelete.images) && visitToDelete.images.length > 0) {
       try {
-        const imagesToDelete = visitToDelete.images.map((image: any) => {
-          // Extract file path from URL: https://xxx.supabase.co/storage/v1/object/public/visit-images/doctor_id/filename
-          const url = image.url;
-          const pathMatch = url.match(/\/visit-images\/(.+)$/);
-          return pathMatch ? pathMatch[1] : null;
-        }).filter(Boolean);
+        interface VisitImage {
+          url: string;
+          filename: string;
+          uploaded_at: string;
+        }
+
+        const imagesToDelete = (visitToDelete.images as VisitImage[])
+          .map((image) => {
+            // Extract file path from URL: https://xxx.supabase.co/storage/v1/object/public/visit-images/doctor_id/filename
+            const pathMatch = image.url.match(/\/visit-images\/(.+)$/);
+            return pathMatch ? pathMatch[1] : null;
+          })
+          .filter((path): path is string => path !== null);
 
         if (imagesToDelete.length > 0) {
           const { error: storageError } = await supabase.storage

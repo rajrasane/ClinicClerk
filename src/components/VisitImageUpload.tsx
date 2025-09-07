@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Camera, X, Upload, Image as ImageIcon } from 'lucide-react';
+import { Camera, X, Image as ImageIcon } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import toast from 'react-hot-toast';
+import Image from 'next/image';
 import { imageOptimizer, validateImageFile, formatFileSize } from '@/lib/imageOptimization';
 
 const supabase = createClient(
@@ -34,7 +35,6 @@ export default function VisitImageUpload({
 }: VisitImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -86,7 +86,7 @@ export default function VisitImageUpload({
         const fileName = `${doctorId}/${visitId || 'temp'}_${timestamp}.${fileExt}`;
 
         // Upload to Supabase Storage
-        const { data, error } = await supabase.storage
+        const { error } = await supabase.storage
           .from('visit-images')
           .upload(fileName, compressedFile);
 
@@ -220,12 +220,14 @@ export default function VisitImageUpload({
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {images.map((image, index) => (
             <div key={index} className="relative group">
-              <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
-                <img
+              <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 relative">
+                <Image
                   src={image.url}
-                  alt={image.filename}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
+                  alt={`Preview ${index}`}
+                  fill
+                  sizes="(max-width: 768px) 50vw, 33vw"
+                  className="object-cover"
+                  unoptimized={true}
                 />
               </div>
               
@@ -251,12 +253,9 @@ export default function VisitImageUpload({
       {images.length === 0 && (
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
           <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
-          <p className="mt-2 text-sm text-gray-500">
-            No images uploaded yet
-          </p>
-          <p className="text-xs text-gray-400">
-            Click "Add Images" to upload photos for this visit
-          </p>
+          <p className="text-sm text-gray-500">or drag and drop images here</p>
+          <p className="text-xs text-gray-400">(Max 10MB per image)</p>
+          <p className="text-xs text-gray-400">Click &quot;Add Images&quot; to upload photos for this visit</p>
         </div>
       )}
     </div>

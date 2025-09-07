@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 import { createPortal } from 'react-dom';
 
 interface Visit {
@@ -26,15 +27,20 @@ interface Visit {
 interface VisitDetailsModalProps {
   visit: Visit;
   onClose: () => void;
-  onUpdate?: () => void;
 }
 
-export default function VisitDetailsModal({ visit, onClose, onUpdate }: VisitDetailsModalProps) {
+export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalProps) {
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [imagesLoading, setImagesLoading] = useState(false);
-  const [visitImages, setVisitImages] = useState<any[]>([]);
+  interface VisitImage {
+    url: string;
+    filename: string;
+    uploaded_at: string;
+  }
+  
+  const [visitImages, setVisitImages] = useState<VisitImage[]>([]);
   
   // Touch/swipe handling
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -259,14 +265,16 @@ export default function VisitDetailsModal({ visit, onClose, onUpdate }: VisitDet
             </div>
           ) : visitImages.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {visitImages.map((image: any, index: number) => (
+              {visitImages.map((image, index) => (
                 <div key={index} className="relative group">
-                  <img
+                  <Image
                     src={image.url}
                     alt={`Visit image ${index + 1}`}
+                    width={128}
+                    height={128}
                     className="w-full h-32 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-75 transition-opacity"
                     onClick={() => window.open(image.url, '_blank')}
-                    loading="lazy"
+                    unoptimized={true} // Since we're using external URLs
                   />
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
                     <div className="text-white text-xs text-center p-2">

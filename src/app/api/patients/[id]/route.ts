@@ -224,13 +224,23 @@ export async function DELETE(
     // Collect and delete all associated images from storage in one operation
     if (!visitsError && visitsWithImages && visitsWithImages.length > 0) {
       try {
-        const allImagePaths = visitsWithImages
-          .flatMap((visit: any) => visit.images || [])
-          .map((image: any) => {
+        interface VisitImage {
+          url: string;
+          filename: string;
+          uploaded_at: string;
+        }
+        
+        interface VisitWithImages {
+          images?: VisitImage[];
+        }
+
+        const allImagePaths = (visitsWithImages as VisitWithImages[])
+          .flatMap((visit) => visit.images || [])
+          .map((image) => {
             const pathMatch = image.url?.match(/\/visit-images\/(.+)$/);
-            return pathMatch ? pathMatch[1] : null;
+            return pathMatch ? pathMatch[1] : '';
           })
-          .filter(Boolean);
+          .filter((path): path is string => path.length > 0);
 
         if (allImagePaths.length > 0) {
           const { error: storageError } = await supabase.storage

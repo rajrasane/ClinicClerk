@@ -26,7 +26,7 @@ interface Visit {
   notes: string;
   follow_up_date: string;
   vitals: Record<string, string> | null;
-  images: Array<{url: string, filename: string, uploaded_at: string}>;
+  images?: Array<{url: string, filename: string, uploaded_at: string}>;
   first_name: string;
   last_name: string;
   phone: string;
@@ -79,7 +79,13 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  interface User {
+    id: string;
+    email?: string;
+    // Add other user properties as needed
+  }
+
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     const getUser = async () => {

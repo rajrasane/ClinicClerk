@@ -392,8 +392,6 @@ export default function AdminPatients() {
           onClose={() => {
             setShowVisitDetailsModal(false);
             setSelectedVisit(null);
-          }}
-          onUpdate={() => {
             // Refresh data to get updated visit with latest images
             apiCache.invalidate('/api/visits');
             refetch();
