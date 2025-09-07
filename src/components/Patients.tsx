@@ -8,6 +8,7 @@ import AddPatientModalNew from './AddPatientModalNew';
 import PatientDetailsModal from './PatientDetailsModal';
 import EditPatientModal from './EditPatientModal';
 import AddVisitModal from './AddVisitModal';
+import VisitDetailsModal from './VisitDetailsModal';
 import { supabase } from '@/lib/supabase';
 import { ExportDropdown } from '@/components/ui/export-dropdown';
 
@@ -30,6 +31,23 @@ interface Patient {
   visit_count?: number;
 }
 
+interface Visit {
+  id: number;
+  patient_id: number;
+  visit_date: string;
+  chief_complaint: string;
+  symptoms: string;
+  diagnosis: string;
+  prescription: string;
+  notes: string;
+  follow_up_date: string;
+  vitals: Record<string, string> | null;
+  created_at: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
+}
+
 export default function AdminPatients() {
   // Use the custom hook for data management
   const [currentPage, setCurrentPage] = useState(1);
@@ -44,6 +62,8 @@ export default function AdminPatients() {
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [showAddVisitModal, setShowAddVisitModal] = useState(false);
   const [preselectedPatientId, setPreselectedPatientId] = useState<number | null>(null);
+  const [showVisitDetailsModal, setShowVisitDetailsModal] = useState(false);
+  const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
 
   const totalPages = pagination?.totalPages || 1;
 
@@ -97,6 +117,11 @@ export default function AdminPatients() {
   const handleAddVisit = (patientId: number) => {
     setPreselectedPatientId(patientId);
     setShowAddVisitModal(true);
+  };
+
+  const handleViewVisit = (visit: Visit) => {
+    setSelectedVisit(visit);
+    setShowVisitDetailsModal(true);
   };
 
   // Removed unused formatDate function
@@ -312,6 +337,7 @@ export default function AdminPatients() {
           }}
           onUpdate={refetch}
           onAddVisit={handleAddVisit}
+          onViewVisit={handleViewVisit}
         />
       )}
 
@@ -356,6 +382,21 @@ export default function AdminPatients() {
             setPreselectedPatientId(null);
           }}
           preselectedPatientId={preselectedPatientId || undefined}
+        />
+      )}
+
+      {/* Visit Details Modal */}
+      {showVisitDetailsModal && selectedVisit && (
+        <VisitDetailsModal
+          visit={selectedVisit}
+          onClose={() => {
+            setShowVisitDetailsModal(false);
+            setSelectedVisit(null);
+          }}
+          onUpdate={() => {
+            // Refresh data if needed
+            refetch();
+          }}
         />
       )}
     </div>

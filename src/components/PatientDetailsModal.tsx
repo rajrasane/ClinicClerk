@@ -6,13 +6,19 @@ import { createPortal } from 'react-dom';
 
 interface Visit {
   id: number;
+  patient_id: number;
   visit_date: string;
   chief_complaint: string;
   symptoms: string;
   diagnosis: string;
   prescription: string;
   notes: string;
+  follow_up_date: string;
   vitals: Record<string, string> | null;
+  created_at: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
 }
 
 interface Patient {
@@ -37,9 +43,10 @@ interface PatientDetailsModalProps {
   onClose: () => void;
   onUpdate: () => void;
   onAddVisit?: (patientId: number) => void;
+  onViewVisit?: (visit: Visit) => void;
 }
 
-export default function PatientDetailsModal({ patient, onClose, onAddVisit }: PatientDetailsModalProps) {
+export default function PatientDetailsModal({ patient, onClose, onAddVisit, onViewVisit }: PatientDetailsModalProps) {
   const [activeTab, setActiveTab] = useState('details');
   const [mounted, setMounted] = useState(false);
   const [visits, setVisits] = useState<Visit[]>([]);
@@ -315,17 +322,36 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
                   {visits.map((visit, index) => (
                     <div key={visit.id}>
                       {index > 0 && <hr className="sm:hidden border-gray-300 my-3" />}
-                      <div className="border rounded-lg p-3 sm:p-4 bg-gray-50">
-                      <div className="flex flex-col sm:flex-row gap-2 sm:justify-between sm:items-start mb-3">
-                        <div>
-                          <h4 className="font-medium text-gray-900 text-sm sm:text-base">
-                            {visit.chief_complaint.length > 40 ? `${visit.chief_complaint.substring(0, 40)}...` : visit.chief_complaint}
+                      <div className="border rounded-lg p-3 sm:p-4 bg-gray-50 hover:bg-gray-100 transition-colors relative group">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1 min-w-0 pr-3">
+                          <h4 className="font-medium text-gray-900 text-sm sm:text-base truncate">
+                            {visit.chief_complaint}
                           </h4>
-                          <p className="text-xs sm:text-sm text-gray-500">
+                          <p className="text-xs sm:text-sm text-gray-500 mt-1">
                             {formatDate(visit.visit_date)}
                           </p>
                         </div>
-                        {visit.vitals && (
+                        {onViewVisit && (
+                          <button
+                            onClick={() => {
+                              onClose(); // Close patient details modal first
+                              onViewVisit(visit); // Open visit details modal
+                            }}
+                            className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white rounded-full transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 border-2 border-blue-200 hover:border-blue-600"
+                            title="View visit details"
+                            aria-label="View visit details"
+                          >
+                            <svg className="w-4 h-4 sm:w-5 sm:h-5 transform hover:translate-x-0.5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Vitals Section */}
+                      {visit.vitals && (
+                        <div className="mb-3">
                           <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-start gap-x-4 gap-y-2 text-xs sm:text-sm text-gray-600 bg-white/50 sm:bg-transparent p-2.5 sm:p-0 rounded-lg sm:rounded-none">
                             {/* Temperature with unit */}
                             {visit.vitals.temperature && (
@@ -368,8 +394,8 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit }: Pa
                               </div>
                             )}
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 text-sm">
                         <div className="bg-white rounded-md p-2 sm:p-3">
