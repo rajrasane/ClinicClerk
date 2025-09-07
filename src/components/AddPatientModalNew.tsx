@@ -339,7 +339,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
               {renderInput("Last Name", "last_name", "text", true, "e.g., Sharma")}
               {renderInput("Age", "age", "number", true, "e.g., 35")}
               <div>
-                <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="gender" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   Gender <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -347,7 +347,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
                   name="gender"
                   value={formData.gender}
                   onChange={handleChange}
-                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                  className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
                     errors.gender 
                       ? 'border-red-500 focus:ring-red-500' 
                       : 'border-gray-300 focus:ring-gray-900'

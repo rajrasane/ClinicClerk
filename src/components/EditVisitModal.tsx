@@ -56,8 +56,45 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
     }
   });
 
+  const originalData = {
+    visit_date: visit.visit_date ? new Date(visit.visit_date) : new Date(),
+    chief_complaint: visit.chief_complaint || '',
+    symptoms: visit.symptoms || '',
+    diagnosis: visit.diagnosis || '',
+    prescription: visit.prescription || '',
+    notes: visit.notes || '',
+    follow_up_date: visit.follow_up_date ? new Date(visit.follow_up_date) : undefined,
+    vitals: {
+      temperature: visit?.vitals?.temperature || '',
+      bp: visit?.vitals?.bp || '',
+      pulse: visit?.vitals?.pulse || '',
+      weight: visit?.vitals?.weight || '',
+      o2: visit?.vitals?.o2 || ''
+    }
+  };
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+
+  // Check if form data has changed
+  const hasChanges = () => {
+    // Compare dates separately since Date objects need special handling
+    const formDateStr = formData.visit_date ? formatDateForAPI(formData.visit_date) : '';
+    const originalDateStr = originalData.visit_date ? formatDateForAPI(originalData.visit_date) : '';
+    const formFollowUpStr = formData.follow_up_date ? formatDateForAPI(formData.follow_up_date) : '';
+    const originalFollowUpStr = originalData.follow_up_date ? formatDateForAPI(originalData.follow_up_date) : '';
+    
+    return (
+      formDateStr !== originalDateStr ||
+      formFollowUpStr !== originalFollowUpStr ||
+      formData.chief_complaint !== originalData.chief_complaint ||
+      formData.symptoms !== originalData.symptoms ||
+      formData.diagnosis !== originalData.diagnosis ||
+      formData.prescription !== originalData.prescription ||
+      formData.notes !== originalData.notes ||
+      JSON.stringify(formData.vitals) !== JSON.stringify(originalData.vitals)
+    );
+  };
 
   useEffect(() => {
     // Prevent background scrolling when modal is open
@@ -390,7 +427,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
           <button
             type="submit"
             form="edit-visit-form"
-            disabled={loading}
+            disabled={loading || !hasChanges()}
             className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors"
             onClick={handleSubmit}
           >

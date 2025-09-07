@@ -148,6 +148,7 @@ export default function AdminVisits() {
                   endDate: dateRangeForAPI.endDate
                 }}
                 variant="icon"
+                hasRecords={visits.length > 0}
               />
             </div>
             <div className="hidden md:block">
@@ -159,6 +160,7 @@ export default function AdminVisits() {
                   endDate: dateRangeForAPI.endDate
                 }}
                 buttonText="Export Visits"
+                hasRecords={visits.length > 0}
               />
             </div>
           </div>

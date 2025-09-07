@@ -125,6 +125,7 @@ export default function AdminPatients() {
               type="patients" 
               filters={{ search: searchTerm }}
               variant="icon"
+              hasRecords={patients.length > 0}
             />
           </div>
           <div className="hidden md:block">
@@ -132,6 +133,7 @@ export default function AdminPatients() {
               type="patients" 
               filters={{ search: searchTerm }}
               buttonText="Export Patients"
+              hasRecords={patients.length > 0}
             />
           </div>
         </div>

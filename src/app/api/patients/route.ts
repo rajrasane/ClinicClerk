@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     if (search) {
       const searchTerms = search.trim().split(/\s+/);
       searchTerms.forEach(term => {
-        query = query.or(`first_name.ilike.%${term}%,middle_name.ilike.%${term}%,last_name.ilike.%${term}%,phone.ilike.%${term}%`);
+        query = query.or(`first_name.ilike.%${term}%,middle_name.ilike.%${term}%,last_name.ilike.%${term}%,phone.like.%${term}%`);
       });
     }
 

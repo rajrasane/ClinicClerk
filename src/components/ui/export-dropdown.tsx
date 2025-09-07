@@ -24,6 +24,7 @@ interface ExportDropdownProps {
   className?: string
   buttonText?: string
   variant?: 'button' | 'icon'
+  hasRecords?: boolean
 }
 
 export function ExportDropdown({ 
@@ -31,7 +32,8 @@ export function ExportDropdown({
   filters = {}, 
   className = '', 
   buttonText = 'Export',
-  variant = 'button'
+  variant = 'button',
+  hasRecords = true
 }: ExportDropdownProps) {
   const [isExporting, setIsExporting] = useState(false)
 
@@ -115,9 +117,9 @@ export function ExportDropdown({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
-            disabled={isExporting}
+            disabled={isExporting || !hasRecords}
             className={`inline-flex items-center justify-center h-9 w-9 rounded-lg bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none ${className}`}
-            title={`Export ${type}`}
+            title={!hasRecords ? `No ${type} to export` : `Export ${type}`}
           >
             {isExporting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -131,7 +133,7 @@ export function ExportDropdown({
           <DropdownMenuSeparator className="bg-gray-200 my-1" />
           <DropdownMenuItem 
             onClick={() => handleExport('excel')} 
-            disabled={isExporting}
+            disabled={isExporting || !hasRecords}
             className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:bg-gray-50 cursor-pointer rounded-md mx-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FileSpreadsheet className="mr-2 h-4 w-4" />
@@ -139,7 +141,7 @@ export function ExportDropdown({
           </DropdownMenuItem>
           <DropdownMenuItem 
             onClick={() => handleExport('pdf')} 
-            disabled={isExporting}
+            disabled={isExporting || !hasRecords}
             className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:bg-gray-50 cursor-pointer rounded-md mx-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FileImage className="mr-2 h-4 w-4" />
@@ -154,8 +156,9 @@ export function ExportDropdown({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          disabled={isExporting}
+          disabled={isExporting || !hasRecords}
           className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none ${className}`}
+          title={!hasRecords ? `No ${type} to export` : undefined}
         >
           {isExporting ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -170,7 +173,7 @@ export function ExportDropdown({
         <DropdownMenuSeparator className="bg-gray-200 my-1" />
         <DropdownMenuItem 
           onClick={() => handleExport('excel')} 
-          disabled={isExporting}
+          disabled={isExporting || !hasRecords}
           className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:bg-gray-50 cursor-pointer rounded-md mx-1 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <FileSpreadsheet className="mr-2 h-4 w-4" />
@@ -178,7 +181,7 @@ export function ExportDropdown({
         </DropdownMenuItem>
         <DropdownMenuItem 
           onClick={() => handleExport('pdf')} 
-          disabled={isExporting}
+          disabled={isExporting || !hasRecords}
           className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:bg-gray-50 cursor-pointer rounded-md mx-1 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <FileImage className="mr-2 h-4 w-4" />

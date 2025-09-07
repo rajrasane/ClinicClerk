@@ -55,13 +55,26 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
     emergency_contact: ''
   });
 
+  const [originalData, setOriginalData] = useState({
+    first_name: '',
+    middle_name: '',
+    last_name: '',
+    age: '',
+    gender: '',
+    phone: '',
+    address: '',
+    blood_group: '',
+    allergies: '',
+    emergency_contact: ''
+  });
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
   // Pre-populate form with patient data
   useEffect(() => {
     if (patient) {
-      setFormData({
+      const initialData = {
         first_name: patient.first_name || '',
         middle_name: patient.middle_name || '',
         last_name: patient.last_name || '',
@@ -72,9 +85,16 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
         blood_group: patient.blood_group || '',
         allergies: patient.allergies || '',
         emergency_contact: patient.emergency_contact || ''
-      });
+      };
+      setFormData(initialData);
+      setOriginalData(initialData);
     }
   }, [patient]);
+
+  // Check if form data has changed
+  const hasChanges = () => {
+    return JSON.stringify(formData) !== JSON.stringify(originalData);
+  };
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -417,7 +437,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
           </button>
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !hasChanges()}
             className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors"
             onClick={handleSubmit}
           >
