@@ -47,13 +47,8 @@ CREATE TABLE IF NOT EXISTS visits (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_doctors_email ON doctors(email);
-CREATE INDEX IF NOT EXISTS idx_doctors_name ON doctors(first_name, last_name);
-CREATE INDEX IF NOT EXISTS idx_doctors_phone ON doctors(phone);
+-- Create indexes for better performance (only used indexes)
 CREATE INDEX IF NOT EXISTS idx_patients_doctor_id ON patients(doctor_id);
-CREATE INDEX IF NOT EXISTS idx_patients_name ON patients(first_name, last_name);
-CREATE INDEX IF NOT EXISTS idx_patients_phone ON patients(phone);
 CREATE INDEX IF NOT EXISTS idx_visits_doctor_id ON visits(doctor_id);
 CREATE INDEX IF NOT EXISTS idx_visits_patient_id ON visits(patient_id);
 CREATE INDEX IF NOT EXISTS idx_visits_date ON visits(visit_date);
@@ -65,7 +60,8 @@ BEGIN
     NEW.updated_at = CURRENT_TIMESTAMP;
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ language 'plpgsql'
+SET search_path = '';
 
 -- Triggers to automatically update updated_at
 CREATE TRIGGER update_doctors_updated_at BEFORE UPDATE ON doctors
@@ -82,41 +78,21 @@ ALTER TABLE doctors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE patients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE visits ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for doctors table
--- Policy: Users can read their own doctor profile
-CREATE POLICY "Users can read own doctor profile" 
-ON doctors FOR SELECT 
-USING (auth.uid() = id);
+-- OPTIMIZED RLS Policies (Single policy per table, performance optimized)
+CREATE POLICY "doctors_optimized_policy" ON doctors
+    FOR ALL
+    TO authenticated, anon
+    USING (id = (SELECT auth.uid()))
+    WITH CHECK (id = (SELECT auth.uid()));
 
--- Policy: Users can update their own doctor profile
-CREATE POLICY "Users can update own doctor profile" 
-ON doctors FOR UPDATE 
-USING (auth.uid() = id);
+CREATE POLICY "patients_optimized_policy" ON patients
+    FOR ALL
+    TO authenticated, anon
+    USING (doctor_id = (SELECT auth.uid()))
+    WITH CHECK (doctor_id = (SELECT auth.uid()));
 
--- Policy: Users can delete their own doctor profile
-CREATE POLICY "Users can delete own doctor profile" 
-ON doctors FOR DELETE 
-USING (auth.uid() = id);
-
--- Policy: Allow users to insert their own doctor profile (for signup)
-CREATE POLICY "Users can insert own doctor profile" 
-ON doctors FOR INSERT 
-WITH CHECK (auth.uid() = id);
-
--- RLS Policies for patients table
-CREATE POLICY "Doctors can only see their own patients" ON patients
-    FOR ALL USING (auth.uid() = doctor_id);
-
--- RLS Policies for visits table  
-CREATE POLICY "Doctors can only see their own visits" ON visits
-    FOR ALL USING (auth.uid() = doctor_id);
-
--- Additional policy to ensure visits belong to doctor's patients
-CREATE POLICY "Visits must belong to doctor's patients" ON visits
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM patients 
-            WHERE patients.id = visits.patient_id 
-            AND patients.doctor_id = auth.uid()
-        )
-    );
+CREATE POLICY "visits_optimized_policy" ON visits
+    FOR ALL
+    TO authenticated, anon
+    USING (doctor_id = (SELECT auth.uid()))
+    WITH CHECK (doctor_id = (SELECT auth.uid()));
