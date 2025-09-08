@@ -70,6 +70,12 @@ export default function SignupForm() {
     <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4 sm:py-12 sm:px-6 lg:px-8 animate-fade-in">
       <div className="max-w-md w-full space-y-5 sm:space-y-6 animate-slide-up">
         <div className="text-center">
+          <Link 
+            href="/"
+            className="inline-flex items-center text-gray-600 hover:text-gray-800 transition-colors mb-4 text-sm"
+          >
+            ← Back to Home
+          </Link>
           <div className="flex justify-center mb-5 sm:mb-6">
             <Image
               src="/logo.png"
