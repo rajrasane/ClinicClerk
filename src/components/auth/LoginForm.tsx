@@ -37,6 +37,12 @@ export default function LoginForm() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-6 px-4 sm:py-8 sm:px-6 lg:px-8 animate-fade-in" style={{alignItems: 'flex-start', paddingTop: '15vh'}}>
       <div className="max-w-md w-full space-y-5 sm:space-y-6 animate-slide-up">
         <div className="text-center">
+          <Link 
+            href="/"
+            className="inline-flex items-center text-gray-600 hover:text-gray-800 transition-colors mb-4 text-sm"
+          >
+            ← Back to Home
+          </Link>
           <div className="flex justify-center mb-5 sm:mb-6">
             <Image
               src="/logo.png"
