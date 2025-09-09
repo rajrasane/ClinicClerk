@@ -64,10 +64,11 @@ export const Header = ({ activeTab, setActiveTab }: HeaderProps) => {
                 <Image 
                   src="/logo.png" 
                   alt="ClinicClerk Logo" 
-                  width={32}
-                  height={32}
+                  width={96}
+                  height={96}
                   className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 object-contain"
                   priority
+                  quality={100}
                 />
               </div>
               <h1 className="text-lg sm:text-3xl font-bold truncate">

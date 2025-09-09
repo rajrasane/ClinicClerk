@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -92,7 +92,7 @@ export default function LandingPage() {
         "Basic search & filters",
         "Excel Export (3 per month)",
       ],
-      cta: "Get Started Free",
+      cta: "Try for Free",
       popular: false
     },
     {
@@ -113,16 +113,16 @@ export default function LandingPage() {
     },
     {
       name: "Enterprise",
-      price: "₹999",
+      price: "₹799",
       period: "per month",
       description: "For large practices & clinics",
       features: [
         "All features of Professional plan",
         "Unlimited patients",
         "Custom integrations",
-        "24/7 phone support",
-        "Dedicated account manager",
-        "Access to our AI agents"
+        "24/7 support",
+        "Dedicated account management",
+        "Early Access to our upcoming AI agents"
       ],
       cta: "Get Started",
       popular: false
@@ -140,10 +140,11 @@ export default function LandingPage() {
               <Image 
                 src="/logo.png" 
                 alt="ClinicClerk Logo" 
-                width={32}
-                height={32}
+                width={80}
+                height={80}
                 className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg"
                 priority
+                quality={100}
               />
               <h1 className="text-lg sm:text-xl lg:text-2xl font-bold">
                 <span className="text-gray-900">Clinic</span>
@@ -317,27 +318,15 @@ export default function LandingPage() {
       </section>
 
       {/* Benefits Section */}
-      <section className="py-12 sm:py-16 bg-white/50 backdrop-blur-sm">
+      <section className="py-12 sm:py-16 bg-white/50" style={{ willChange: 'transform' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="text-center mb-8 sm:mb-12"
-          >
+          <div className="text-center mb-8 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
               Why Choose ClinicClerk?
             </h2>
-          </motion.div>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              viewport={{ once: true }}
-              className="text-center p-6 bg-white/80 rounded-xl shadow-sm hover:shadow-md transition-shadow"
-            >
+            <div className="text-center p-6 bg-white/80 rounded-xl shadow-sm hover:shadow-md transition-shadow">
               <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -345,14 +334,8 @@ export default function LandingPage() {
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Lightning Fast</h3>
               <p className="text-sm text-gray-600">Access patient records instantly</p>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              viewport={{ once: true }}
-              className="text-center p-6 bg-white/80 rounded-xl shadow-sm hover:shadow-md transition-shadow"
-            >
+            </div>
+            <div className="text-center p-6 bg-white/80 rounded-xl shadow-sm hover:shadow-md transition-shadow">
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -360,14 +343,8 @@ export default function LandingPage() {
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">100% Secure</h3>
               <p className="text-sm text-gray-600">Your data is encrypted & private</p>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              viewport={{ once: true }}
-              className="text-center p-6 bg-white/80 rounded-xl shadow-sm hover:shadow-md transition-shadow"
-            >
+            </div>
+            <div className="text-center p-6 bg-white/80 rounded-xl shadow-sm hover:shadow-md transition-shadow">
               <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -375,47 +352,36 @@ export default function LandingPage() {
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">No Setup Required</h3>
               <p className="text-sm text-gray-600">Start using immediately - no installation or training needed</p>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              viewport={{ once: true }}
-              className="text-center p-6 bg-white/80 rounded-xl shadow-sm hover:shadow-md transition-shadow"
-            >
+            </div>
+            <div className="text-center p-6 bg-white/80 rounded-xl shadow-sm hover:shadow-md transition-shadow">
               <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-xl font-bold text-purple-600">₹</span>
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Cost Effective</h3>
               <p className="text-sm text-gray-600">Affordable for solo practitioners</p>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-12 sm:py-16 lg:py-20">
+      <section className="py-12 sm:py-16 lg:py-20" style={{ willChange: 'transform' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="text-center mb-8 sm:mb-12 lg:mb-16"
-          >
+          <div className="text-center mb-8 sm:mb-12 lg:mb-16">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4 px-2">
               Everything You Need for Modern Practice
             </h2>
             <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto px-4">
               Comprehensive features designed to streamline your medical practice and improve patient care.
             </p>
-          </motion.div>
+          </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-8">
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="bg-white/90 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/20 hover:shadow-xl transition-all duration-300"
+                className="bg-white/90 rounded-2xl p-4 sm:p-6 border border-white/20 hover:shadow-xl transition-all duration-300"
+                style={{ willChange: 'transform' }}
               >
                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mb-3 sm:mb-4">
                   <feature.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
@@ -433,40 +399,39 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-12 sm:py-16 lg:py-20 bg-white/50 backdrop-blur-sm">
+      <section id="pricing" className="py-12 sm:py-16 lg:py-20 bg-white/50" style={{ willChange: 'transform' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="text-center mb-8 sm:mb-12"
-          >
+          <div className="text-center mb-8 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4 px-2">
               Simple, Transparent Pricing
             </h2>
             <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto px-4">
               Choose the plan that fits your practice size and needs.
             </p>
-          </motion.div>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 max-w-6xl mx-auto">
             {plans.map((plan, index) => (
-              <motion.div
-                key={plan.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className={`rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8 border transition-all duration-300 hover:shadow-xl relative ${
-                  plan.popular 
-                    ? 'bg-white/95 backdrop-blur-md border-blue-300 ring-2 ring-blue-500 md:transform md:scale-105' 
-                    : 'bg-white/90 backdrop-blur-md border-white/20'
-                }`}
-              >
+              <React.Fragment key={plan.name}>
+                {/* Mobile divider - only show between cards on small screens */}
+                {index > 0 && (
+                  <div className="md:hidden flex justify-center -mb-2">
+                    <div className="w-36 h-px bg-gray-300"></div>
+                  </div>
+                )}
+                
+                <div className="relative">
+                <div
+                  className={`mt-2 md:mt-0 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8 border transition-all duration-300 hover:shadow-xl relative ${
+                    plan.popular 
+                      ? 'bg-white/95 border-blue-300 ring-2 ring-blue-500 md:transform md:scale-105' 
+                      : 'bg-white/90 border-white/20'
+                  }`}
+                  style={{ willChange: 'transform' }}
+                >
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-1.5 rounded-full text-xs font-semibold shadow-lg">Most Valuable</span>
+                    <span className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-1.5 rounded-full text-xs font-semibold shadow-lg">Most Popular</span>
                   </div>
                 )}
                 
@@ -520,45 +485,35 @@ export default function LandingPage() {
                       : plan.name === 'Basic'
                       ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl'
                       : plan.name === 'Enterprise'
-                      ? 'bg-white text-gray-900 border-2 border-gray-900 hover:bg-gray-900 hover:text-white hover:shadow-lg'
+                      ? 'border-2 bg-gray-800 text-white hover:shadow-lg'
                       : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                   }`}>
                     {plan.cta}
                   </button>
                 </div>
-              </motion.div>
+                </div>
+                </div>
+              </React.Fragment>
             ))}
           </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            viewport={{ once: true }}
-            className="text-center mt-6 sm:mt-8"
-          >
+          <div className="text-center mt-6 sm:mt-8">
             <p className="text-sm sm:text-base text-gray-600 ">🚀 Currently in Beta</p>
-          </motion.div>
+          </div>
         </div>
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-12 sm:py-16 lg:py-20">
+      <section className="py-12 sm:py-16 lg:py-20" style={{ willChange: 'transform' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="text-center mb-8 sm:mb-12"
-          >
+          <div className="text-center mb-8 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
               Trusted by Doctors Across India
             </h2>
             <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
               See what medical professionals are saying about ClinicClerk
             </p>
-          </motion.div>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {[
@@ -586,7 +541,8 @@ export default function LandingPage() {
             ].map((testimonial, index) => (
               <div
                 key={index}
-                className="bg-white/90 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:shadow-xl transition-all duration-300"
+                className="bg-white/90 rounded-2xl p-6 border border-white/20 hover:shadow-xl transition-all duration-300"
+                style={{ willChange: 'transform' }}
               >
                 <div className="flex items-center gap-1 mb-4">
                   {[...Array(testimonial.rating)].map((_, i) => (
@@ -613,31 +569,24 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Divider */}
+      <div className="max-w-4xl mx-auto px-10 sm:px-10 lg:px-8">
+        <div className="h-px bg-gray-300"></div>
+      </div>
+
       {/* FAQ Section */}
       <section className="py-12 sm:py-16 lg:py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="text-center mb-8 sm:mb-12"
-          >
+          <div className="text-center mb-8 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
               Frequently Asked Questions
             </h2>
             <p className="text-lg sm:text-xl text-gray-600">
               Everything you need to know about ClinicClerk
             </p>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            viewport={{ once: true }}
-            className="bg-white/90 backdrop-blur-md rounded-2xl border border-white/20 shadow-lg"
-          >
+          <div className="bg-white/90 rounded-2xl border border-white/20 shadow-lg">
             <Accordion type="single" collapsible className="w-full">
               {[
                 {
@@ -687,33 +636,21 @@ export default function LandingPage() {
                 </AccordionItem>
               ))}
             </Accordion>
-          </motion.div>
+          </div>
 
           {/* Load More Button */}
           {!showAllFAQs && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              viewport={{ once: true }}
-              className="text-center mt-8"
-            >
+            <div className="text-center mt-8">
               <button
                 onClick={() => setShowAllFAQs(true)}
                 className="bg-white border-2 border-blue-600 text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-all duration-200"
               >
                 Load More FAQs
               </button>
-            </motion.div>
+            </div>
           )}
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.8 }}
-            viewport={{ once: true }}
-            className="text-center mt-8 sm:mt-12"
-          >
+          <div className="text-center mt-8 sm:mt-12">
             <p className="text-base sm:text-lg text-gray-600 mb-4">
               Still have questions?
             </p>
@@ -724,21 +661,16 @@ export default function LandingPage() {
               Contact Support
               <ArrowRightIcon className="w-4 h-4" />
             </Link>
-          </motion.div>
+          </div>
         </div>
       </section>
 
       {/* Demo/Trial Section */}
-      <section className="py-12 sm:py-16 bg-white/50 backdrop-blur-sm">
+      <section className="py-12 sm:py-16 bg-white/50" style={{ willChange: 'transform' }}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             {/* Left side - Demo info */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true }}
-            >
+            <div>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4 sm:mb-6">
                 Try ClinicClerk Risk-Free
               </h2>
@@ -784,17 +716,11 @@ export default function LandingPage() {
                   Start For Free
                 </Link>
               </div>
-            </motion.div>
+            </div>
 
             {/* Right side - Actual Screenshot */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              viewport={{ once: true }}
-              className="relative"
-            >
-              <div className="bg-white/90 backdrop-blur-md rounded-2xl p-3 border border-white/20 shadow-xl">
+            <div className="relative">
+              <div className="bg-white/90 rounded-2xl p-3 border border-white/20 shadow-xl" style={{ willChange: 'transform' }}>
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-3 h-3 bg-red-400 rounded-full"></div>
                   <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
@@ -821,21 +747,15 @@ export default function LandingPage() {
               <div className="absolute -top-2 -right-2 sm:-top-4 sm:-right-4 w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center shadow-lg">
                 <CheckCircleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
               </div>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-12 sm:py-16 lg:py-20">
+      <section className="py-12 sm:py-16 lg:py-20" style={{ willChange: 'transform' }}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 text-white"
-          >
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 text-white" style={{ willChange: 'transform' }}>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4">
               Ready to Modernize Your Practice?
             </h2>
@@ -857,7 +777,7 @@ export default function LandingPage() {
                 Sign In
               </Link>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -871,9 +791,10 @@ export default function LandingPage() {
                 <Image 
                   src="/logo.png" 
                   alt="ClinicClerk Logo" 
-                  width={28}
-                  height={28}
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg"
+                  width={56}
+                  height={56}
+                  className="w-7 h-7 rounded-lg"
+                  quality={100}
                 />
                 <h3 className="text-lg sm:text-xl font-bold">
                   <span className="text-white">Clinic</span>
