@@ -413,12 +413,8 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-8">
             {features.map((feature, index) => (
-              <motion.div
+              <div
                 key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: true }}
                 className="bg-white/90 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/20 hover:shadow-xl transition-all duration-300"
               >
                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mb-3 sm:mb-4">
@@ -430,7 +426,7 @@ export default function LandingPage() {
                 <p className="text-xs sm:text-sm lg:text-base text-gray-600 leading-tight sm:leading-normal">
                   {feature.description}
                 </p>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
@@ -588,12 +584,8 @@ export default function LandingPage() {
                 quote: "Being able to export patient data for referrals has saved me hours every week. The security features give me complete peace of mind about patient privacy."
               }
             ].map((testimonial, index) => (
-              <motion.div
+              <div
                 key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: true }}
                 className="bg-white/90 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:shadow-xl transition-all duration-300"
               >
                 <div className="flex items-center gap-1 mb-4">
@@ -615,7 +607,7 @@ export default function LandingPage() {
                     <div className="text-gray-600 text-xs sm:text-sm">{testimonial.title}</div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
