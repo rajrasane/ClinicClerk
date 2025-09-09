@@ -145,8 +145,8 @@ export default function LandingPage() {
               </h1>
             </Link>
             
-            {/* Pricing - Center on sm/md/lg */}
-            <div className="absolute left-1/2 transform -translate-x-1/2">
+            {/* Pricing - Center on md/lg only */}
+            <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2">
               <Link 
                 href="#pricing"
                 onClick={(e) => {
@@ -156,14 +156,28 @@ export default function LandingPage() {
                     block: 'start'
                   });
                 }}
-                className="text-gray-600 hover:text-gray-900 font-medium transition-colors text-sm sm:text-base"
+                className="text-gray-600 hover:text-gray-900 font-medium transition-colors text-base"
               >
                 Pricing
               </Link>
             </div>
             
             {/* Navigation - Right */}
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-4 sm:gap-4">
+              {/* Pricing for small screens - next to Sign In */}
+              <Link 
+                href="#pricing"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById('pricing')?.scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start'
+                  });
+                }}
+                className="md:hidden text-green-600 hover:text-green-700 font-medium transition-colors text-sm"
+              >
+                Pricing
+              </Link>
               <Link 
                 href="/login"
                 className="text-gray-700 hover:text-gray-900 font-medium transition-colors text-sm sm:text-base px-2 sm:px-0 border border-gray-300 sm:border-0 rounded-lg sm:rounded-none py-1.5 sm:py-0"
@@ -820,74 +834,87 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12 sm:py-16">
+      <footer className="bg-gray-900 text-white py-8 sm:py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8 mb-6 sm:mb-8">
             {/* Company Info */}
             <div className="lg:col-span-2">
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                 <Image 
                   src="/logo.png" 
                   alt="ClinicClerk Logo" 
-                  width={32}
-                  height={32}
-                  className="rounded-lg"
+                  width={28}
+                  height={28}
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg"
                 />
-                <h3 className="text-xl font-bold">
+                <h3 className="text-lg sm:text-xl font-bold">
                   <span className="text-white">Clinic</span>
                   <span className="text-blue-400">Clerk</span>
                 </h3>
               </div>
-              <p className="text-gray-400 mb-4 max-w-md">
+              <p className="text-gray-400 text-sm sm:text-base mb-4 sm:mb-6 max-w-md leading-relaxed">
                 Digital patient management made simple for Indian doctors. Secure, intuitive, and designed specifically for solo medical practices.
               </p>
-              <div className="flex gap-4">
-                <Link href="mailto:support@clinicclerk.com" className="text-gray-400 hover:text-white transition-colors">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <div className="flex gap-3 sm:gap-4">
+                <Link href="mailto:support@clinicclerk.com" className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-800 rounded-lg">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                     <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                   </svg>
                 </Link>
-                <Link href="tel:+91-9876543210" className="text-gray-400 hover:text-white transition-colors">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <Link href="tel:+91-9876543210" className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-800 rounded-lg">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                  </svg>
+                </Link>
+                <Link href="https://twitter.com/clinicclerk" className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-800 rounded-lg">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M6.29 18.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0020 3.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.073 4.073 0 01.8 7.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 010 16.407a11.616 11.616 0 006.29 1.84" />
                   </svg>
                 </Link>
               </div>
             </div>
 
-            {/* Product Links */}
-            <div>
-              <h4 className="text-lg font-semibold mb-4">Product</h4>
-              <ul className="space-y-2">
-                <li><Link href="/features" className="text-gray-400 hover:text-white transition-colors">Features</Link></li>
-                <li><Link href="/pricing" className="text-gray-400 hover:text-white transition-colors">Pricing</Link></li>
-                <li><Link href="/security" className="text-gray-400 hover:text-white transition-colors">Security</Link></li>
-                <li><Link href="/integrations" className="text-gray-400 hover:text-white transition-colors">Integrations</Link></li>
-              </ul>
-            </div>
+            {/* Product and Support Links - Side by side on mobile */}
+            <div className="grid grid-cols-2 lg:grid-cols-1 gap-6 lg:gap-0 lg:contents">
+              {/* Product Links */}
+              <div>
+                <h4 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-white">Product</h4>
+                <ul className="space-y-2 sm:space-y-3">
+                  <li><Link href="/features" className="text-gray-400 hover:text-white transition-colors text-sm sm:text-base block py-1">Features</Link></li>
+                  <li><Link href="#pricing" onClick={(e) => {
+                    e.preventDefault();
+                    document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+                  }} className="text-gray-400 hover:text-white transition-colors text-sm sm:text-base block py-1">Pricing</Link></li>
+                  <li><Link href="/security" className="text-gray-400 hover:text-white transition-colors text-sm sm:text-base block py-1">Security</Link></li>
+                  <li><Link href="/demo" className="text-gray-400 hover:text-white transition-colors text-sm sm:text-base block py-1">Live Demo</Link></li>
+                </ul>
+              </div>
 
-            {/* Support Links */}
-            <div>
-              <h4 className="text-lg font-semibold mb-4">Support</h4>
-              <ul className="space-y-2">
-                <li><Link href="/help" className="text-gray-400 hover:text-white transition-colors">Help Center</Link></li>
-                <li><Link href="/contact" className="text-gray-400 hover:text-white transition-colors">Contact Us</Link></li>
-                <li><Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</Link></li>
-                <li><Link href="/terms" className="text-gray-400 hover:text-white transition-colors">Terms of Service</Link></li>
-              </ul>
+              {/* Support Links */}
+              <div>
+                <h4 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-white">Support</h4>
+                <ul className="space-y-2 sm:space-y-3">
+                  <li><Link href="/help" className="text-gray-400 hover:text-white transition-colors text-sm sm:text-base block py-1">Help Center</Link></li>
+                  <li><Link href="/contact" className="text-gray-400 hover:text-white transition-colors text-sm sm:text-base block py-1">Contact Us</Link></li>
+                  <li><Link href="/privacy" className="text-gray-400 hover:text-white transition-colors text-sm sm:text-base block py-1">Privacy Policy</Link></li>
+                  <li><Link href="/terms" className="text-gray-400 hover:text-white transition-colors text-sm sm:text-base block py-1">Terms of Service</Link></li>
+                </ul>
+              </div>
             </div>
           </div>
 
           {/* Bottom Bar */}
-          <div className="border-t border-gray-800 pt-8">
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <div className="text-gray-400 text-sm mb-4 md:mb-0">
+          <div className="border-t border-gray-800 pt-6 sm:pt-8">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
+              <div className="text-gray-400 text-xs sm:text-sm text-center sm:text-left">
                 <p>&copy; 2025 ClinicClerk. Built with ❤️ for modern medical practices in India.</p>
               </div>
-              {/* <div className="flex items-center gap-6 text-sm">
-                <p className="text-gray-400">🇮🇳 Made in India</p>
-              </div> */}
+              <div className="flex items-center gap-4 text-xs sm:text-sm">
+                <span className="text-gray-400">🇮🇳 Made in India</span>
+                <span className="text-gray-600">|</span>
+                <span className="text-gray-400">ISO 27001 Compliant</span>
+              </div>
             </div>
           </div>
         </div>
