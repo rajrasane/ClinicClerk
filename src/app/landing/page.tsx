@@ -17,6 +17,12 @@ import {
   ArrowRightIcon,
   StarIcon
 } from '@heroicons/react/24/outline';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 export default function LandingPage() {
   const { user, loading } = useAuth();
@@ -608,58 +614,63 @@ export default function LandingPage() {
             </p>
           </motion.div>
 
-          <div className="space-y-4 sm:space-y-6">
-            {[
-              {
-                question: "Is my patient data secure and private?",
-                answer: "Absolutely. We use high-level encryption and multi-tenant architecture to ensure your data is completely isolated and secure. Your patient information is never shared with anyone and remains 100% private to your practice."
-              },
-              {
-                question: "Do I need any technical knowledge to use ClinicClerk?",
-                answer: "Not at all! ClinicClerk is designed to be intuitive and user-friendly. You can start using it immediately without any training or technical setup. If you can use WhatsApp, you can use ClinicClerk."
-              },
-              {
-                question: "Can I export my patient data if needed?",
-                answer: "Yes, you have complete control over your data. You can export patient records and visit details in Excel or PDF format anytime. This is useful for referrals, reports, or if you ever want to switch systems."
-              },
-              {
-                question: "How does the free Basic plan work?",
-                answer: "The Basic plan is completely free forever for up to 50 patients. It includes unlimited visits, basic search, and 3 Excel exports per month. Perfect for new practices or doctors wanting to try the system."
-              },
-              {
-                question: "What happens if I exceed my plan limits?",
-                answer: "We'll notify you before you reach your limits. You can easily upgrade your plan anytime. For the Basic plan, you can upgrade to Professional to add more patients and unlock additional features."
-              },
-              {
-                question: "Is there a mobile app available?",
-                answer: "ClinicClerk works perfectly on mobile browsers with a responsive design optimized for phones and tablets. You can access all features from any device with an internet connection."
-              },
-              {
-                question: "Can I cancel my subscription anytime?",
-                answer: "Yes, you can cancel anytime with no questions asked. We also offer a 30-day money-back guarantee on all paid plans. Your data remains accessible even after cancellation."
-              },
-              {
-                question: "Do you provide customer support?",
-                answer: "Yes! We provide email support for all users and phone support for Professional and Enterprise plans. Our team is here to help you get the most out of ClinicClerk."
-              }
-            ].slice(0, showAllFAQs ? 8 : 4).map((faq, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="bg-white/90 backdrop-blur-md rounded-xl p-4 sm:p-6 border border-white/20 hover:shadow-lg transition-all duration-300"
-              >
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">
-                  {faq.question}
-                </h3>
-                <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-                  {faq.answer}
-                </p>
-              </motion.div>
-            ))}
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            viewport={{ once: true }}
+            className="bg-white/90 backdrop-blur-md rounded-2xl border border-white/20 shadow-lg"
+          >
+            <Accordion type="single" collapsible className="w-full">
+              {[
+                {
+                  question: "Is my patient data secure and private?",
+                  answer: "Absolutely. We use high-level encryption and multi-tenant architecture to ensure your data is completely isolated and secure. Your patient information is never shared with anyone and remains 100% private to your practice."
+                },
+                {
+                  question: "Do I need any technical knowledge to use ClinicClerk?",
+                  answer: "Not at all! ClinicClerk is designed to be intuitive and user-friendly. You can start using it immediately without any training or technical setup. If you can use WhatsApp, you can use ClinicClerk."
+                },
+                {
+                  question: "Can I export my patient data if needed?",
+                  answer: "Yes, you have complete control over your data. You can export patient records and visit details in Excel or PDF format anytime. This is useful for referrals, reports, or if you ever want to switch systems."
+                },
+                {
+                  question: "How does the free Basic plan work?",
+                  answer: "The Basic plan is completely free forever for up to 50 patients. It includes unlimited visits, basic search, and 3 Excel exports per month. Perfect for new practices or doctors wanting to try the system."
+                },
+                {
+                  question: "What happens if I exceed my plan limits?",
+                  answer: "We'll notify you before you reach your limits. You can easily upgrade your plan anytime. For the Basic plan, you can upgrade to Professional to add more patients and unlock additional features."
+                },
+                {
+                  question: "Is there a mobile app available?",
+                  answer: "ClinicClerk works perfectly on mobile browsers with a responsive design optimized for phones and tablets. You can access all features from any device with an internet connection."
+                },
+                {
+                  question: "Can I cancel my subscription anytime?",
+                  answer: "Yes, you can cancel anytime with no questions asked. We also offer a 30-day money-back guarantee on all paid plans. Your data remains accessible even after cancellation."
+                },
+                {
+                  question: "Do you provide customer support?",
+                  answer: "Yes! We provide email support for all users and phone support for Professional and Enterprise plans. Our team is here to help you get the most out of ClinicClerk."
+                }
+              ].slice(0, showAllFAQs ? 8 : 4).map((faq, index) => (
+                <AccordionItem key={`faq-${index}`} value={`faq-${index}`} className="border-b border-gray-200 last:border-b-0">
+                  <AccordionTrigger className="text-left px-6 py-4 hover:no-underline hover:bg-gray-50/50 transition-colors">
+                    <span className="text-base sm:text-lg font-semibold text-gray-900 pr-4">
+                      {faq.question}
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-6 pb-4 pt-0">
+                    <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
+                      {faq.answer}
+                    </p>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </motion.div>
 
           {/* Load More Button */}
           {!showAllFAQs && (
@@ -908,12 +919,10 @@ export default function LandingPage() {
           <div className="border-t border-gray-800 pt-6 sm:pt-8">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
               <div className="text-gray-400 text-xs sm:text-sm text-center sm:text-left">
-                <p>&copy; 2025 ClinicClerk. Built with ❤️ for modern medical practices in India.</p>
+                <p>&copy; {new Date().getFullYear()} ClinicClerk. Built with ❤️ for modern medical practices in India.</p>
               </div>
               <div className="flex items-center gap-4 text-xs sm:text-sm">
                 <span className="text-gray-400">🇮🇳 Made in India</span>
-                <span className="text-gray-600">|</span>
-                <span className="text-gray-400">ISO 27001 Compliant</span>
               </div>
             </div>
           </div>
