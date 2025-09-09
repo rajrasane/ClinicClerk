@@ -88,7 +88,7 @@ export default function LandingPage() {
       description: "Perfect for getting started",
       features: [
         "Up to 50 patients",
-        "Unlimited visits",
+        "Up to 300 visits",
         "Basic search & filters",
         "Excel Export (3 per month)",
       ],
