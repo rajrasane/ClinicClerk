@@ -97,7 +97,7 @@ export default function LandingPage() {
       features: [
         "Up to 3,000 patients",
         "Unlimited visits",
-        "Basic search & filters",
+        "Advance search & filters",
         "Unlimited Excel/PDF export",
         "Image uploads for visits",
         "Prescription printing"
