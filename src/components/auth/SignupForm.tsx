@@ -72,9 +72,17 @@ export default function SignupForm() {
         <div className="text-center">
           <Link 
             href="/"
-            className="inline-flex items-center text-gray-600 hover:text-gray-800 transition-colors mb-4 text-sm"
+            className="group inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors mb-4 text-sm font-medium"
           >
-            ← Back to Home
+            <svg 
+              className="w-4 h-4 mr-1.5 transition-transform group-hover:-translate-x-0.5" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Home
           </Link>
           <div className="flex justify-center mb-5 sm:mb-6">
             <Image

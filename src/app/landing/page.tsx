@@ -157,10 +157,12 @@ export default function LandingPage() {
                 href="#pricing"
                 onClick={(e) => {
                   e.preventDefault();
-                  document.getElementById('pricing')?.scrollIntoView({ 
-                    behavior: 'smooth',
-                    block: 'start'
-                  });
+                  const element = document.getElementById('pricing');
+                  if (element) {
+                    const yOffset = -24; // Adjust this value as needed
+                    const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                    window.scrollTo({ top: y, behavior: 'smooth' });
+                  }
                 }}
                 className="text-gray-600 hover:text-gray-900 font-medium transition-colors text-base"
               >
@@ -175,10 +177,12 @@ export default function LandingPage() {
                 href="#pricing"
                 onClick={(e) => {
                   e.preventDefault();
-                  document.getElementById('pricing')?.scrollIntoView({ 
-                    behavior: 'smooth',
-                    block: 'start'
-                  });
+                  const element = document.getElementById('pricing');
+                  if (element) {
+                    const yOffset = -24; // Adjust this value as needed
+                    const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                    window.scrollTo({ top: y, behavior: 'smooth' });
+                  }
                 }}
                 className="md:hidden text-green-600 hover:text-green-700 font-medium transition-colors text-sm"
               >
@@ -380,9 +384,7 @@ export default function LandingPage() {
               className="text-center p-6 bg-white/80 rounded-xl shadow-sm hover:shadow-md transition-shadow"
             >
               <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                </svg>
+                <span className="text-xl font-bold text-purple-600">₹</span>
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Cost Effective</h3>
               <p className="text-sm text-gray-600">Affordable for solo practitioners</p>
@@ -409,7 +411,7 @@ export default function LandingPage() {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-8">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
@@ -422,10 +424,10 @@ export default function LandingPage() {
                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mb-3 sm:mb-4">
                   <feature.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">
+                <h3 className="text-sm sm:text-lg lg:text-xl font-semibold text-gray-900 mb-1 sm:mb-2 lg:mb-3">
                   {feature.title}
                 </h3>
-                <p className="text-sm sm:text-base text-gray-600">
+                <p className="text-xs sm:text-sm lg:text-base text-gray-600 leading-tight sm:leading-normal">
                   {feature.description}
                 </p>
               </motion.div>
@@ -485,14 +487,35 @@ export default function LandingPage() {
                   <p className="text-gray-600 mb-4 sm:mb-5 md:mb-6 lg:mb-8 text-sm sm:text-base">{plan.description}</p>
                   
                   <ul className="space-y-2 sm:space-y-2.5 md:space-y-3 lg:space-y-4 mb-4 sm:mb-5 md:mb-6 lg:mb-8 text-left">
-                    {plan.features.map((feature, featureIndex) => (
-                      <li key={featureIndex} className="flex items-start gap-3">
-                        <CheckIcon className={`h-4 w-4 sm:h-5 sm:w-5 mt-1 sm:mt-0.5 flex-shrink-0 ${
-                          plan.popular ? 'text-blue-600' : 'text-green-500'
-                        }`} />
-                        <span className="text-gray-700 text-xs sm:text-sm md:text-sm lg:text-base">{feature}</span>
-                      </li>
-                    ))}
+                    {plan.features.map((feature, featureIndex) => {
+                      if (plan.name === 'Enterprise' && featureIndex === 0) {
+                        return (
+                          <div key={featureIndex} className="mb-2">
+                            <li className="flex items-start gap-2 sm:gap-3">
+                              <CheckIcon className={`h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 mt-0 sm:mt-0.5 flex-shrink-0 ${
+                                plan.popular ? 'text-blue-600' : 'text-green-500'
+                              }`} />
+                              <span className="text-gray-700 text-xs sm:text-sm md:text-sm lg:text-base leading-tight sm:leading-normal">{feature}</span>
+                            </li>
+                            <div className="flex justify-center my-1">
+                              <div className="h-5 w-5 rounded-full bg-gray-100 flex items-center justify-center mx-auto">
+                                <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return (
+                        <li key={featureIndex} className="flex items-start gap-2 sm:gap-3">
+                          <CheckIcon className={`h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 mt-0 sm:mt-0.5 flex-shrink-0 ${
+                            plan.popular ? 'text-blue-600' : 'text-green-500'
+                          }`} />
+                          <span className="text-gray-700 text-xs sm:text-sm md:text-sm lg:text-base leading-tight sm:leading-normal">{feature}</span>
+                        </li>
+                      );
+                    })}
                   </ul>
                   
                   <button className={`w-full py-2.5 sm:py-3 md:py-3 lg:py-4 px-4 sm:px-5 md:px-6 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 text-sm sm:text-base md:text-base lg:text-lg ${
@@ -500,6 +523,8 @@ export default function LandingPage() {
                       ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl' 
                       : plan.name === 'Basic'
                       ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl'
+                      : plan.name === 'Enterprise'
+                      ? 'bg-white text-gray-900 border-2 border-gray-900 hover:bg-gray-900 hover:text-white hover:shadow-lg'
                       : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                   }`}>
                     {plan.cta}
@@ -893,10 +918,18 @@ export default function LandingPage() {
                 <h4 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-white">Product</h4>
                 <ul className="space-y-2 sm:space-y-3">
                   <li><Link href="/features" className="text-gray-400 hover:text-white transition-colors text-sm sm:text-base block py-1">Features</Link></li>
-                  <li><Link href="#pricing" onClick={(e) => {
-                    e.preventDefault();
-                    document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
-                  }} className="text-gray-400 hover:text-white transition-colors text-sm sm:text-base block py-1">Pricing</Link></li>
+                  <li><Link 
+                    href="#pricing"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const element = document.getElementById('pricing');
+                      if (element) {
+                        const yOffset = -24; 
+                        const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                        window.scrollTo({ top: y, behavior: 'smooth' });
+                      }
+                    }} 
+                    className="text-gray-400 hover:text-white transition-colors text-sm sm:text-base block py-1">Pricing</Link></li>
                   <li><Link href="/security" className="text-gray-400 hover:text-white transition-colors text-sm sm:text-base block py-1">Security</Link></li>
                   <li><Link href="/demo" className="text-gray-400 hover:text-white transition-colors text-sm sm:text-base block py-1">Live Demo</Link></li>
                 </ul>
