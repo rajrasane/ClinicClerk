@@ -101,7 +101,7 @@ export default function LandingPage() {
       period: "per month",
       description: "Most popular for growing practices",
       features: [
-        "Up to 3,000 patients",
+        "Up to 250 patients",
         "Unlimited visits",
         "Advance search & filters",
         "Unlimited Excel/PDF export",
