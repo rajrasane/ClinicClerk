@@ -7,11 +7,12 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { 
-  CheckCircleIcon, 
+  ArrowDownTrayIcon, 
   CheckIcon,
+  CheckCircleIcon,
   ShieldCheckIcon, 
   ClockIcon, 
-  DevicePhoneMobileIcon,
+  PhotoIcon,
   ChartBarIcon,
   UserGroupIcon,
   ArrowRightIcon,
@@ -64,12 +65,12 @@ export default function LandingPage() {
       description: "High-level encryption with multi-tenant architecture. Your data stays completely private."
     },
     {
-      icon: CheckCircleIcon,
+      icon: ArrowDownTrayIcon,
       title: "Excel/PDF Export",
       description: "Export patient data and visit records in Excel or PDF format for reports and referrals."
     },
     {
-      icon: DevicePhoneMobileIcon,
+      icon: PhotoIcon,
       title: "Image Uploads",
       description: "Attach medical images, prescriptions, and documents directly to patient visit records."
     },
@@ -125,7 +126,8 @@ export default function LandingPage() {
         "Early Access to our upcoming AI agents"
       ],
       cta: "Get Started",
-      popular: false
+      popular: false,
+      premium: true
     }
   ];
 
@@ -325,7 +327,7 @@ export default function LandingPage() {
               Why Choose ClinicClerk?
             </h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6 sm:gap-8 sm:[&>*:nth-child(3)]:col-start-1 sm:[&>*:nth-child(3)]:col-end-3 sm:[&>*:nth-child(3)]:justify-self-center sm:[&>*:nth-child(3)]:w-full sm:[&>*:nth-child(3)]:max-w-sm md:[&>*:nth-child(3)]:col-start-auto md:[&>*:nth-child(3)]:col-end-auto md:[&>*:nth-child(3)]:justify-self-auto md:[&>*:nth-child(3)]:max-w-none lg:[&>*:nth-child(3)]:col-start-auto lg:[&>*:nth-child(3)]:col-end-auto lg:[&>*:nth-child(3)]:justify-self-auto lg:[&>*:nth-child(3)]:max-w-none">
             <div className="text-center p-6 bg-white/80 rounded-xl shadow-sm hover:shadow-md transition-shadow">
               <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -334,15 +336,6 @@ export default function LandingPage() {
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Lightning Fast</h3>
               <p className="text-sm text-gray-600">Access patient records instantly</p>
-            </div>
-            <div className="text-center p-6 bg-white/80 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-2">100% Secure</h3>
-              <p className="text-sm text-gray-600">Your data is encrypted & private</p>
             </div>
             <div className="text-center p-6 bg-white/80 rounded-xl shadow-sm hover:shadow-md transition-shadow">
               <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -425,6 +418,8 @@ export default function LandingPage() {
                   className={`mt-2 md:mt-0 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8 border transition-all duration-300 hover:shadow-xl relative ${
                     plan.popular 
                       ? 'bg-white/95 border-blue-300 ring-2 ring-blue-500 md:transform md:scale-105' 
+                      : plan.premium
+                      ? 'bg-white/95 border-gray-800 ring-2 ring-gray-800 md:transform md:scale-105'
                       : 'bg-white/90 border-white/20'
                   }`}
                   style={{ willChange: 'transform' }}
@@ -434,14 +429,19 @@ export default function LandingPage() {
                     <span className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-1.5 rounded-full text-xs font-semibold shadow-lg">Most Popular</span>
                   </div>
                 )}
+                {plan.premium && (
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                    <span className="bg-gradient-to-r from-gray-900 to-black text-white px-4 py-1.5 rounded-full text-xs font-semibold shadow-lg">Most Valued</span>
+                  </div>
+                )}
                 
                 <div className="text-center p-3 sm:p-4 md:p-6 lg:p-8">
                   <h3 className={`text-lg sm:text-xl md:text-xl lg:text-2xl font-bold mb-2 ${
-                    plan.popular ? 'text-blue-900' : 'text-gray-900'
+                    plan.popular ? 'text-blue-900' : plan.premium ? 'text-gray-900' : 'text-gray-900'
                   }`}>{plan.name}</h3>
                   <div className="mb-4">
                     <span className={`text-2xl sm:text-3xl md:text-3xl lg:text-4xl font-bold ${
-                      plan.popular ? 'text-blue-900' : 'text-gray-900'
+                      plan.popular ? 'text-blue-900' : plan.premium ? 'text-gray-900' : 'text-gray-900'
                     }`}>{plan.price}</span>
                     {plan.price !== "Free" && <span className="text-gray-600 ml-1 text-sm sm:text-base">/{plan.period}</span>}
                   </div>
@@ -453,9 +453,13 @@ export default function LandingPage() {
                         return (
                           <div key={featureIndex} className="mb-2">
                             <li className="flex items-start gap-2 sm:gap-3">
-                              <CheckIcon className={`h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 mt-0 sm:mt-0.5 flex-shrink-0 ${
-                                plan.popular ? 'text-blue-600' : 'text-green-500'
-                              }`} />
+                              <div className={`h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 lg:h-5 lg:w-5 mt-0 sm:mt-0.5 lg:mt-1 flex-shrink-0 rounded-full flex items-center justify-center ${
+                                plan.premium && featureIndex === 0 ? 'bg-blue-100' : ''
+                              }`}>
+                                <CheckIcon className={`h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 lg:h-4 lg:w-4 ${
+                                  plan.popular ? 'text-blue-600' : plan.premium && featureIndex === 0 ? 'text-blue-600' : plan.premium ? 'text-gray-700' : 'text-green-500'
+                                }`} />
+                              </div>
                               <span className="text-gray-700 text-xs sm:text-sm md:text-sm lg:text-base leading-tight sm:leading-normal">{feature}</span>
                             </li>
                             <div className="flex justify-center my-1">
@@ -471,7 +475,7 @@ export default function LandingPage() {
                       return (
                         <li key={featureIndex} className="flex items-start gap-2 sm:gap-3">
                           <CheckIcon className={`h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 mt-0 sm:mt-0.5 flex-shrink-0 ${
-                            plan.popular ? 'text-blue-600' : 'text-green-500'
+                            plan.popular ? 'text-blue-600' : plan.premium ? 'text-gray-700' : 'text-green-500'
                           }`} />
                           <span className="text-gray-700 text-xs sm:text-sm md:text-sm lg:text-base leading-tight sm:leading-normal">{feature}</span>
                         </li>
@@ -482,6 +486,8 @@ export default function LandingPage() {
                   <button className={`w-full py-2.5 sm:py-3 md:py-3 lg:py-4 px-4 sm:px-5 md:px-6 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 text-sm sm:text-base md:text-base lg:text-lg ${
                     plan.popular 
                       ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl' 
+                      : plan.premium
+                      ? 'bg-gradient-to-r from-gray-900 to-black text-white hover:from-gray-800 hover:to-gray-900 shadow-lg hover:shadow-xl'
                       : plan.name === 'Basic'
                       ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl'
                       : plan.name === 'Enterprise'
@@ -497,9 +503,6 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <div className="text-center mt-6 sm:mt-8">
-            <p className="text-sm sm:text-base text-gray-600 ">🚀 Currently in Beta</p>
-          </div>
         </div>
       </section>
 
@@ -780,6 +783,15 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Beta Notice */}
+      <div className="py-6 sm:py-6 text-center">
+        <div className="mb-8 sm:mb-12">
+          <span className="inline-flex items-center gap-2 border-2 border-orange-400 bg-orange-50 text-orange-700 px-4 py-2 rounded-full text-sm font-semibold shadow-sm">
+            🚀 Currently in Beta
+          </span>
+        </div>
+      </div>
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-8 sm:py-12 lg:py-16">
