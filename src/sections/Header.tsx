@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { LogOut, User, Settings } from 'lucide-react';
+import { UserGroupIcon, ClockIcon } from '@heroicons/react/24/outline';
 
 interface HeaderProps {
   activeTab: string;
@@ -25,8 +26,8 @@ export const Header = ({ activeTab, setActiveTab }: HeaderProps) => {
   const router = useRouter();
   
   const tabs = [
-    { id: 'patients', label: 'Patients', icon: '👥' },
-    { id: 'visits', label: 'Visits', icon: '🏥' },
+    { id: 'patients', label: 'Patients', icon: UserGroupIcon },
+    { id: 'visits', label: 'Visits', icon: ClockIcon },
   ];
 
   // Get doctor display name
@@ -168,7 +169,7 @@ export const Header = ({ activeTab, setActiveTab }: HeaderProps) => {
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                <span className="text-sm sm:text-base">{tab.icon}</span>
+                <tab.icon className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span>{tab.label}</span>
               </button>
             ))}
