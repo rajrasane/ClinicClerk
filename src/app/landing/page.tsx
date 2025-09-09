@@ -97,7 +97,7 @@ export default function LandingPage() {
     },
     {
       name: "Professional",
-      price: "₹1,999",
+      price: "₹399",
       period: "per month",
       description: "Most popular for growing practices",
       features: [
@@ -113,7 +113,7 @@ export default function LandingPage() {
     },
     {
       name: "Enterprise",
-      price: "₹3,999",
+      price: "₹999",
       period: "per month",
       description: "For large practices & clinics",
       features: [
