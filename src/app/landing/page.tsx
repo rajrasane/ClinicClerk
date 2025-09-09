@@ -95,7 +95,7 @@ export default function LandingPage() {
       period: "per month",
       description: "Most popular for growing practices",
       features: [
-        "Up to 2,000 patients",
+        "Up to 3,000 patients",
         "Unlimited visits",
         "Basic search & filters",
         "Unlimited Excel/PDF export",
@@ -201,32 +201,17 @@ export default function LandingPage() {
                 <span className="sm:hidden">Digital patient records made easy. Store patient details, track visits, and manage your clinic efficiently.</span>
                 <span className="hidden sm:block">Digital patient records made easy. Store patient details, track visits, and manage your clinic efficiently - all in one secure platform designed for Indian medical practices.</span>
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start items-center">
-              <Link 
-                href="/signup"
-                className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base"
-              >
-                Start For Free
-                <ArrowRightIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-              </Link>
-              <Link 
-                href="/login"
-                className="w-full sm:w-auto bg-white/90 backdrop-blur-md text-gray-700 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold hover:bg-white transition-all duration-200 border border-white/20 text-sm sm:text-base"
-              >
-                Sign In
-              </Link>
-            </div>
-            
-            {/* Doctor Image for SM screens - below description */}
+              
+            {/* Doctor Image for mobile screens - above buttons */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="hidden sm:flex md:hidden justify-center items-center mt-6"
+              className="flex md:hidden justify-center items-center mb-6"
             >
               <div className="relative">
-                <div className="w-48 h-48 bg-gradient-to-br from-blue-100 to-indigo-200 rounded-full flex items-center justify-center">
-                  <div className="w-40 h-40 rounded-full overflow-hidden shadow-lg">
+                <div className="w-56 h-56 bg-gradient-to-br from-blue-100 to-indigo-200 rounded-full flex items-center justify-center">
+                  <div className="w-48 h-48 rounded-full overflow-hidden shadow-lg">
                     <Image
                       src="/smiling-doctor.jpg"
                       alt="Smiling Indian Doctor using ClinicClerk"
@@ -250,6 +235,23 @@ export default function LandingPage() {
                 </div>
               </div>
             </motion.div>
+            
+            {/* Buttons section - below doctor image on mobile */}
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start items-center">
+              <Link 
+                href="/signup"
+                className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base"
+              >
+                Start For Free
+                <ArrowRightIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+              </Link>
+              <Link 
+                href="/login"
+                className="w-full sm:w-auto bg-white/90 backdrop-blur-md text-gray-700 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold hover:bg-white transition-all duration-200 border border-white/20 text-sm sm:text-base"
+              >
+                Sign In
+              </Link>
+            </div>
             </motion.div>
             
             {/* Doctor Image for MD+ screens - side by side */}
