@@ -294,7 +294,21 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Emergency Contact</label>
-                  <p className="mt-1 text-sm text-gray-900">{patient.emergency_contact || '--'}</p>
+                  {patient.emergency_contact ? (
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-sm text-gray-900">{patient.emergency_contact}</p>
+                      <button
+                        onClick={() => copyToClipboard(patient.emergency_contact)}
+                        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                        title="Copy emergency contact"
+                      >
+                        <Copy className="h-3 w-3" />
+                        <span>copy</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-sm text-gray-900">--</p>
+                  )}
                 </div>
               </div>
 
