@@ -20,7 +20,7 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f3f3f7' }}>
         <div className="text-lg">Loading...</div>
       </div>
     );
@@ -33,7 +33,7 @@ export default function Home() {
 
   // Show dashboard for authenticated users
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ backgroundColor: '#f3f3f7' }}>
       <Header activeTab={activeTab} setActiveTab={handleTabChange} />
 
       {/* Content */}

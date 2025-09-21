@@ -89,7 +89,7 @@ export default function LandingPage() {
       description: "Perfect for getting started",
       features: [
         "Up to 50 patients",
-        "Up to 300 visits",
+        "Up to 3 visits per patient",
         "Basic search & filters",
         "Excel Export (3 per month)",
       ],
@@ -114,7 +114,7 @@ export default function LandingPage() {
     },
     {
       name: "Enterprise",
-      price: "₹799",
+      price: "₹899",
       period: "per month",
       description: "For large practices & clinics",
       features: [

@@ -176,7 +176,7 @@ export default function AdminVisits() {
                 placeholder="Search by patient name or complaint..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base bg-white"
               />
               <svg
                 className="absolute left-3 top-2.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400"
@@ -264,7 +264,7 @@ export default function AdminVisits() {
               </div>
             )}
           </div>
-        </div>
+        </div>  
       </div>
 
       {/* Visits Table */}
