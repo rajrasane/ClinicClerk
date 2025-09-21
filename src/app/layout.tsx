@@ -51,6 +51,7 @@ export default function RootLayout({
               style: {
                 background: '#363636',
                 color: '#fff',
+                zIndex: 999999,
               },
               success: {
                 duration: 3000,
@@ -66,6 +67,9 @@ export default function RootLayout({
                   secondary: '#fff',
                 },
               },
+            }}
+            containerStyle={{
+              zIndex: 999999,
             }}
           />
         </AuthProvider>

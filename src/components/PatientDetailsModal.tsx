@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
+import { Copy } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface Visit {
   id: number;
@@ -138,6 +140,16 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
     return new Date(dateString).toLocaleDateString('en-IN');
   };
 
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('Phone number copied to clipboard');
+    } catch (error) {
+      console.error('Failed to copy:', error);
+      toast.error('Failed to copy phone number');
+    }
+  };
+
 
   if (!mounted) return null;
 
@@ -261,7 +273,17 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Phone</label>
-                  <p className="mt-1 text-sm text-gray-900">{patient.phone}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-sm text-gray-900">{patient.phone}</p>
+                    <button
+                      onClick={() => copyToClipboard(patient.phone)}
+                      className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                      title="Copy phone number"
+                    >
+                      <Copy className="h-3 w-3" />
+                      <span>copy</span>
+                    </button>
+                  </div>
                 </div>
 
 
