@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { Copy } from 'lucide-react';
@@ -58,6 +58,9 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
   // Touch/swipe handling
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  
+  // Ref for scrollable content area
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -102,6 +105,10 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
 
   const handleVisitsTab = () => {
     setActiveTab('visits');
+    // Reset scroll position to top when switching to visits tab
+    if (contentRef.current) {
+      contentRef.current.scrollTop = 0;
+    }
     // Only load visits if we haven't loaded them AND there are visits to load
     if (!visitsLoaded && Number(patient.visit_count) > 0) {
       loadVisits();
@@ -195,7 +202,13 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
         <div className="border-b">
           <nav className="flex sm:space-x-8 sm:px-6">
             <button
-              onClick={() => setActiveTab('details')}
+              onClick={() => {
+                setActiveTab('details');
+                // Reset scroll position to top when switching to details tab
+                if (contentRef.current) {
+                  contentRef.current.scrollTop = 0;
+                }
+              }}
               className={`py-4 px-1 border-b-2 font-medium text-sm flex-1 sm:flex-none text-center ${
                 activeTab === 'details'
                   ? 'border-blue-500 text-blue-600'
@@ -218,7 +231,7 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[60vh]">
+        <div ref={contentRef} className="p-6 overflow-y-auto max-h-[60vh]">
           <AnimatePresence mode="wait">
             {activeTab === 'details' && (
               <motion.div
