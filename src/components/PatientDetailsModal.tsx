@@ -127,6 +127,14 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
     setTouchEnd(e.targetTouches[0].clientX);
   };
 
+  const handleDetailsTab = () => {
+    setActiveTab('details');
+    // Reset scroll position to top when switching to details tab
+    if (contentRef.current) {
+      contentRef.current.scrollTop = 0;
+    }
+  };
+
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
     
@@ -139,7 +147,7 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
       handleVisitsTab();
     } else if (isRightSwipe && activeTab === 'visits') {
       // Swipe right: visits -> details
-      setActiveTab('details');
+      handleDetailsTab();
     }
   };
 
@@ -202,13 +210,7 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
         <div className="border-b">
           <nav className="flex sm:space-x-8 sm:px-6">
             <button
-              onClick={() => {
-                setActiveTab('details');
-                // Reset scroll position to top when switching to details tab
-                if (contentRef.current) {
-                  contentRef.current.scrollTop = 0;
-                }
-              }}
+              onClick={handleDetailsTab}
               className={`py-4 px-1 border-b-2 font-medium text-sm flex-1 sm:flex-none text-center ${
                 activeTab === 'details'
                   ? 'border-blue-500 text-blue-600'
