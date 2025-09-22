@@ -123,7 +123,16 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
                     {key === 'bp' ? 'Blood Pressure' : key.replace(/_/g, ' ')}
                   </label>
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                    {String(value) || '—'}
+                    {key === 'temperature' ? 
+                      (String(value).includes('°F') ? value : `${value}°F`) :
+                      key === 'pulse' ? 
+                      (String(value).toLowerCase().includes('bpm') ? value : `${value} bpm`) :
+                      key === 'weight' ? 
+                      (String(value).toLowerCase().includes('kg') ? value : `${value} kg`) :
+                      key === 'o2' ? 
+                      (String(value).includes('%') ? value : `${value}%`) :
+                      key === 'bp' ? value :
+                      String(value) || '—'}
                   </span>
                 </div>
               ))}
