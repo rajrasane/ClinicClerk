@@ -42,13 +42,13 @@ interface Visit {
   notes: string;
   follow_up_date: string;
   vitals: Record<string, string> | null;
+  consultation_fee: number;
+  payment_status: 'P' | 'D';
+  payment_method: 'C' | 'O';
   created_at: string;
   first_name: string;
   last_name: string;
   phone: string;
-  consultation_fee: number;
-  payment_status: 'P' | 'D';
-  payment_method: 'C' | 'O' | null;
 }
 
 export default function AdminPatients() {

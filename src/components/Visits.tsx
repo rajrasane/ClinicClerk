@@ -107,6 +107,7 @@ export default function AdminVisits() {
         apiCache.invalidate('/api/patients'); // Clear patients cache to update visit counts
         apiCache.invalidate('/api/visits'); // Clear visits cache
         removeVisit(visitId); // Optimistic update
+        refetch(); // Trigger immediate refetch from server
       } else {
         const errorMessage = 'Failed to delete visit';
         console.error('Error deleting visit:', response);

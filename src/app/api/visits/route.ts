@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
 
     // Add search filter - search in chief complaint, diagnosis, and patient names
     if (search) {
-      query = query.or(`chief_complaint.ilike.*${search}*,diagnosis.ilike.*${search}*,patients.first_name.ilike.*${search}*,patients.last_name.ilike.*${search}*`);
+      query = query.or(`chief_complaint.ilike.%${search}%,diagnosis.ilike.%${search}%,patients.first_name.ilike.%${search}%,patients.last_name.ilike.%${search}%`);
     }
 
     // Add date range filter

@@ -60,7 +60,6 @@ const GENDER_DISPLAY_TO_DB = {
   'Other': 'O'
 } as const;
 
-
 // Helper function to format date without timezone issues
 const formatDateForAPI = (date: Date): string => {
   const year = date.getFullYear();
@@ -186,7 +185,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     }
 
     // Validate visit fields
-    if (!stringValue.trim() && ['patient_id', 'chief_complaint'].includes(name)) {
+    if (!stringValue.trim() && ['patient_id', 'chief_complaint',].includes(name)) {
       return 'This field is required';
     }
     return '';
@@ -236,7 +235,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         const numericValue = value.replace(/\D/g, ''); // Remove all non-digits
         setFormData({
           ...formData,
-          [name === 'consultation_fee' ? name : 'consultationFee']: numericValue ? parseFloat(numericValue) || 0 : 0
+          consultation_fee: numericValue
         });
       } else {
         setFormData(prev => {
