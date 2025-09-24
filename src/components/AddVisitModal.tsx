@@ -60,17 +60,6 @@ const GENDER_DISPLAY_TO_DB = {
   'Other': 'O'
 } as const;
 
-// Payment status mapping utilities
-const PAYMENT_STATUS_DISPLAY_TO_DB = {
-  'Paid': 'P',
-  'Due': 'D'
-} as const;
-
-// Payment method mapping utilities
-const PAYMENT_METHOD_DISPLAY_TO_DB = {
-  'Cash': 'C',
-  'Online': 'O'
-} as const;
 
 // Helper function to format date without timezone issues
 const formatDateForAPI = (date: Date): string => {
