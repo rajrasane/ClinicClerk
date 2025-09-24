@@ -87,11 +87,11 @@ export function usePatients(page: number = 1, searchTerm: string = '', limit: nu
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
     
-    if (searchTerm) {
-      // Debounce search
+    if (searchTerm.trim()) {
+      // Debounce search when there's a search term
       timeoutId = setTimeout(fetchPatients, 300);
     } else {
-      // Immediate load for page changes
+      // Immediate load for initial load and page changes (no search)
       fetchPatients();
     }
 

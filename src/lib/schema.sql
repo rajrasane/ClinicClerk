@@ -43,6 +43,9 @@ CREATE TABLE IF NOT EXISTS visits (
     notes VARCHAR(500),
     follow_up_date DATE,
     vitals JSONB,
+    consultation_fee INTEGER DEFAULT 500 CHECK (consultation_fee >= 0 AND consultation_fee <= 2147483647),
+    payment_status CHAR(1) DEFAULT 'P' CHECK (payment_status IN ('P', 'D')), -- P=Paid, D=Due
+    payment_method CHAR(1) DEFAULT 'C' CHECK (payment_method IN ('C', 'O')), -- C=Cash, O=Online
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

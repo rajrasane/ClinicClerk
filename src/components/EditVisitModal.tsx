@@ -25,9 +25,13 @@ interface Visit {
   notes: string;
   follow_up_date: string;
   vitals: Record<string, string> | null;
+  created_at: string;
   first_name: string;
   last_name: string;
   phone: string;
+  consultation_fee: number;
+  payment_status: 'P' | 'D';
+  payment_method: 'C' | 'O';
 }
 
 interface EditVisitModalProps {
@@ -47,6 +51,9 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
     prescription: visit.prescription || '',
     notes: visit.notes || '',
     follow_up_date: visit.follow_up_date ? new Date(visit.follow_up_date) : undefined,
+    consultation_fee: visit.consultation_fee ?? '',
+    payment_status: visit.payment_status || 'P',
+    payment_method: visit.payment_method || 'C',
     vitals: {
       temperature: visit?.vitals?.temperature || '',
       bp: visit?.vitals?.bp || '',
@@ -64,6 +71,9 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
     prescription: visit.prescription || '',
     notes: visit.notes || '',
     follow_up_date: visit.follow_up_date ? new Date(visit.follow_up_date) : undefined,
+    consultation_fee: visit.consultation_fee ?? '',
+    payment_status: visit.payment_status || 'P',
+    payment_method: visit.payment_method || 'C',
     vitals: {
       temperature: visit?.vitals?.temperature || '',
       bp: visit?.vitals?.bp || '',
@@ -92,6 +102,9 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
       formData.diagnosis !== originalData.diagnosis ||
       formData.prescription !== originalData.prescription ||
       formData.notes !== originalData.notes ||
+      formData.consultation_fee !== originalData.consultation_fee ||
+      formData.payment_status !== originalData.payment_status ||
+      formData.payment_method !== originalData.payment_method ||
       JSON.stringify(formData.vitals) !== JSON.stringify(originalData.vitals)
     );
   };
@@ -149,14 +162,19 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
         }, {} as Record<string, string>);
 
       const submitData = {
-        visit_date: formatDateForAPI(formData.visit_date),
+        patient_id: visit.patient_id,
+        visit_date: formData.visit_date,
         chief_complaint: formData.chief_complaint,
         symptoms: formData.symptoms,
         diagnosis: formData.diagnosis,
         prescription: formData.prescription,
         notes: formData.notes,
         follow_up_date: formData.follow_up_date ? formatDateForAPI(formData.follow_up_date) : null,
-        vitals: Object.keys(vitalsData).length > 0 ? vitalsData : null
+        vitals: Object.keys(vitalsData).length > 0 ? vitalsData : null,
+        consultation_fee: typeof formData.consultation_fee === 'string' && formData.consultation_fee === '' ? 0 : Number(formData.consultation_fee),
+        payment_status: formData.payment_status,
+        // Only include payment_method if status is not 'Due'
+        ...(formData.payment_status !== 'D' && { payment_method: formData.payment_method }),
       };
 
       const { data: { session } } = await supabase.auth.getSession();
@@ -207,7 +225,16 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
           vitals: { ...prev.vitals, [vitalField]: value }
         }));
       } else {
-        setFormData(prev => ({ ...prev, [name]: value }));
+        setFormData(prev => {
+          const newData = { ...prev, [name]: value };
+          
+          // Set default payment method when status is changed to Due
+          if (name === 'payment_status' && value === 'D') {
+            newData.payment_method = 'C';
+          }
+          
+          return newData;
+        });
       }
       
       // Clear error when user starts typing
@@ -409,6 +436,64 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                       placeholder="e.g., 98%"
                     />
                   </div>
+                </div>
+              </div>
+
+              <hr className="md:col-span-2 border-gray-200" />
+
+              {/* Payment Information Section */}
+              <div className="md:col-span-2 space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Payment Information</h3>
+                
+                <div className={`grid gap-4 ${formData.payment_status === 'D' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-3'}`}>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Consultation Fee
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">₹</span>
+                      <input
+                        type="number"
+                        name="consultation_fee"
+                        value={formData.consultation_fee}
+                        onChange={handleInputChange}
+                        min="0"
+                        max="99999"
+                        placeholder="Enter amount"
+                        className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Payment Status
+                    </label>
+                    <select
+                      name="payment_status"
+                      value={formData.payment_status}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="P">Paid</option>
+                      <option value="D">Due</option>
+                    </select>
+                  </div>
+                  {formData.payment_status === 'P' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Payment Method
+                      </label>
+                      <select
+                        name="payment_method"
+                        value={formData.payment_method}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="C">Cash</option>
+                        <option value="O">Online</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -17,6 +17,9 @@ interface Visit {
   notes: string;
   follow_up_date: string;
   vitals: Record<string, string> | null;
+  consultation_fee: number;
+  payment_status: 'P' | 'D';
+  payment_method: 'C' | 'O';
   created_at: string;
   first_name: string;
   last_name: string;
@@ -374,14 +377,42 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
                     <div key={visit.id}>
                       {index > 0 && <hr className="sm:hidden border-gray-300 my-3" />}
                       <div className="border rounded-lg p-3 sm:p-4 bg-gray-50 hover:bg-gray-100 transition-colors relative group">
-                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-start justify-between mb-3">
                         <div className="flex-1 min-w-0 pr-3">
-                          <h4 className="font-medium text-gray-900 text-sm sm:text-base truncate">
-                            {visit.chief_complaint}
-                          </h4>
-                          <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                            {formatDate(visit.visit_date)}
-                          </p>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium text-gray-900 text-sm sm:text-base truncate">
+                              {visit.chief_complaint}
+                            </h4>
+                            {/* Payment Status Badge */}
+                            {/* <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                              visit.payment_status === 'P' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {visit.payment_status === 'P' ? '₹' : '₹!'}
+                            </span> */}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+                            <span>{formatDate(visit.visit_date)}</span>
+                            {
+                              visit.payment_status === 'P' ? (
+                                <>
+                                <span>•</span>
+                                <span className="font-medium">₹{visit.consultation_fee}</span>
+                                <span className="font-medium text-green-700">{visit.payment_method === 'C' ? 'Cash' : 'Online'}</span>
+                                </>
+                              ) : <>
+                              <span>•</span>
+                              <span>₹{visit.consultation_fee}</span>
+                              <span className="font-medium text-red-700">Due</span>
+                              </>
+                            }
+                            <span className={`text-xs ${
+                              visit.payment_method === 'C' ? 'text-gray-600' : 'text-blue-600'
+                            }`}>
+                              
+                            </span> 
+                          </div>
                         </div>
                         {onViewVisit && (
                           <button
@@ -398,91 +429,91 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
                             </svg>
                           </button>
                         )}
+                        </div>
+
+                        {/* Vitals Section */}
+                        {visit.vitals && (
+                          <div className="mb-3">
+                            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-start gap-x-4 gap-y-2 text-xs sm:text-sm text-gray-600 bg-white/50 sm:bg-transparent p-2.5 sm:p-0 rounded-lg sm:rounded-none">
+                              {/* Temperature with unit */}
+                              {visit.vitals.temperature && (
+                                <div className="flex items-center whitespace-nowrap">
+                                  <span className="w-11 sm:w-auto font-medium">Temp</span>
+                                  <span className="mx-1">:</span>
+                                  <span>{String(visit.vitals.temperature).includes('°F') ? visit.vitals.temperature : `${visit.vitals.temperature}°F`}</span>
+                                </div>
+                              )}
+                              {/* Pulse */}
+                              {visit.vitals.pulse && (
+                                <div className="flex items-center whitespace-nowrap">
+                                  <span className="w-11 sm:w-auto font-medium">Pulse</span>
+                                  <span className="mx-1">:</span>
+                                  <span>{String(visit.vitals.pulse).toLowerCase().includes('bpm') ? visit.vitals.pulse : `${visit.vitals.pulse} bpm`}</span>
+                                </div>
+                              )}
+                              {/* Blood Pressure */}
+                              {visit.vitals.bp && (
+                                <div className="flex items-center whitespace-nowrap">
+                                  <span className="w-11 sm:w-auto font-medium">BP</span>
+                                  <span className="mx-1">:</span>
+                                  <span>{visit.vitals.bp}</span>
+                                </div>
+                              )}
+                              {/* Weight with unit */}
+                              {visit.vitals.weight && (
+                                <div className="flex items-center whitespace-nowrap">
+                                  <span className="w-11 sm:w-auto font-medium">Wt</span>
+                                  <span className="mx-1">:</span>
+                                  <span>{String(visit.vitals.weight).toLowerCase().includes('kg') ? visit.vitals.weight : `${visit.vitals.weight} kg`}</span>
+                                </div>
+                              )}
+                              {/* O2 Saturation */}
+                              {visit.vitals.o2 && (
+                                <div className="flex items-center whitespace-nowrap">
+                                  <span className="w-11 sm:w-auto font-medium">O2</span>
+                                  <span className="mx-1">:</span>
+                                  <span>{String(visit.vitals.o2).includes('%') ? visit.vitals.o2 : `${visit.vitals.o2}%`}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 text-sm">
+                          <div className="bg-white rounded-md p-2 sm:p-3">
+                            <span className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Chief Complaint:</span>
+                            <p className="text-xs sm:text-sm text-gray-900">{visit.chief_complaint}</p>
+                          </div>
+                          
+                          {visit.symptoms && (
+                            <div className="bg-white rounded-md p-2 sm:p-3">
+                              <span className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Symptoms:</span>
+                              <p className="text-xs sm:text-sm text-gray-900">{visit.symptoms}</p>
+                            </div>
+                          )}
+                          
+                          {visit.diagnosis && (
+                            <div className="bg-white rounded-md p-2 sm:p-3">
+                              <span className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Diagnosis:</span>
+                              <p className="text-xs sm:text-sm text-gray-900">{visit.diagnosis}</p>
+                            </div>
+                          )}
+                          
+                          {visit.prescription && (
+                            <div className="bg-white rounded-md p-2 sm:p-3">
+                              <span className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Prescription:</span>
+                              <p className="text-xs sm:text-sm text-gray-900 whitespace-pre-wrap">{visit.prescription}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {visit.notes && (
+                          <div className="mt-3 pt-3 border-t border-gray-200">
+                            <span className="font-medium text-gray-700">Notes:</span>
+                            <p className="text-sm text-gray-900">{visit.notes}</p>
+                          </div>
+                        )}
                       </div>
-
-                      {/* Vitals Section */}
-                      {visit.vitals && (
-                        <div className="mb-3">
-                          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-start gap-x-4 gap-y-2 text-xs sm:text-sm text-gray-600 bg-white/50 sm:bg-transparent p-2.5 sm:p-0 rounded-lg sm:rounded-none">
-                            {/* Temperature with unit */}
-                            {visit.vitals.temperature && (
-                              <div className="flex items-center whitespace-nowrap">
-                                <span className="w-11 sm:w-auto font-medium">Temp</span>
-                                <span className="mx-1">:</span>
-                                <span>{String(visit.vitals.temperature).includes('°F') ? visit.vitals.temperature : `${visit.vitals.temperature}°F`}</span>
-                              </div>
-                            )}
-                            {/* Pulse */}
-                            {visit.vitals.pulse && (
-                              <div className="flex items-center whitespace-nowrap">
-                                <span className="w-11 sm:w-auto font-medium">Pulse</span>
-                                <span className="mx-1">:</span>
-                                <span>{String(visit.vitals.pulse).toLowerCase().includes('bpm') ? visit.vitals.pulse : `${visit.vitals.pulse} bpm`}</span>
-                              </div>
-                            )}
-                            {/* Blood Pressure */}
-                            {visit.vitals.bp && (
-                              <div className="flex items-center whitespace-nowrap">
-                                <span className="w-11 sm:w-auto font-medium">BP</span>
-                                <span className="mx-1">:</span>
-                                <span>{visit.vitals.bp}</span>
-                              </div>
-                            )}
-                            {/* Weight with unit */}
-                            {visit.vitals.weight && (
-                              <div className="flex items-center whitespace-nowrap">
-                                <span className="w-11 sm:w-auto font-medium">Wt</span>
-                                <span className="mx-1">:</span>
-                                <span>{String(visit.vitals.weight).toLowerCase().includes('kg') ? visit.vitals.weight : `${visit.vitals.weight} kg`}</span>
-                              </div>
-                            )}
-                            {/* O2 Saturation */}
-                            {visit.vitals.o2 && (
-                              <div className="flex items-center whitespace-nowrap">
-                                <span className="w-11 sm:w-auto font-medium">O2</span>
-                                <span className="mx-1">:</span>
-                                <span>{String(visit.vitals.o2).includes('%') ? visit.vitals.o2 : `${visit.vitals.o2}%`}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 text-sm">
-                        <div className="bg-white rounded-md p-2 sm:p-3">
-                          <span className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Chief Complaint:</span>
-                          <p className="text-xs sm:text-sm text-gray-900">{visit.chief_complaint}</p>
-                        </div>
-                        
-                        {visit.symptoms && (
-                          <div className="bg-white rounded-md p-2 sm:p-3">
-                            <span className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Symptoms:</span>
-                            <p className="text-xs sm:text-sm text-gray-900">{visit.symptoms}</p>
-                          </div>
-                        )}
-                        
-                        {visit.diagnosis && (
-                          <div className="bg-white rounded-md p-2 sm:p-3">
-                            <span className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Diagnosis:</span>
-                            <p className="text-xs sm:text-sm text-gray-900">{visit.diagnosis}</p>
-                          </div>
-                        )}
-                        
-                        {visit.prescription && (
-                          <div className="bg-white rounded-md p-2 sm:p-3">
-                            <span className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Prescription:</span>
-                            <p className="text-xs sm:text-sm text-gray-900 whitespace-pre-wrap">{visit.prescription}</p>
-                          </div>
-                        )}
-                      </div>
-
-                      {visit.notes && (
-                        <div className="mt-3 pt-3 border-t border-gray-200">
-                          <span className="font-medium text-gray-700">Notes:</span>
-                          <p className="text-sm text-gray-900">{visit.notes}</p>
-                        </div>
-                      )}
-                    </div>
                     </div>
                   ))}
                 </div>

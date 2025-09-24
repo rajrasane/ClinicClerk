@@ -16,6 +16,9 @@ interface Visit {
   first_name: string;
   last_name: string;
   phone: string;
+  consultation_fee: number;
+  payment_status: 'P' | 'D';
+  payment_method: 'C' | 'O';
 }
 
 interface PaginationData {
@@ -79,11 +82,11 @@ export function useVisits(
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
     
-    if (searchQuery || dateRange.startDate || dateRange.endDate) {
+    if (searchQuery.trim() || dateRange.startDate || dateRange.endDate) {
       // Debounce search and filter changes
       timeoutId = setTimeout(fetchVisits, 300);
     } else {
-      // Immediate load for page changes
+      // Immediate load for initial load and page changes (no search/filters)
       fetchVisits();
     }
 

@@ -35,6 +35,7 @@ export async function GET(
         id, patient_id, visit_date, chief_complaint, 
         symptoms, diagnosis, prescription, notes, 
         follow_up_date, vitals, created_at, updated_at,
+        consultation_fee, payment_status, payment_method,
         patients(first_name, last_name, phone, age, gender)
       `)
       .eq('id', visitId)
@@ -102,13 +103,31 @@ export async function PUT(
       prescription,
       notes,
       follow_up_date,
-      vitals
+      vitals,
+      consultation_fee,
+      payment_status,
+      payment_method
     } = body;
 
     // Validate required fields
     if (!chief_complaint) {
       return NextResponse.json(
         { success: false, error: 'Chief complaint is required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate payment fields
+    if (payment_status === 'D' && payment_method) {
+      return NextResponse.json(
+        { success: false, error: 'Payment method should not be set for Due status' },
+        { status: 400 }
+      );
+    }
+
+    if (consultation_fee !== undefined && consultation_fee < 0) {
+      return NextResponse.json(
+        { success: false, error: 'Consultation fee cannot be negative' },
         { status: 400 }
       );
     }
@@ -137,6 +156,9 @@ export async function PUT(
     if (notes !== undefined) updateData.notes = notes;
     if (follow_up_date !== undefined) updateData.follow_up_date = follow_up_date;
     if (vitals !== undefined) updateData.vitals = vitals;
+    if (consultation_fee !== undefined) updateData.consultation_fee = consultation_fee;
+    if (payment_status !== undefined) updateData.payment_status = payment_status;
+    if (payment_method !== undefined) updateData.payment_method = payment_method;
 
     const { data: updatedVisit, error } = await supabase
       .from('visits')
@@ -146,6 +168,7 @@ export async function PUT(
         id, patient_id, visit_date, chief_complaint, 
         symptoms, diagnosis, prescription, notes, 
         follow_up_date, vitals, created_at, updated_at,
+        consultation_fee, payment_status, payment_method,
         patients(first_name, last_name, phone, age, gender)
       `)
       .single();

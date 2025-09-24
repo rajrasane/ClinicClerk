@@ -26,6 +26,9 @@ interface Visit {
   first_name: string;
   last_name: string;
   phone: string;
+  consultation_fee: number;
+  payment_status: 'P' | 'D';
+  payment_method: 'C' | 'O';
 }
 
 export default function AdminVisits() {
