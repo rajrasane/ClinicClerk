@@ -1,8 +1,7 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
-import { User, Session } from '@supabase/supabase-js'
-import { supabase } from '@/lib/supabase'
+import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { User, Session, SupabaseClient } from '@supabase/supabase-js'
 import { apiCache } from '@/lib/cache'
 
 interface Doctor {
@@ -36,9 +35,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [doctor, setDoctor] = useState<Doctor | null>(null)
   const [loading, setLoading] = useState(true)
   const [doctorLoading, setDoctorLoading] = useState(false)
+  const [supabase, setSupabase] = useState<SupabaseClient | null>(null)
+
+  // Initialize Supabase client only on the client side
+  useEffect(() => {
+    const initSupabase = async () => {
+      if (typeof window !== 'undefined') {
+        const { supabase: supabaseClient } = await import('@/lib/supabase')
+        setSupabase(supabaseClient)
+      }
+    }
+    initSupabase()
+  }, [])
 
   // Fetch doctor data when user is available
-  const fetchDoctorData = async (userId: string) => {
+  const fetchDoctorData = useCallback(async (userId: string) => {
+    if (!supabase) return
+    
     setDoctorLoading(true)
     try {
       const { data, error } = await supabase
@@ -69,11 +82,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setDoctorLoading(false)
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
+    if (!supabase) return
+
     // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }: { data: { session: Session | null } }) => {
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false) // Auth loading complete
@@ -89,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event: string, session: Session | null) => {
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false) // Auth loading complete
@@ -103,9 +118,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [supabase, fetchDoctorData])
 
   const signIn = async (email: string, password: string) => {
+    if (!supabase) return { error: new Error('Supabase not initialized') }
+    
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -120,6 +137,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signUp = async (email: string, password: string) => {
+    if (!supabase) return { error: new Error('Supabase not initialized') }
+    
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -128,6 +147,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
+    if (!supabase) return
+    
     // Clear all cached data before signing out
     apiCache.clear()
     
