@@ -91,7 +91,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     address: '',
     blood_group: '',
     allergies: '',
-    emergency_contact: ''
+    emergency_contact: '',
+    // Payment fields
+    consultation_fee: '',
+    payment_status: '' as 'P' | 'D' | '',
+    payment_method: '' as 'C' | 'O' | ''
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -99,7 +103,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
   const [currentStep, setCurrentStep] = useState(preselectedPatientId ? 1 : 1);
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
   const [patientType, setPatientType] = useState<'existing' | 'new' | null>(preselectedPatientId ? 'existing' : null);
-  const totalSteps = patientType === 'new' ? 5 : (preselectedPatientId ? 2 : 4);
+  const totalSteps = patientType === 'new' ? 6 : (preselectedPatientId ? 3 : 5);
 
   // Focus management
   const modalRef = useRef<HTMLDivElement | null>(null);
@@ -172,6 +176,22 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           return 'Please enter a valid age (1-120)';
         }
       }
+    }
+
+    // Validate payment fields
+    if (name === 'consultation_fee') {
+      const fee = parseInt(stringValue);
+      if (isNaN(fee) || fee <= 0) {
+        return 'Consultation fee must be a valid positive number';
+      }
+    }
+
+    if (name === 'payment_status' && !stringValue.trim()) {
+      return 'Payment status is required';
+    }
+
+    if (name === 'payment_method' && !stringValue.trim()) {
+      return 'Payment method is required';
     }
 
     // Validate visit fields
@@ -271,8 +291,23 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     // Validate required fields
     const newErrors: FormErrors = {};
     const requiredFields = patientType === 'new' 
-      ? ['first_name', 'last_name', 'age', 'phone', 'gender', 'address', 'visit_date', 'chief_complaint']
-      : ['patient_id', 'visit_date', 'chief_complaint'];
+      ? ['first_name', 'last_name', 'age', 'phone', 'gender', 'address', 'visit_date', 'chief_complaint', 'consultation_fee']
+      : ['patient_id', 'visit_date', 'chief_complaint', 'consultation_fee'];
+    
+    // Payment validation
+    if (parseInt(formData.consultation_fee) <= 0) {
+      newErrors.consultation_fee = 'Consultation fee must be a positive number';
+    }
+    
+    if (!formData.payment_status) {
+      newErrors.payment_status = 'Payment status is required';
+    }
+    
+    if (formData.payment_status === 'P' && !formData.payment_method) {
+      newErrors.payment_method = 'Payment method is required when payment is marked as paid';
+    } else if (!formData.payment_method) {
+      newErrors.payment_method = 'Payment method is required';
+    }
     
     requiredFields.forEach(key => {
       const value = formData[key as keyof typeof formData];
@@ -367,7 +402,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           prescription: formData.prescription,
           notes: formData.notes,
           follow_up_date: formData.follow_up_date ? formatDateForAPI(formData.follow_up_date) : null,
-          vitals: Object.keys(vitalsData).length > 0 ? vitalsData : null
+          vitals: Object.keys(vitalsData).length > 0 ? vitalsData : null,
+          // Payment fields
+          consultation_fee: formData.consultation_fee,
+          payment_status: formData.payment_status,
+          payment_method: formData.payment_status === 'P' ? formData.payment_method : null
         }),
       });
 
@@ -493,6 +532,14 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         // Vitals step - all optional
         return true;
       }
+      if (currentStep === 6) {
+        // Payment step - all payment fields required
+        const hasConsultationFee = parseInt(formData.consultation_fee) > 0;
+        const hasPaymentStatus = formData.payment_status !== '';
+        const hasValidPaymentMethod = formData.payment_status === 'D' || 
+          (formData.payment_status === 'P' && (formData.payment_method === 'C' || formData.payment_method === 'O'));
+        return hasConsultationFee && hasPaymentStatus && hasValidPaymentMethod;
+      }
     }
     
     // For existing patient flow
@@ -514,6 +561,14 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         // Vitals step - all optional
         return true;
       }
+      if (currentStep === 5) {
+        // Payment step - all payment fields required
+        const hasConsultationFee = parseInt(formData.consultation_fee) > 0;
+        const hasPaymentStatus = formData.payment_status !== '';
+        const hasValidPaymentMethod = formData.payment_status === 'D' || 
+          (formData.payment_status === 'P' && (formData.payment_method === 'C' || formData.payment_method === 'O'));
+        return hasConsultationFee && hasPaymentStatus && hasValidPaymentMethod;
+      }
     }
     
     // For preselected patient flow
@@ -528,6 +583,14 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
       if (currentStep === 2) {
         // Vitals step - all optional
         return true;
+      }
+      if (currentStep === 3) {
+        // Payment step - all payment fields required
+        const hasConsultationFee = parseInt(formData.consultation_fee) > 0;
+        const hasPaymentStatus = formData.payment_status !== '';
+        const hasValidPaymentMethod = formData.payment_status === 'D' || 
+          (formData.payment_status === 'P' && (formData.payment_method === 'C' || formData.payment_method === 'O'));
+        return hasConsultationFee && hasPaymentStatus && hasValidPaymentMethod;
       }
     }
     
@@ -549,6 +612,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           return ['chief_complaint', 'symptoms', 'diagnosis', 'prescription'];
         case 6:
           return ['vitals.temperature', 'vitals.blood_pressure', 'vitals.pulse', 'vitals.weight', 'vitals.height', 'notes'];
+        case 7:
+          return ['consultation_fee', 'payment_status', 'payment_method'];
         default:
           return [];
       }
@@ -562,6 +627,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           return ['chief_complaint', 'symptoms', 'diagnosis', 'prescription'];
         case 4:
           return ['vitals.temperature', 'vitals.blood_pressure', 'vitals.pulse', 'vitals.weight', 'vitals.height', 'notes'];
+        case 5:
+          return ['consultation_fee', 'payment_status', 'payment_method'];
         default:
           return [];
       }
@@ -736,6 +803,83 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     placeholder="Any additional observations or instructions"
                     className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
                   />
+                </div>
+              </div>
+            </div>
+          );
+        case 3:
+          return (
+            <div className="space-y-6">
+              <div className="text-center mb-4 sm:mb-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Payment Information</h3>
+                <p className="text-xs sm:text-sm text-gray-600">Consultation fee and payment details</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Consultation Fee (₹) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="consultation_fee"
+                    value={formData.consultation_fee}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    min="0"
+                    step="1"
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                      errors.consultation_fee 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:ring-gray-900'
+                    }`}
+                    placeholder="Enter consultation fee"
+                  />
+                  {errors.consultation_fee && (
+                    <p className="mt-1 text-sm text-red-600">{errors.consultation_fee}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Payment Status
+                  </label>
+                  <select
+                    name="payment_status"
+                    value={formData.payment_status}
+                    onChange={handleChange}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                  >
+                    <option value="">Select Status</option>
+                    <option value="D">Due</option>
+                    <option value="P">Paid</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Payment Method
+                  </label>
+                  <select
+                    name="payment_method"
+                    value={formData.payment_method}
+                    onChange={handleChange}
+                    disabled={formData.payment_status === 'D'}
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                      formData.payment_status === 'D' ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:ring-gray-900'
+                    } ${
+                      errors.payment_method ? 'border-red-500' : ''
+                    }`}
+                  >
+                    <option value="">Select Method</option>
+                    <option value="C">Cash</option>
+                    <option value="O">Online</option>
+                  </select>
+                  {errors.payment_method && (
+                    <p className="mt-1 text-sm text-red-600">{errors.payment_method}</p>
+                  )}
+                  {formData.payment_status === 'D' && (
+                    <p className="mt-1 text-xs text-gray-500">Payment method is disabled when status is Due</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -1191,27 +1335,75 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           return (
             <div className="space-y-6">
               <div className="text-center mb-4 sm:mb-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Vital Signs & Notes</h3>
-                <p className="text-xs sm:text-sm text-gray-600">Patient vital measurements and additional notes</p>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Payment Information</h3>
+                <p className="text-xs sm:text-sm text-gray-600">Consultation fee and payment details</p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {renderInput("Temperature", "vitals.temperature", "text", false, "e.g., 98.6°F")}
-                {renderInput("Blood Pressure", "vitals.blood_pressure", "text", false, "e.g., 120/80")}
-                {renderInput("Pulse Rate", "vitals.pulse", "text", false, "e.g., 72 bpm")}
-                {renderInput("Weight", "vitals.weight", "text", false, "e.g., 70 kg")}
-                {renderInput("O2 Saturation", "vitals.o2", "text", false, "e.g., 98%")}
-                <div className="md:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                    Additional Notes
+                    Consultation Fee (₹) <span className="text-red-500">*</span>
                   </label>
-                  <textarea
-                    name="notes"
-                    value={formData.notes}
+                  <input
+                    type="number"
+                    name="consultation_fee"
+                    value={formData.consultation_fee}
                     onChange={handleChange}
-                    rows={3}
-                    placeholder="Any additional observations or instructions"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                    onBlur={handleBlur}
+                    min="0"
+                    step="1"
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                      errors.consultation_fee 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:ring-gray-900'
+                    }`}
+                    placeholder="Enter consultation fee"
                   />
+                  {errors.consultation_fee && (
+                    <p className="mt-1 text-sm text-red-600">{errors.consultation_fee}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Payment Status
+                  </label>
+                  <select
+                    name="payment_status"
+                    value={formData.payment_status}
+                    onChange={handleChange}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                  >
+                    <option value="">Select Status</option>
+                    <option value="D">Due</option>
+                    <option value="P">Paid</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Payment Method
+                  </label>
+                  <select
+                    name="payment_method"
+                    value={formData.payment_method}
+                    onChange={handleChange}
+                    disabled={formData.payment_status === 'D'}
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                      formData.payment_status === 'D' ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:ring-gray-900'
+                    } ${
+                      errors.payment_method ? 'border-red-500' : ''
+                    }`}
+                  >
+                    <option value="">Select Method</option>
+                    <option value="C">Cash</option>
+                    <option value="O">Online</option>
+                  </select>
+                  {errors.payment_method && (
+                    <p className="mt-1 text-sm text-red-600">{errors.payment_method}</p>
+                  )}
+                  {formData.payment_status === 'D' && (
+                    <p className="mt-1 text-xs text-gray-500">Payment method is disabled when status is Due</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -1223,27 +1415,75 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           return (
             <div className="space-y-6">
               <div className="text-center mb-4 sm:mb-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Vital Signs & Notes</h3>
-                <p className="text-xs sm:text-sm text-gray-600">Patient vital measurements and additional notes</p>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Payment Information</h3>
+                <p className="text-xs sm:text-sm text-gray-600">Consultation fee and payment details</p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {renderInput("Temperature", "vitals.temperature", "text", false, "e.g., 98.6°F")}
-                {renderInput("Blood Pressure", "vitals.blood_pressure", "text", false, "e.g., 120/80")}
-                {renderInput("Pulse Rate", "vitals.pulse", "text", false, "e.g., 72 bpm")}
-                {renderInput("Weight", "vitals.weight", "text", false, "e.g., 70 kg")}
-                {renderInput("O2 Saturation", "vitals.o2", "text", false, "e.g., 98%")}
-                <div className="md:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                    Additional Notes
+                    Consultation Fee (₹) <span className="text-red-500">*</span>
                   </label>
-                  <textarea
-                    name="notes"
-                    value={formData.notes}
+                  <input
+                    type="number"
+                    name="consultation_fee"
+                    value={formData.consultation_fee}
                     onChange={handleChange}
-                    rows={3}
-                    placeholder="Any additional observations or instructions"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                    onBlur={handleBlur}
+                    min="0"
+                    step="1"
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                      errors.consultation_fee 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:ring-gray-900'
+                    }`}
+                    placeholder="Enter consultation fee"
                   />
+                  {errors.consultation_fee && (
+                    <p className="mt-1 text-sm text-red-600">{errors.consultation_fee}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Payment Status
+                  </label>
+                  <select
+                    name="payment_status"
+                    value={formData.payment_status}
+                    onChange={handleChange}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                  >
+                    <option value="">Select Status</option>
+                    <option value="D">Due</option>
+                    <option value="P">Paid</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Payment Method
+                  </label>
+                  <select
+                    name="payment_method"
+                    value={formData.payment_method}
+                    onChange={handleChange}
+                    disabled={formData.payment_status === 'D'}
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                      formData.payment_status === 'D' ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:ring-gray-900'
+                    } ${
+                      errors.payment_method ? 'border-red-500' : ''
+                    }`}
+                  >
+                    <option value="">Select Method</option>
+                    <option value="C">Cash</option>
+                    <option value="O">Online</option>
+                  </select>
+                  {errors.payment_method && (
+                    <p className="mt-1 text-sm text-red-600">{errors.payment_method}</p>
+                  )}
+                  {formData.payment_status === 'D' && (
+                    <p className="mt-1 text-xs text-gray-500">Payment method is disabled when status is Due</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -1303,11 +1543,13 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     <span>Medical Info</span>
                     <span>Visit Details</span>
                     <span>Vitals & Notes</span>
+                    <span>Payment</span>
                   </>
                 ) : preselectedPatientId ? (
                   <>
                     <span>Visit Details</span>
                     <span>Vitals & Notes</span>
+                    <span>Payment</span>
                   </>
                 ) : (
                   <>
@@ -1315,15 +1557,16 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     <span>Patient Selection</span>
                     <span>Visit Details</span>
                     <span>Vitals & Notes</span>
+                    <span>Payment</span>
                   </>
                 )}
               </div>
               <div className="sm:hidden text-center text-xs text-gray-500 mb-2">
                 Step {currentStep} of {totalSteps}: {patientType === 'new' 
-                  ? ['Patient Type', 'Basic Information', 'Medical Information', 'Visit Details', 'Vital Signs & Notes'][currentStep - 1]
+                  ? ['Patient Type', 'Basic Information', 'Medical Information', 'Visit Details', 'Vital Signs & Notes', 'Payment'][currentStep - 1]
                   : preselectedPatientId 
-                    ? ['Visit Details', 'Vital Signs & Notes'][currentStep - 1]
-                    : ['Patient Type', 'Patient Selection', 'Visit Details', 'Vital Signs & Notes'][currentStep - 1]}
+                    ? ['Visit Details', 'Vital Signs & Notes', 'Payment'][currentStep - 1]
+                    : ['Patient Type', 'Patient Selection', 'Visit Details', 'Vital Signs & Notes', 'Payment'][currentStep - 1]}
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 

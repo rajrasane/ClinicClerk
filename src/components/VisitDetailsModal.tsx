@@ -19,6 +19,10 @@ interface Visit {
   first_name: string;
   last_name: string;
   phone: string;
+  // Payment fields
+  consultation_fee: number;
+  payment_status: 'P' | 'D';
+  payment_method: 'C' | 'O' | '';
 }
 
 interface VisitDetailsModalProps {
@@ -177,9 +181,18 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
           <div className="flex justify-between items-center p-6 border-b">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Visit Details</h2>
-              <p className="text-sm text-gray-600 mt-1">
-                {visit.first_name} {visit.last_name} • {formatDate(visit.visit_date)}
-              </p>
+              <div className="flex items-center gap-3 mt-1">
+                <p className="text-sm text-gray-600">
+                  {visit.first_name} {visit.last_name} • {formatDate(visit.visit_date)}
+                </p>
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                  visit.payment_status === 'P' 
+                    ? 'bg-emerald-100 text-emerald-800' 
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  ₹{visit.consultation_fee} • {visit.payment_status === 'P' ? 'Paid' : 'Due'}{visit.payment_status === 'P' ? ` ${visit.payment_method === 'C' ? '(C)' : '(O)'}` : ''}
+                </span>
+              </div>
             </div>
             <button
               onClick={onClose}

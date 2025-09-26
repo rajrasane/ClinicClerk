@@ -28,6 +28,10 @@ interface Visit {
   first_name: string;
   last_name: string;
   phone: string;
+  // Payment fields
+  consultation_fee: number;
+  payment_status: 'P' | 'D';
+  payment_method: 'C' | 'O';
 }
 
 interface EditVisitModalProps {
@@ -53,7 +57,11 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
       pulse: visit?.vitals?.pulse || '',
       weight: visit?.vitals?.weight || '',
       o2: visit?.vitals?.o2 || ''
-    }
+    },
+    // Payment fields
+    consultation_fee: visit.consultation_fee || 0,
+    payment_status: visit.payment_status || 'D',
+    payment_method: visit.payment_method || 'C'
   });
 
   const originalData = {
@@ -70,7 +78,11 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
       pulse: visit?.vitals?.pulse || '',
       weight: visit?.vitals?.weight || '',
       o2: visit?.vitals?.o2 || ''
-    }
+    },
+    // Payment fields
+    consultation_fee: visit.consultation_fee || 0,
+    payment_status: visit.payment_status || 'D',
+    payment_method: visit.payment_method || 'C'
   };
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -84,16 +96,25 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
     const formFollowUpStr = formData.follow_up_date ? formatDateForAPI(formData.follow_up_date) : '';
     const originalFollowUpStr = originalData.follow_up_date ? formatDateForAPI(originalData.follow_up_date) : '';
     
-    return (
-      formDateStr !== originalDateStr ||
-      formFollowUpStr !== originalFollowUpStr ||
-      formData.chief_complaint !== originalData.chief_complaint ||
-      formData.symptoms !== originalData.symptoms ||
-      formData.diagnosis !== originalData.diagnosis ||
-      formData.prescription !== originalData.prescription ||
-      formData.notes !== originalData.notes ||
-      JSON.stringify(formData.vitals) !== JSON.stringify(originalData.vitals)
-    );
+    const changes = {
+      dateChanged: formDateStr !== originalDateStr,
+      followUpChanged: formFollowUpStr !== originalFollowUpStr,
+      complaintChanged: formData.chief_complaint !== originalData.chief_complaint,
+      symptomsChanged: formData.symptoms !== originalData.symptoms,
+      diagnosisChanged: formData.diagnosis !== originalData.diagnosis,
+      prescriptionChanged: formData.prescription !== originalData.prescription,
+      notesChanged: formData.notes !== originalData.notes,
+      vitalsChanged: JSON.stringify(formData.vitals) !== JSON.stringify(originalData.vitals),
+      feeChanged: formData.consultation_fee !== originalData.consultation_fee,
+      statusChanged: formData.payment_status !== originalData.payment_status,
+      methodChanged: formData.payment_status === 'P' && formData.payment_method !== originalData.payment_method
+    };
+    
+    console.log('Change detection:', changes);
+    console.log('Form data:', formData);
+    console.log('Original data:', originalData);
+    
+    return Object.values(changes).some(changed => changed);
   };
 
   useEffect(() => {
@@ -117,6 +138,17 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
       newErrors.chief_complaint = 'Chief complaint is required';
     }
 
+    // Payment validation
+    if (formData.consultation_fee < 0) {
+      newErrors.consultation_fee = 'Consultation fee cannot be negative';
+    }
+
+    // Remove this validation - payment method can have a default value when status is Due
+
+    if (formData.payment_status === 'P' && !formData.payment_method) {
+      newErrors.payment_method = 'Payment method is required when payment is marked as paid';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -132,11 +164,14 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted, validating...');
 
     if (!validateForm()) {
+      console.log('Validation failed:', errors);
       return;
     }
 
+    console.log('Validation passed, submitting...');
     setLoading(true);
 
     try {
@@ -156,7 +191,11 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
         prescription: formData.prescription,
         notes: formData.notes,
         follow_up_date: formData.follow_up_date ? formatDateForAPI(formData.follow_up_date) : null,
-        vitals: Object.keys(vitalsData).length > 0 ? vitalsData : null
+        vitals: Object.keys(vitalsData).length > 0 ? vitalsData : null,
+        // Payment fields
+        consultation_fee: formData.consultation_fee,
+        payment_status: formData.payment_status,
+        payment_method: formData.payment_status === 'P' ? formData.payment_method : null
       };
 
       const { data: { session } } = await supabase.auth.getSession();
@@ -207,7 +246,16 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
           vitals: { ...prev.vitals, [vitalField]: value }
         }));
       } else {
-        setFormData(prev => ({ ...prev, [name]: value }));
+        setFormData(prev => {
+          const newData = { ...prev, [name]: value };
+          
+          // Clear payment method when payment status changes to 'Due'
+          if (name === 'payment_status' && value === 'D') {
+            newData.payment_method = 'C'; // Set default value when clearing
+          }
+          
+          return newData;
+        });
       }
       
       // Clear error when user starts typing
@@ -246,7 +294,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
             </div>
           )}
 
-          <form onSubmit={handleSubmit}>
+          <form id="edit-visit-form" onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">Visit Information</h3>
@@ -344,10 +392,74 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                 </div>
               </div>
 
-              <hr className="md:col-span-2 border-gray-200" />
+              <hr className="md:col-span-2 border-gray-200/50" />
 
-              <div className="md:col-span-2 space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Vitals</h3>
+              {/* Payment Information Section */}
+              <div className="md:col-span-2 space-y-3">
+                <h3 className="text-base font-semibold text-gray-900">Payment Information</h3>
+                
+                <div className={`grid gap-4 ${formData.payment_status === 'D' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-3'}`}>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Consultation Fee
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">₹</span>
+                      <input
+                        type="number"
+                        name="consultation_fee"
+                        value={formData.consultation_fee}
+                        onChange={handleInputChange}
+                        min="0"
+                        max="99999"
+                        placeholder="Enter amount"
+                        className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                    {errors.consultation_fee && (
+                      <p className="mt-1 text-sm text-red-600">{errors.consultation_fee}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Payment Status
+                    </label>
+                    <select
+                      name="payment_status"
+                      value={formData.payment_status}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="P">Paid</option>
+                      <option value="D">Due</option>
+                    </select>
+                  </div>
+                  {formData.payment_status === 'P' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Payment Method
+                      </label>
+                      <select
+                        name="payment_method"
+                        value={formData.payment_method}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="C">Cash</option>
+                        <option value="O">Online</option>
+                      </select>
+                      {errors.payment_method && (
+                        <p className="mt-1 text-sm text-red-600">{errors.payment_method}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <hr className="md:col-span-2 border-gray-200/50" />
+
+              <div className="md:col-span-2 space-y-3">
+                <h3 className="text-base font-semibold text-gray-900">Vitals</h3>
                 
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                   <div>
@@ -416,7 +528,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end space-x-2 p-4 border-t border-gray-200 bg-gray-50">
+        <div className="flex justify-end space-x-2 p-3 border-t border-gray-200/50 bg-gray-50/50">
           <button
             type="button"
             onClick={onClose}
@@ -429,7 +541,13 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
             form="edit-visit-form"
             disabled={loading || !hasChanges()}
             className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors"
-            onClick={handleSubmit}
+            onClick={(e) => {
+              console.log('Button clicked!');
+              console.log('Loading:', loading);
+              console.log('Has changes:', hasChanges());
+              console.log('Button disabled:', loading || !hasChanges());
+              handleSubmit(e);
+            }}
           >
             {loading ? 'Updating...' : 'Update Visit'}
           </button>

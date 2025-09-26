@@ -16,6 +16,10 @@ interface Visit {
   first_name: string;
   last_name: string;
   phone: string;
+  // Payment fields
+  consultation_fee: number;
+  payment_status: 'P' | 'D';
+  payment_method: 'C' | 'O';
 }
 
 interface PaginationData {
