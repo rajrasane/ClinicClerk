@@ -190,8 +190,9 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
       return 'Payment status is required';
     }
 
-    if (name === 'payment_method' && !stringValue.trim()) {
-      return 'Payment method is required';
+    // Only require payment method when payment status is Paid
+    if (name === 'payment_method' && formData.payment_status === 'P' && !stringValue.trim()) {
+      return 'Payment method is required when payment is marked as paid';
     }
 
     // Validate visit fields
@@ -305,8 +306,6 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     
     if (formData.payment_status === 'P' && !formData.payment_method) {
       newErrors.payment_method = 'Payment method is required when payment is marked as paid';
-    } else if (!formData.payment_method) {
-      newErrors.payment_method = 'Payment method is required';
     }
     
     requiredFields.forEach(key => {
