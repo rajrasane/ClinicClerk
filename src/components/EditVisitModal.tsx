@@ -28,10 +28,12 @@ interface Visit {
   first_name: string;
   last_name: string;
   phone: string;
-  // Payment fields
-  consultation_fee: number;
-  payment_status: 'P' | 'D';
-  payment_method: 'C' | 'O';
+  age: number;
+  gender: string;
+  // Payment fields - nullable for existing visits
+  consultation_fee: number | null;
+  payment_status: 'P' | 'D' | null;
+  payment_method: 'C' | 'O' | null;
 }
 
 interface EditVisitModalProps {
@@ -87,6 +89,27 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [prescriptionTags, setPrescriptionTags] = useState<string[]>([]);
+  const [prescriptionInput, setPrescriptionInput] = useState('');
+
+  useEffect(() => {
+    // Initialize prescription tags from existing prescription
+    if (visit.prescription) {
+      const existingTags = visit.prescription
+        .split(/[,;\n]/)
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0);
+      setPrescriptionTags(existingTags);
+    }
+    
+    // Prevent background scrolling when modal is open
+    document.body.style.overflow = 'hidden';
+    
+    return () => {
+      // Restore background scrolling when modal closes
+      document.body.style.overflow = 'unset';
+    };
+  }, [visit.prescription]);
 
   // Check if form data has changed
   const hasChanges = () => {
@@ -102,7 +125,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
       complaintChanged: formData.chief_complaint !== originalData.chief_complaint,
       symptomsChanged: formData.symptoms !== originalData.symptoms,
       diagnosisChanged: formData.diagnosis !== originalData.diagnosis,
-      prescriptionChanged: formData.prescription !== originalData.prescription,
+      prescriptionChanged: prescriptionTags.join(', ') !== originalData.prescription,
       notesChanged: formData.notes !== originalData.notes,
       vitalsChanged: JSON.stringify(formData.vitals) !== JSON.stringify(originalData.vitals),
       feeChanged: formData.consultation_fee !== originalData.consultation_fee,
@@ -117,15 +140,51 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
     return Object.values(changes).some(changed => changed);
   };
 
-  useEffect(() => {
-    // Prevent background scrolling when modal is open
-    document.body.style.overflow = 'hidden';
+  const handlePrescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setPrescriptionInput(value);
     
-    return () => {
-      // Restore background scrolling when modal closes
-      document.body.style.overflow = 'unset';
-    };
-  }, []);
+    // Check for comma or newline to create tags
+    if (value.includes(',') || value.includes('\n')) {
+      const newTags = value
+        .split(/[,\n]/)
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0);
+      
+      if (newTags.length > 0) {
+        // Add new tags that aren't already in the list
+        const uniqueNewTags = newTags.filter(tag => !prescriptionTags.includes(tag));
+        setPrescriptionTags(prev => [...prev, ...uniqueNewTags]);
+        
+        // Clear the input or keep the last incomplete part
+        const lastPart = value.split(/[,\n]/).pop() || '';
+        setPrescriptionInput(lastPart);
+        
+        // Update form data with all tags
+        const allTags = [...prescriptionTags, ...uniqueNewTags];
+        setFormData(prev => ({
+          ...prev,
+          prescription: allTags.join(', ')
+        }));
+      }
+    }
+  };
+
+  const removePrescriptionTag = (indexToRemove: number) => {
+    const newTags = prescriptionTags.filter((_, index) => index !== indexToRemove);
+    setPrescriptionTags(newTags);
+    setFormData(prev => ({
+      ...prev,
+      prescription: newTags.join(', ')
+    }));
+  };
+
+  const handlePrescriptionKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Backspace' && prescriptionInput === '' && prescriptionTags.length > 0) {
+      // Remove last tag if input is empty and backspace is pressed
+      removePrescriptionTag(prescriptionTags.length - 1);
+    }
+  };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -188,7 +247,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
         chief_complaint: formData.chief_complaint,
         symptoms: formData.symptoms,
         diagnosis: formData.diagnosis,
-        prescription: formData.prescription,
+        prescription: prescriptionTags.join(', '),
         notes: formData.notes,
         follow_up_date: formData.follow_up_date ? formatDateForAPI(formData.follow_up_date) : null,
         vitals: Object.keys(vitalsData).length > 0 ? vitalsData : null,
@@ -238,32 +297,31 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    try {
-      if (name.startsWith('vitals.')) {
-        const vitalField = name.split('.')[1];
-        setFormData(prev => ({
-          ...prev,
-          vitals: { ...prev.vitals, [vitalField]: value }
-        }));
+    if (name.startsWith('vitals.')) {
+      const vitalName = name.split('.')[1];
+      
+      // Handle different vitals input restrictions
+      let filteredValue = value;
+      if (vitalName === 'bp') {
+        // Allow only digits and forward slash for blood pressure
+        filteredValue = value.replace(/[^0-9/]/g, '');
       } else {
-        setFormData(prev => {
-          const newData = { ...prev, [name]: value };
-          
-          // Clear payment method when payment status changes to 'Due'
-          if (name === 'payment_status' && value === 'D') {
-            newData.payment_method = 'C'; // Set default value when clearing
-          }
-          
-          return newData;
-        });
+        // For all other vitals, allow only digits and decimal point
+        filteredValue = value.replace(/[^0-9.]/g, '');
       }
       
-      // Clear error when user starts typing
-      if (errors[name]) {
-        setErrors(prev => ({ ...prev, [name]: '' }));
-      }
-    } catch (error) {
-      console.error('Input change error:', error);
+      setFormData({
+        ...formData,
+        vitals: {
+          ...formData.vitals,
+          [vitalName]: filteredValue
+        }
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
     }
   };
 
@@ -369,14 +427,36 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Prescription</label>
-                  <textarea
-                    name="prescription"
-                    value={formData.prescription}
-                    onChange={handleInputChange}
-                    rows={3}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Medications and dosage"
-                  />
+                  <div className="mt-1">
+                    {prescriptionTags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {prescriptionTags.map((tag, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
+                          >
+                            {tag}
+                            <button
+                              type="button"
+                              onClick={() => removePrescriptionTag(index)}
+                              className="ml-1 text-yellow-600 hover:text-yellow-800 focus:outline-none"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <textarea
+                      name="prescription"
+                      value={prescriptionInput}
+                      onChange={handlePrescriptionChange}
+                      onKeyDown={handlePrescriptionKeyDown}
+                      rows={2}
+                      placeholder="Type medications and press comma or enter to create tags"
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -432,6 +512,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                     >
                       <option value="P">Paid</option>
                       <option value="D">Due</option>
+                      <option value="">None</option>
                     </select>
                   </div>
                   {formData.payment_status === 'P' && (
@@ -466,6 +547,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                     <label className="block text-sm font-medium text-gray-700">Temperature</label>
                     <input
                       type="text"
+                      inputMode="decimal"
                       name="vitals.temperature"
                       value={formData.vitals.temperature}
                       onChange={handleInputChange}
@@ -490,6 +572,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                     <label className="block text-sm font-medium text-gray-700">Pulse</label>
                     <input
                       type="text"
+                      inputMode="numeric"
                       name="vitals.pulse"
                       value={formData.vitals.pulse}
                       onChange={handleInputChange}
@@ -502,6 +585,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                     <label className="block text-sm font-medium text-gray-700">Weight</label>
                     <input
                       type="text"
+                      inputMode="decimal"
                       name="vitals.weight"
                       value={formData.vitals.weight}
                       onChange={handleInputChange}
@@ -514,6 +598,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                     <label className="block text-sm font-medium text-gray-700">O2 Saturation</label>
                     <input
                       type="text"
+                      inputMode="numeric"
                       name="vitals.o2"
                       value={formData.vitals.o2}
                       onChange={handleInputChange}

@@ -156,7 +156,20 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
   };
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return 'Not set';
     return new Date(dateString).toLocaleDateString('en-IN');
+  };
+
+  const formatPrescription = (prescription: string) => {
+    if (!prescription || !prescription.trim()) return [];
+    
+    // Split by common separators and clean up
+    const medications = prescription
+      .split(/[,;\n]/)
+      .map(med => med.trim())
+      .filter(med => med.length > 0);
+    
+    return medications;
   };
 
   const copyToClipboard = async (text: string) => {
@@ -170,7 +183,7 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
   };
 
 
-  if (!mounted) return null;
+  if (!mounted || !patient) return null;
 
   return createPortal(
     <AnimatePresence mode="wait">
@@ -490,7 +503,16 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
                         {visit.prescription && (
                           <div className="bg-white rounded-md p-2 sm:p-3">
                             <span className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Prescription:</span>
-                            <p className="text-xs sm:text-sm text-gray-900 whitespace-pre-wrap">{visit.prescription}</p>
+                            <div className="flex flex-wrap gap-1">
+                              {formatPrescription(visit.prescription).map((medication, index) => (
+                                <span
+                                  key={index}
+                                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
+                                >
+                                  {medication}
+                                </span>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>

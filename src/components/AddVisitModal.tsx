@@ -104,6 +104,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
   const [patientType, setPatientType] = useState<'existing' | 'new' | null>(preselectedPatientId ? 'existing' : null);
   const totalSteps = patientType === 'new' ? 6 : (preselectedPatientId ? 3 : 5);
+  const [prescriptionTags, setPrescriptionTags] = useState<string[]>([]);
+  const [prescriptionInput, setPrescriptionInput] = useState('');
 
   // Focus management
   const modalRef = useRef<HTMLDivElement | null>(null);
@@ -161,6 +163,78 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     // Convert value to string for other validations
     const stringValue = typeof value === 'string' ? value : '';
 
+    // Validate vitals fields
+    if (name.startsWith('vitals.')) {
+      const vitalType = name.split('.')[1];
+      if (stringValue.trim() === '') {
+        return ''; // Vitals are optional, so empty is okay
+      }
+      
+      switch (vitalType) {
+        case 'temperature':
+          const temp = parseFloat(stringValue);
+          if (isNaN(temp)) {
+            return 'Temperature must be a valid number';
+          }
+          if (temp < 90 || temp > 110) {
+            return 'Temperature should be between 90°F and 110°F';
+          }
+          break;
+          
+        case 'blood_pressure':
+          const bpPattern = /^\d{2,3}\/\d{2,3}$/;
+          if (!bpPattern.test(stringValue.trim())) {
+            return 'Blood pressure format should be XXX/XX (e.g., 120/80)';
+          }
+          const [systolic, diastolic] = stringValue.split('/').map(Number);
+          if (systolic < 70 || systolic > 250 || diastolic < 40 || diastolic > 150) {
+            return 'Blood pressure values seem unusual (systolic: 70-250, diastolic: 40-150)';
+          }
+          break;
+          
+        case 'pulse':
+          const pulse = parseInt(stringValue);
+          if (isNaN(pulse)) {
+            return 'Pulse must be a valid number';
+          }
+          if (pulse < 30 || pulse > 200) {
+            return 'Pulse should be between 30 and 200 bpm';
+          }
+          break;
+          
+        case 'weight':
+          const weight = parseFloat(stringValue);
+          if (isNaN(weight)) {
+            return 'Weight must be a valid number';
+          }
+          if (weight < 1 || weight > 300) {
+            return 'Weight should be between 1 and 300 kg';
+          }
+          break;
+          
+        case 'height':
+          const height = parseFloat(stringValue);
+          if (isNaN(height)) {
+            return 'Height must be a valid number';
+          }
+          if (height < 30 || height > 250) {
+            return 'Height should be between 30 and 250 cm';
+          }
+          break;
+          
+        case 'o2':
+          const o2 = parseFloat(stringValue);
+          if (isNaN(o2)) {
+            return 'Oxygen saturation must be a valid number';
+          }
+          if (o2 < 70 || o2 > 100) {
+            return 'Oxygen saturation should be between 70% and 100%';
+          }
+          break;
+      }
+      return '';
+    }
+
     // Validate new patient fields
     if (['first_name', 'last_name', 'age', 'phone', 'gender', 'address'].includes(name)) {
       if (!stringValue.trim()) {
@@ -207,11 +281,22 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     
     if (name.startsWith('vitals.')) {
       const vitalName = name.split('.')[1];
+      
+      // Handle different vitals input restrictions
+      let filteredValue = value;
+      if (vitalName === 'blood_pressure') {
+        // Allow only digits and forward slash for blood pressure
+        filteredValue = value.replace(/[^0-9/]/g, '');
+      } else {
+        // For all other vitals, allow only digits and decimal point
+        filteredValue = value.replace(/[^0-9.]/g, '');
+      }
+      
       setFormData({
         ...formData,
         vitals: {
           ...formData.vitals,
-          [vitalName]: value
+          [vitalName]: filteredValue
         }
       });
     } else {
@@ -398,7 +483,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           chief_complaint: formData.chief_complaint,
           symptoms: formData.symptoms,
           diagnosis: formData.diagnosis,
-          prescription: formData.prescription,
+          prescription: prescriptionTags.join(', '),
           notes: formData.notes,
           follow_up_date: formData.follow_up_date ? formatDateForAPI(formData.follow_up_date) : null,
           vitals: Object.keys(vitalsData).length > 0 ? vitalsData : null,
@@ -427,6 +512,52 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
       setErrors({ general: 'Network error. Please try again.' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePrescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setPrescriptionInput(value);
+    
+    // Check for comma or newline to create tags
+    if (value.includes(',') || value.includes('\n')) {
+      const newTags = value
+        .split(/[,\n]/)
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0);
+      
+      if (newTags.length > 0) {
+        // Add new tags that aren't already in the list
+        const uniqueNewTags = newTags.filter(tag => !prescriptionTags.includes(tag));
+        setPrescriptionTags(prev => [...prev, ...uniqueNewTags]);
+        
+        // Clear the input or keep the last incomplete part
+        const lastPart = value.split(/[,\n]/).pop() || '';
+        setPrescriptionInput(lastPart);
+        
+        // Update form data with all tags
+        const allTags = [...prescriptionTags, ...uniqueNewTags];
+        setFormData(prev => ({
+          ...prev,
+          prescription: allTags.join(', ')
+        }));
+      }
+    }
+  };
+
+  const removePrescriptionTag = (indexToRemove: number) => {
+    const newTags = prescriptionTags.filter((_, index) => index !== indexToRemove);
+    setPrescriptionTags(newTags);
+    setFormData(prev => ({
+      ...prev,
+      prescription: newTags.join(', ')
+    }));
+  };
+
+  const handlePrescriptionKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Backspace' && prescriptionInput === '' && prescriptionTags.length > 0) {
+      // Remove last tag if input is empty and backspace is pressed
+      removePrescriptionTag(prescriptionTags.length - 1);
     }
   };
 
@@ -648,6 +779,19 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     const value = name.startsWith('vitals.') 
       ? formData.vitals[name.split('.')[1] as keyof typeof formData.vitals] as string
       : formData[name as keyof Omit<typeof formData, 'vitals'>] as string;
+    
+    // Determine inputMode for vitals fields
+    let inputMode: "text" | "decimal" | "numeric" | "search" | "email" | "tel" | "url" | "none" | undefined;
+    if (name.startsWith('vitals.')) {
+      const vitalType = name.split('.')[1];
+      if (vitalType === 'blood_pressure') {
+        inputMode = undefined; // Allow text keyboard for blood pressure (needs '/')
+      } else if (vitalType === 'temperature' || vitalType === 'weight') {
+        inputMode = 'decimal'; // Allow decimal numbers
+      } else {
+        inputMode = 'numeric'; // Only numbers for pulse, o2, etc.
+      }
+    }
       
     return (
       <div>
@@ -657,6 +801,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         <input
           id={name}
           type={type}
+          inputMode={inputMode}
           name={name}
           value={value}
           onChange={handleChange}
@@ -765,14 +910,36 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Prescription
                   </label>
-                  <textarea
-                    name="prescription"
-                    value={formData.prescription}
-                    onChange={handleChange}
-                    rows={3}
-                    placeholder="Medications and dosage instructions"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
-                  />
+                  <div className="mt-1">
+                    {prescriptionTags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {prescriptionTags.map((tag, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
+                          >
+                            {tag}
+                            <button
+                              type="button"
+                              onClick={() => removePrescriptionTag(index)}
+                              className="ml-1 text-yellow-600 hover:text-yellow-800 focus:outline-none"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <textarea
+                      name="prescription"
+                      value={prescriptionInput}
+                      onChange={handlePrescriptionChange}
+                      onKeyDown={handlePrescriptionKeyDown}
+                      rows={2}
+                      placeholder="Type medications and press comma or enter to create tags"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -1148,7 +1315,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     name="diagnosis"
                     value={formData.diagnosis}
                     onChange={handleChange}
-                    rows={2}
+                    rows={3}
                     placeholder="Medical diagnosis"
                     className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
                   />
@@ -1157,14 +1324,36 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Prescription
                   </label>
-                  <textarea
-                    name="prescription"
-                    value={formData.prescription}
-                    onChange={handleChange}
-                    rows={3}
-                    placeholder="Medications and dosage instructions"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
-                  />
+                  <div className="mt-1">
+                    {prescriptionTags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {prescriptionTags.map((tag, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
+                          >
+                            {tag}
+                            <button
+                              type="button"
+                              onClick={() => removePrescriptionTag(index)}
+                              className="ml-1 text-yellow-600 hover:text-yellow-800 focus:outline-none"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <textarea
+                      name="prescription"
+                      value={prescriptionInput}
+                      onChange={handlePrescriptionChange}
+                      onKeyDown={handlePrescriptionKeyDown}
+                      rows={2}
+                      placeholder="Type medications and press comma or enter to create tags"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -1257,14 +1446,36 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Prescription
                   </label>
-                  <textarea
-                    name="prescription"
-                    value={formData.prescription}
-                    onChange={handleChange}
-                    rows={3}
-                    placeholder="Medications and dosage instructions"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
-                  />
+                  <div className="mt-1">
+                    {prescriptionTags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {prescriptionTags.map((tag, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
+                          >
+                            {tag}
+                            <button
+                              type="button"
+                              onClick={() => removePrescriptionTag(index)}
+                              className="ml-1 text-yellow-600 hover:text-yellow-800 focus:outline-none"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <textarea
+                      name="prescription"
+                      value={prescriptionInput}
+                      onChange={handlePrescriptionChange}
+                      onKeyDown={handlePrescriptionKeyDown}
+                      rows={2}
+                      placeholder="Type medications and press comma or enter to create tags"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
                 </div>
               </div>
             </div>

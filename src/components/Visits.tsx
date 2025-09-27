@@ -26,10 +26,12 @@ interface Visit {
   first_name: string;
   last_name: string;
   phone: string;
-  // Payment fields
-  consultation_fee: number;
-  payment_status: 'P' | 'D';
-  payment_method: 'C' | 'O';
+  age: number;
+  gender: string;
+  // Payment fields - nullable for existing visits
+  consultation_fee: number | null;
+  payment_status: 'P' | 'D' | null;
+  payment_method: 'C' | 'O' | null;
 }
 
 export default function AdminVisits() {

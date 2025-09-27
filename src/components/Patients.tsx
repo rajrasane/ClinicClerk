@@ -46,9 +46,9 @@ interface Visit {
   first_name: string;
   last_name: string;
   phone: string;
-  consultation_fee: number;
-  payment_status: 'P' | 'D';
-  payment_method: 'C' | 'O' | '';
+  consultation_fee: number | null;
+  payment_status: 'P' | 'D' | null;
+  payment_method: 'C' | 'O' | null;
 }
 
 export default function AdminPatients() {
