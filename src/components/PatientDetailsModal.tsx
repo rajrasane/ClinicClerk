@@ -160,18 +160,6 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
     return new Date(dateString).toLocaleDateString('en-IN');
   };
 
-  const formatPrescription = (prescription: string) => {
-    if (!prescription || !prescription.trim()) return [];
-    
-    // Split by common separators and clean up
-    const medications = prescription
-      .split(/[,;\n]/)
-      .map(med => med.trim())
-      .filter(med => med.length > 0);
-    
-    return medications;
-  };
-
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -400,7 +388,7 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
                           </div>
                           <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
                             <span>{formatDate(visit.visit_date)}</span>
-                            {
+                            {visit.consultation_fee && (
                               visit.payment_status === 'P' ? (
                                 <>
                                 <span>•</span>
@@ -412,7 +400,7 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
                               <span>₹{visit.consultation_fee}</span>
                               <span className="font-medium text-red-700">Due</span>
                               </>
-                            }
+                            )}
                           </div>
                         </div>
                         {onViewVisit && (
@@ -503,16 +491,7 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
                         {visit.prescription && (
                           <div className="bg-white rounded-md p-2 sm:p-3">
                             <span className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Prescription:</span>
-                            <div className="flex flex-wrap gap-1">
-                              {formatPrescription(visit.prescription).map((medication, index) => (
-                                <span
-                                  key={index}
-                                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
-                                >
-                                  {medication}
-                                </span>
-                              ))}
-                            </div>
+                            <p className="text-xs sm:text-sm text-gray-900">{visit.prescription}</p>
                           </div>
                         )}
                       </div>
