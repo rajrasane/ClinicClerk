@@ -19,6 +19,10 @@ interface Visit {
   first_name: string;
   last_name: string;
   phone: string;
+  // Payment fields - nullable for existing visits
+  consultation_fee: number | null;
+  payment_status: 'P' | 'D' | null;
+  payment_method: 'C' | 'O' | null;
 }
 
 interface VisitDetailsModalProps {
@@ -62,6 +66,18 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
     return filtered;
   };
 
+  const formatPrescription = (prescription: string) => {
+    if (!prescription || !prescription.trim()) return [];
+    
+    // Split by common separators and clean up
+    const medications = prescription
+      .split(/[,;\n]/)
+      .map(med => med.trim())
+      .filter(med => med.length > 0);
+    
+    return medications;
+  };
+
   const renderContent = () => (
     <div className="p-6 overflow-y-auto max-h-[60vh]">
       <div className="space-y-6">
@@ -97,9 +113,20 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
             
             <div>
               <label className="block text-sm font-medium text-gray-700">Prescription</label>
-              <p className="mt-1 text-sm text-gray-900 whitespace-pre-line">
-                {visit.prescription || 'No prescription'}
-              </p>
+              {visit.prescription && visit.prescription.trim() ? (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {formatPrescription(visit.prescription).map((medication, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
+                    >
+                      {medication}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-1 text-sm text-gray-500 italic">No prescription</p>
+              )}
             </div>
             
             {visit.follow_up_date && (
@@ -176,10 +203,19 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
           {/* Header */}
           <div className="flex justify-between items-center p-6 border-b">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Visit Details</h2>
-              <p className="text-sm text-gray-600 mt-1">
-                {visit.first_name} {visit.last_name} • {formatDate(visit.visit_date)}
-              </p>
+              <h2 className="text-2xl font-bold text-gray-900">{visit.first_name} {visit.last_name}</h2>
+              <div className="flex items-center gap-3 mt-2">
+                <p className="text-xs text-gray-600">
+                  {formatDate(visit.visit_date)}
+                </p>
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-[0.7rem] font-medium ${
+                  visit.payment_status === 'P' 
+                    ? 'bg-emerald-100 text-emerald-800' 
+                    : visit.payment_status === 'D' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {visit.consultation_fee !== null ? `₹${visit.consultation_fee}` : '—'} • {visit.payment_status === 'P' ? 'Paid' : visit.payment_status === 'D' ? 'Due' : '—'}{visit.payment_status === 'P' ? ` ${visit.payment_method === 'C' ? '(C)' : '(O)'}` : ''}
+                </span>
+              </div>
             </div>
             <button
               onClick={onClose}
@@ -207,4 +243,3 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
     document.body
   );
 }
-

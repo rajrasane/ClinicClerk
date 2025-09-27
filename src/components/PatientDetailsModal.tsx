@@ -21,6 +21,10 @@ interface Visit {
   first_name: string;
   last_name: string;
   phone: string;
+  // Payment fields
+  consultation_fee: number;
+  payment_status: 'P' | 'D';
+  payment_method: 'C' | 'O';
 }
 
 interface Patient {
@@ -152,7 +156,20 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
   };
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return 'Not set';
     return new Date(dateString).toLocaleDateString('en-IN');
+  };
+
+  const formatPrescription = (prescription: string) => {
+    if (!prescription || !prescription.trim()) return [];
+    
+    // Split by common separators and clean up
+    const medications = prescription
+      .split(/[,;\n]/)
+      .map(med => med.trim())
+      .filter(med => med.length > 0);
+    
+    return medications;
   };
 
   const copyToClipboard = async (text: string) => {
@@ -166,7 +183,7 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
   };
 
 
-  if (!mounted) return null;
+  if (!mounted || !patient) return null;
 
   return createPortal(
     <AnimatePresence mode="wait">
@@ -376,12 +393,27 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
                       <div className="border rounded-lg p-3 sm:p-4 bg-gray-50 hover:bg-gray-100 transition-colors relative group">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1 min-w-0 pr-3">
-                          <h4 className="font-medium text-gray-900 text-sm sm:text-base truncate">
-                            {visit.chief_complaint}
-                          </h4>
-                          <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                            {formatDate(visit.visit_date)}
-                          </p>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium text-gray-900 text-sm sm:text-base truncate">
+                              {visit.chief_complaint}
+                            </h4>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+                            <span>{formatDate(visit.visit_date)}</span>
+                            {
+                              visit.payment_status === 'P' ? (
+                                <>
+                                <span>•</span>
+                                <span className="font-medium">₹{visit.consultation_fee}</span>
+                                <span className="font-medium text-green-700">{visit.payment_method === 'C' ? 'Cash' : 'Online'}</span>
+                                </>
+                              ) : <>
+                              <span>•</span>
+                              <span>₹{visit.consultation_fee}</span>
+                              <span className="font-medium text-red-700">Due</span>
+                              </>
+                            }
+                          </div>
                         </div>
                         {onViewVisit && (
                           <button
@@ -471,7 +503,16 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
                         {visit.prescription && (
                           <div className="bg-white rounded-md p-2 sm:p-3">
                             <span className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Prescription:</span>
-                            <p className="text-xs sm:text-sm text-gray-900 whitespace-pre-wrap">{visit.prescription}</p>
+                            <div className="flex flex-wrap gap-1">
+                              {formatPrescription(visit.prescription).map((medication, index) => (
+                                <span
+                                  key={index}
+                                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
+                                >
+                                  {medication}
+                                </span>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>

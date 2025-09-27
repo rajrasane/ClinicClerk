@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
         id, patient_id, visit_date, chief_complaint, 
         symptoms, diagnosis, prescription, notes, 
         follow_up_date, vitals, created_at, updated_at,
+        consultation_fee, payment_status, payment_method,
         patients(first_name, last_name, phone, age, gender)
       `)
       .order('visit_date', { ascending: false })
@@ -134,13 +135,31 @@ export async function POST(request: NextRequest) {
       prescription,
       notes,
       follow_up_date,
-      vitals
+      vitals,
+      consultation_fee,
+      payment_status,
+      payment_method
     } = body;
 
     // Validate required fields
     if (!patient_id || !visit_date || !chief_complaint) {
       return NextResponse.json(
         { success: false, error: 'Patient ID, visit date, and chief complaint are required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate payment fields
+    if (payment_status === 'D' && payment_method) {
+      return NextResponse.json(
+        { success: false, error: 'Payment method should not be set for Due status' },
+        { status: 400 }
+      );
+    }
+
+    if (consultation_fee && consultation_fee < 0) {
+      return NextResponse.json(
+        { success: false, error: 'Consultation fee cannot be negative' },
         { status: 400 }
       );
     }
@@ -180,7 +199,10 @@ export async function POST(request: NextRequest) {
         prescription: prescription || null,
         notes: notes || null,
         follow_up_date: follow_up_date || null,
-        vitals: vitals || null
+        vitals: vitals || null,
+        consultation_fee: consultation_fee ?? null,
+        payment_status: payment_status ?? 'D',
+        payment_method: payment_method ?? null
       })
       .select()
       .single();

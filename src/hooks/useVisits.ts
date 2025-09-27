@@ -16,6 +16,12 @@ interface Visit {
   first_name: string;
   last_name: string;
   phone: string;
+  age: number;
+  gender: string;
+  // Payment fields - nullable for existing visits
+  consultation_fee: number | null;
+  payment_status: 'P' | 'D' | null;
+  payment_method: 'C' | 'O' | null;
 }
 
 interface PaginationData {

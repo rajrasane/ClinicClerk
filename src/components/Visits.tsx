@@ -26,6 +26,12 @@ interface Visit {
   first_name: string;
   last_name: string;
   phone: string;
+  age: number;
+  gender: string;
+  // Payment fields - nullable for existing visits
+  consultation_fee: number | null;
+  payment_status: 'P' | 'D' | null;
+  payment_method: 'C' | 'O' | null;
 }
 
 export default function AdminVisits() {
@@ -104,6 +110,8 @@ export default function AdminVisits() {
         apiCache.invalidate('/api/patients'); // Clear patients cache to update visit counts
         apiCache.invalidate('/api/visits'); // Clear visits cache
         removeVisit(visitId); // Optimistic update
+        // Trigger immediate refetch to sync with server
+        await refetch();
       } else {
         const errorMessage = 'Failed to delete visit';
         console.error('Error deleting visit:', response);

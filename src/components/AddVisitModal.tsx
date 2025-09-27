@@ -91,7 +91,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     address: '',
     blood_group: '',
     allergies: '',
-    emergency_contact: ''
+    emergency_contact: '',
+    // Payment fields
+    consultation_fee: '',
+    payment_status: '' as 'P' | 'D' | '',
+    payment_method: '' as 'C' | 'O' | ''
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -99,7 +103,9 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
   const [currentStep, setCurrentStep] = useState(preselectedPatientId ? 1 : 1);
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
   const [patientType, setPatientType] = useState<'existing' | 'new' | null>(preselectedPatientId ? 'existing' : null);
-  const totalSteps = patientType === 'new' ? 5 : (preselectedPatientId ? 2 : 4);
+  const totalSteps = patientType === 'new' ? 6 : (preselectedPatientId ? 3 : 5);
+  const [prescriptionTags, setPrescriptionTags] = useState<string[]>([]);
+  const [prescriptionInput, setPrescriptionInput] = useState('');
 
   // Focus management
   const modalRef = useRef<HTMLDivElement | null>(null);
@@ -157,6 +163,78 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     // Convert value to string for other validations
     const stringValue = typeof value === 'string' ? value : '';
 
+    // Validate vitals fields
+    if (name.startsWith('vitals.')) {
+      const vitalType = name.split('.')[1];
+      if (stringValue.trim() === '') {
+        return ''; // Vitals are optional, so empty is okay
+      }
+      
+      switch (vitalType) {
+        case 'temperature':
+          const temp = parseFloat(stringValue);
+          if (isNaN(temp)) {
+            return 'Temperature must be a valid number';
+          }
+          if (temp < 90 || temp > 110) {
+            return 'Temperature should be between 90°F and 110°F';
+          }
+          break;
+          
+        case 'blood_pressure':
+          const bpPattern = /^\d{2,3}\/\d{2,3}$/;
+          if (!bpPattern.test(stringValue.trim())) {
+            return 'Blood pressure format should be XXX/XX (e.g., 120/80)';
+          }
+          const [systolic, diastolic] = stringValue.split('/').map(Number);
+          if (systolic < 70 || systolic > 250 || diastolic < 40 || diastolic > 150) {
+            return 'Blood pressure values seem unusual (systolic: 70-250, diastolic: 40-150)';
+          }
+          break;
+          
+        case 'pulse':
+          const pulse = parseInt(stringValue);
+          if (isNaN(pulse)) {
+            return 'Pulse must be a valid number';
+          }
+          if (pulse < 30 || pulse > 200) {
+            return 'Pulse should be between 30 and 200 bpm';
+          }
+          break;
+          
+        case 'weight':
+          const weight = parseFloat(stringValue);
+          if (isNaN(weight)) {
+            return 'Weight must be a valid number';
+          }
+          if (weight < 1 || weight > 300) {
+            return 'Weight should be between 1 and 300 kg';
+          }
+          break;
+          
+        case 'height':
+          const height = parseFloat(stringValue);
+          if (isNaN(height)) {
+            return 'Height must be a valid number';
+          }
+          if (height < 30 || height > 250) {
+            return 'Height should be between 30 and 250 cm';
+          }
+          break;
+          
+        case 'o2':
+          const o2 = parseFloat(stringValue);
+          if (isNaN(o2)) {
+            return 'Oxygen saturation must be a valid number';
+          }
+          if (o2 < 70 || o2 > 100) {
+            return 'Oxygen saturation should be between 70% and 100%';
+          }
+          break;
+      }
+      return '';
+    }
+
     // Validate new patient fields
     if (['first_name', 'last_name', 'age', 'phone', 'gender', 'address'].includes(name)) {
       if (!stringValue.trim()) {
@@ -174,6 +252,23 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
       }
     }
 
+    // Validate payment fields
+    if (name === 'consultation_fee') {
+      const fee = parseInt(stringValue);
+      if (isNaN(fee) || fee <= 0) {
+        return 'Consultation fee must be a valid positive number';
+      }
+    }
+
+    if (name === 'payment_status' && !stringValue.trim()) {
+      return 'Payment status is required';
+    }
+
+    // Only require payment method when payment status is Paid
+    if (name === 'payment_method' && formData.payment_status === 'P' && !stringValue.trim()) {
+      return 'Payment method is required when payment is marked as paid';
+    }
+
     // Validate visit fields
     if (!stringValue.trim() && ['patient_id', 'chief_complaint'].includes(name)) {
       return 'This field is required';
@@ -186,11 +281,22 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     
     if (name.startsWith('vitals.')) {
       const vitalName = name.split('.')[1];
+      
+      // Handle different vitals input restrictions
+      let filteredValue = value;
+      if (vitalName === 'blood_pressure') {
+        // Allow only digits and forward slash for blood pressure
+        filteredValue = value.replace(/[^0-9/]/g, '');
+      } else {
+        // For all other vitals, allow only digits and decimal point
+        filteredValue = value.replace(/[^0-9.]/g, '');
+      }
+      
       setFormData({
         ...formData,
         vitals: {
           ...formData.vitals,
-          [vitalName]: value
+          [vitalName]: filteredValue
         }
       });
     } else {
@@ -271,8 +377,21 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     // Validate required fields
     const newErrors: FormErrors = {};
     const requiredFields = patientType === 'new' 
-      ? ['first_name', 'last_name', 'age', 'phone', 'gender', 'address', 'visit_date', 'chief_complaint']
-      : ['patient_id', 'visit_date', 'chief_complaint'];
+      ? ['first_name', 'last_name', 'age', 'phone', 'gender', 'address', 'visit_date', 'chief_complaint', 'consultation_fee']
+      : ['patient_id', 'visit_date', 'chief_complaint', 'consultation_fee'];
+    
+    // Payment validation
+    if (parseInt(formData.consultation_fee) <= 0) {
+      newErrors.consultation_fee = 'Consultation fee must be a positive number';
+    }
+    
+    if (!formData.payment_status) {
+      newErrors.payment_status = 'Payment status is required';
+    }
+    
+    if (formData.payment_status === 'P' && !formData.payment_method) {
+      newErrors.payment_method = 'Payment method is required when payment is marked as paid';
+    }
     
     requiredFields.forEach(key => {
       const value = formData[key as keyof typeof formData];
@@ -364,10 +483,14 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           chief_complaint: formData.chief_complaint,
           symptoms: formData.symptoms,
           diagnosis: formData.diagnosis,
-          prescription: formData.prescription,
+          prescription: prescriptionTags.join(', '),
           notes: formData.notes,
           follow_up_date: formData.follow_up_date ? formatDateForAPI(formData.follow_up_date) : null,
-          vitals: Object.keys(vitalsData).length > 0 ? vitalsData : null
+          vitals: Object.keys(vitalsData).length > 0 ? vitalsData : null,
+          // Payment fields
+          consultation_fee: formData.consultation_fee,
+          payment_status: formData.payment_status,
+          payment_method: formData.payment_status === 'P' ? formData.payment_method : null
         }),
       });
 
@@ -389,6 +512,52 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
       setErrors({ general: 'Network error. Please try again.' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePrescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setPrescriptionInput(value);
+    
+    // Check for comma or newline to create tags
+    if (value.includes(',') || value.includes('\n')) {
+      const newTags = value
+        .split(/[,\n]/)
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0);
+      
+      if (newTags.length > 0) {
+        // Add new tags that aren't already in the list
+        const uniqueNewTags = newTags.filter(tag => !prescriptionTags.includes(tag));
+        setPrescriptionTags(prev => [...prev, ...uniqueNewTags]);
+        
+        // Clear the input or keep the last incomplete part
+        const lastPart = value.split(/[,\n]/).pop() || '';
+        setPrescriptionInput(lastPart);
+        
+        // Update form data with all tags
+        const allTags = [...prescriptionTags, ...uniqueNewTags];
+        setFormData(prev => ({
+          ...prev,
+          prescription: allTags.join(', ')
+        }));
+      }
+    }
+  };
+
+  const removePrescriptionTag = (indexToRemove: number) => {
+    const newTags = prescriptionTags.filter((_, index) => index !== indexToRemove);
+    setPrescriptionTags(newTags);
+    setFormData(prev => ({
+      ...prev,
+      prescription: newTags.join(', ')
+    }));
+  };
+
+  const handlePrescriptionKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Backspace' && prescriptionInput === '' && prescriptionTags.length > 0) {
+      // Remove last tag if input is empty and backspace is pressed
+      removePrescriptionTag(prescriptionTags.length - 1);
     }
   };
 
@@ -493,6 +662,14 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         // Vitals step - all optional
         return true;
       }
+      if (currentStep === 6) {
+        // Payment step - all payment fields required
+        const hasConsultationFee = parseInt(formData.consultation_fee) > 0;
+        const hasPaymentStatus = formData.payment_status !== '';
+        const hasValidPaymentMethod = formData.payment_status === 'D' || 
+          (formData.payment_status === 'P' && (formData.payment_method === 'C' || formData.payment_method === 'O'));
+        return hasConsultationFee && hasPaymentStatus && hasValidPaymentMethod;
+      }
     }
     
     // For existing patient flow
@@ -514,6 +691,14 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         // Vitals step - all optional
         return true;
       }
+      if (currentStep === 5) {
+        // Payment step - all payment fields required
+        const hasConsultationFee = parseInt(formData.consultation_fee) > 0;
+        const hasPaymentStatus = formData.payment_status !== '';
+        const hasValidPaymentMethod = formData.payment_status === 'D' || 
+          (formData.payment_status === 'P' && (formData.payment_method === 'C' || formData.payment_method === 'O'));
+        return hasConsultationFee && hasPaymentStatus && hasValidPaymentMethod;
+      }
     }
     
     // For preselected patient flow
@@ -528,6 +713,14 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
       if (currentStep === 2) {
         // Vitals step - all optional
         return true;
+      }
+      if (currentStep === 3) {
+        // Payment step - all payment fields required
+        const hasConsultationFee = parseInt(formData.consultation_fee) > 0;
+        const hasPaymentStatus = formData.payment_status !== '';
+        const hasValidPaymentMethod = formData.payment_status === 'D' || 
+          (formData.payment_status === 'P' && (formData.payment_method === 'C' || formData.payment_method === 'O'));
+        return hasConsultationFee && hasPaymentStatus && hasValidPaymentMethod;
       }
     }
     
@@ -549,6 +742,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           return ['chief_complaint', 'symptoms', 'diagnosis', 'prescription'];
         case 6:
           return ['vitals.temperature', 'vitals.blood_pressure', 'vitals.pulse', 'vitals.weight', 'vitals.height', 'notes'];
+        case 7:
+          return ['consultation_fee', 'payment_status', 'payment_method'];
         default:
           return [];
       }
@@ -562,6 +757,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           return ['chief_complaint', 'symptoms', 'diagnosis', 'prescription'];
         case 4:
           return ['vitals.temperature', 'vitals.blood_pressure', 'vitals.pulse', 'vitals.weight', 'vitals.height', 'notes'];
+        case 5:
+          return ['consultation_fee', 'payment_status', 'payment_method'];
         default:
           return [];
       }
@@ -582,6 +779,19 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     const value = name.startsWith('vitals.') 
       ? formData.vitals[name.split('.')[1] as keyof typeof formData.vitals] as string
       : formData[name as keyof Omit<typeof formData, 'vitals'>] as string;
+    
+    // Determine inputMode for vitals fields
+    let inputMode: "text" | "decimal" | "numeric" | "search" | "email" | "tel" | "url" | "none" | undefined;
+    if (name.startsWith('vitals.')) {
+      const vitalType = name.split('.')[1];
+      if (vitalType === 'blood_pressure') {
+        inputMode = undefined; // Allow text keyboard for blood pressure (needs '/')
+      } else if (vitalType === 'temperature' || vitalType === 'weight') {
+        inputMode = 'decimal'; // Allow decimal numbers
+      } else {
+        inputMode = 'numeric'; // Only numbers for pulse, o2, etc.
+      }
+    }
       
     return (
       <div>
@@ -591,6 +801,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         <input
           id={name}
           type={type}
+          inputMode={inputMode}
           name={name}
           value={value}
           onChange={handleChange}
@@ -699,14 +910,36 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Prescription
                   </label>
-                  <textarea
-                    name="prescription"
-                    value={formData.prescription}
-                    onChange={handleChange}
-                    rows={3}
-                    placeholder="Medications and dosage instructions"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
-                  />
+                  <div className="mt-1">
+                    {prescriptionTags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {prescriptionTags.map((tag, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
+                          >
+                            {tag}
+                            <button
+                              type="button"
+                              onClick={() => removePrescriptionTag(index)}
+                              className="ml-1 text-yellow-600 hover:text-yellow-800 focus:outline-none"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <textarea
+                      name="prescription"
+                      value={prescriptionInput}
+                      onChange={handlePrescriptionChange}
+                      onKeyDown={handlePrescriptionKeyDown}
+                      rows={2}
+                      placeholder="Type medications and press comma or enter to create tags"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -736,6 +969,83 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     placeholder="Any additional observations or instructions"
                     className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
                   />
+                </div>
+              </div>
+            </div>
+          );
+        case 3:
+          return (
+            <div className="space-y-6">
+              <div className="text-center mb-4 sm:mb-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Payment Information</h3>
+                <p className="text-xs sm:text-sm text-gray-600">Consultation fee and payment details</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Consultation Fee (₹) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="consultation_fee"
+                    value={formData.consultation_fee}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    min="0"
+                    step="1"
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                      errors.consultation_fee 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:ring-gray-900'
+                    }`}
+                    placeholder="Enter consultation fee"
+                  />
+                  {errors.consultation_fee && (
+                    <p className="mt-1 text-sm text-red-600">{errors.consultation_fee}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Payment Status
+                  </label>
+                  <select
+                    name="payment_status"
+                    value={formData.payment_status}
+                    onChange={handleChange}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                  >
+                    <option value="">Select Status</option>
+                    <option value="D">Due</option>
+                    <option value="P">Paid</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Payment Method
+                  </label>
+                  <select
+                    name="payment_method"
+                    value={formData.payment_method}
+                    onChange={handleChange}
+                    disabled={formData.payment_status === 'D'}
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                      formData.payment_status === 'D' ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:ring-gray-900'
+                    } ${
+                      errors.payment_method ? 'border-red-500' : ''
+                    }`}
+                  >
+                    <option value="">Select Method</option>
+                    <option value="C">Cash</option>
+                    <option value="O">Online</option>
+                  </select>
+                  {errors.payment_method && (
+                    <p className="mt-1 text-sm text-red-600">{errors.payment_method}</p>
+                  )}
+                  {formData.payment_status === 'D' && (
+                    <p className="mt-1 text-xs text-gray-500">Payment method is disabled when status is Due</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -1005,7 +1315,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     name="diagnosis"
                     value={formData.diagnosis}
                     onChange={handleChange}
-                    rows={2}
+                    rows={3}
                     placeholder="Medical diagnosis"
                     className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
                   />
@@ -1014,14 +1324,36 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Prescription
                   </label>
-                  <textarea
-                    name="prescription"
-                    value={formData.prescription}
-                    onChange={handleChange}
-                    rows={3}
-                    placeholder="Medications and dosage instructions"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
-                  />
+                  <div className="mt-1">
+                    {prescriptionTags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {prescriptionTags.map((tag, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
+                          >
+                            {tag}
+                            <button
+                              type="button"
+                              onClick={() => removePrescriptionTag(index)}
+                              className="ml-1 text-yellow-600 hover:text-yellow-800 focus:outline-none"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <textarea
+                      name="prescription"
+                      value={prescriptionInput}
+                      onChange={handlePrescriptionChange}
+                      onKeyDown={handlePrescriptionKeyDown}
+                      rows={2}
+                      placeholder="Type medications and press comma or enter to create tags"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -1114,14 +1446,36 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Prescription
                   </label>
-                  <textarea
-                    name="prescription"
-                    value={formData.prescription}
-                    onChange={handleChange}
-                    rows={3}
-                    placeholder="Medications and dosage instructions"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
-                  />
+                  <div className="mt-1">
+                    {prescriptionTags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {prescriptionTags.map((tag, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
+                          >
+                            {tag}
+                            <button
+                              type="button"
+                              onClick={() => removePrescriptionTag(index)}
+                              className="ml-1 text-yellow-600 hover:text-yellow-800 focus:outline-none"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <textarea
+                      name="prescription"
+                      value={prescriptionInput}
+                      onChange={handlePrescriptionChange}
+                      onKeyDown={handlePrescriptionKeyDown}
+                      rows={2}
+                      placeholder="Type medications and press comma or enter to create tags"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -1191,27 +1545,75 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           return (
             <div className="space-y-6">
               <div className="text-center mb-4 sm:mb-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Vital Signs & Notes</h3>
-                <p className="text-xs sm:text-sm text-gray-600">Patient vital measurements and additional notes</p>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Payment Information</h3>
+                <p className="text-xs sm:text-sm text-gray-600">Consultation fee and payment details</p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {renderInput("Temperature", "vitals.temperature", "text", false, "e.g., 98.6°F")}
-                {renderInput("Blood Pressure", "vitals.blood_pressure", "text", false, "e.g., 120/80")}
-                {renderInput("Pulse Rate", "vitals.pulse", "text", false, "e.g., 72 bpm")}
-                {renderInput("Weight", "vitals.weight", "text", false, "e.g., 70 kg")}
-                {renderInput("O2 Saturation", "vitals.o2", "text", false, "e.g., 98%")}
-                <div className="md:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                    Additional Notes
+                    Consultation Fee (₹) <span className="text-red-500">*</span>
                   </label>
-                  <textarea
-                    name="notes"
-                    value={formData.notes}
+                  <input
+                    type="number"
+                    name="consultation_fee"
+                    value={formData.consultation_fee}
                     onChange={handleChange}
-                    rows={3}
-                    placeholder="Any additional observations or instructions"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                    onBlur={handleBlur}
+                    min="0"
+                    step="1"
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                      errors.consultation_fee 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:ring-gray-900'
+                    }`}
+                    placeholder="Enter consultation fee"
                   />
+                  {errors.consultation_fee && (
+                    <p className="mt-1 text-sm text-red-600">{errors.consultation_fee}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Payment Status
+                  </label>
+                  <select
+                    name="payment_status"
+                    value={formData.payment_status}
+                    onChange={handleChange}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                  >
+                    <option value="">Select Status</option>
+                    <option value="D">Due</option>
+                    <option value="P">Paid</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Payment Method
+                  </label>
+                  <select
+                    name="payment_method"
+                    value={formData.payment_method}
+                    onChange={handleChange}
+                    disabled={formData.payment_status === 'D'}
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                      formData.payment_status === 'D' ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:ring-gray-900'
+                    } ${
+                      errors.payment_method ? 'border-red-500' : ''
+                    }`}
+                  >
+                    <option value="">Select Method</option>
+                    <option value="C">Cash</option>
+                    <option value="O">Online</option>
+                  </select>
+                  {errors.payment_method && (
+                    <p className="mt-1 text-sm text-red-600">{errors.payment_method}</p>
+                  )}
+                  {formData.payment_status === 'D' && (
+                    <p className="mt-1 text-xs text-gray-500">Payment method is disabled when status is Due</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -1223,27 +1625,75 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           return (
             <div className="space-y-6">
               <div className="text-center mb-4 sm:mb-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Vital Signs & Notes</h3>
-                <p className="text-xs sm:text-sm text-gray-600">Patient vital measurements and additional notes</p>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Payment Information</h3>
+                <p className="text-xs sm:text-sm text-gray-600">Consultation fee and payment details</p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {renderInput("Temperature", "vitals.temperature", "text", false, "e.g., 98.6°F")}
-                {renderInput("Blood Pressure", "vitals.blood_pressure", "text", false, "e.g., 120/80")}
-                {renderInput("Pulse Rate", "vitals.pulse", "text", false, "e.g., 72 bpm")}
-                {renderInput("Weight", "vitals.weight", "text", false, "e.g., 70 kg")}
-                {renderInput("O2 Saturation", "vitals.o2", "text", false, "e.g., 98%")}
-                <div className="md:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                    Additional Notes
+                    Consultation Fee (₹) <span className="text-red-500">*</span>
                   </label>
-                  <textarea
-                    name="notes"
-                    value={formData.notes}
+                  <input
+                    type="number"
+                    name="consultation_fee"
+                    value={formData.consultation_fee}
                     onChange={handleChange}
-                    rows={3}
-                    placeholder="Any additional observations or instructions"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                    onBlur={handleBlur}
+                    min="0"
+                    step="1"
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                      errors.consultation_fee 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:ring-gray-900'
+                    }`}
+                    placeholder="Enter consultation fee"
                   />
+                  {errors.consultation_fee && (
+                    <p className="mt-1 text-sm text-red-600">{errors.consultation_fee}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Payment Status
+                  </label>
+                  <select
+                    name="payment_status"
+                    value={formData.payment_status}
+                    onChange={handleChange}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                  >
+                    <option value="">Select Status</option>
+                    <option value="D">Due</option>
+                    <option value="P">Paid</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Payment Method
+                  </label>
+                  <select
+                    name="payment_method"
+                    value={formData.payment_method}
+                    onChange={handleChange}
+                    disabled={formData.payment_status === 'D'}
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                      formData.payment_status === 'D' ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:ring-gray-900'
+                    } ${
+                      errors.payment_method ? 'border-red-500' : ''
+                    }`}
+                  >
+                    <option value="">Select Method</option>
+                    <option value="C">Cash</option>
+                    <option value="O">Online</option>
+                  </select>
+                  {errors.payment_method && (
+                    <p className="mt-1 text-sm text-red-600">{errors.payment_method}</p>
+                  )}
+                  {formData.payment_status === 'D' && (
+                    <p className="mt-1 text-xs text-gray-500">Payment method is disabled when status is Due</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -1303,11 +1753,13 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     <span>Medical Info</span>
                     <span>Visit Details</span>
                     <span>Vitals & Notes</span>
+                    <span>Payment</span>
                   </>
                 ) : preselectedPatientId ? (
                   <>
                     <span>Visit Details</span>
                     <span>Vitals & Notes</span>
+                    <span>Payment</span>
                   </>
                 ) : (
                   <>
@@ -1315,15 +1767,16 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     <span>Patient Selection</span>
                     <span>Visit Details</span>
                     <span>Vitals & Notes</span>
+                    <span>Payment</span>
                   </>
                 )}
               </div>
               <div className="sm:hidden text-center text-xs text-gray-500 mb-2">
                 Step {currentStep} of {totalSteps}: {patientType === 'new' 
-                  ? ['Patient Type', 'Basic Information', 'Medical Information', 'Visit Details', 'Vital Signs & Notes'][currentStep - 1]
+                  ? ['Patient Type', 'Basic Information', 'Medical Information', 'Visit Details', 'Vital Signs & Notes', 'Payment'][currentStep - 1]
                   : preselectedPatientId 
-                    ? ['Visit Details', 'Vital Signs & Notes'][currentStep - 1]
-                    : ['Patient Type', 'Patient Selection', 'Visit Details', 'Vital Signs & Notes'][currentStep - 1]}
+                    ? ['Visit Details', 'Vital Signs & Notes', 'Payment'][currentStep - 1]
+                    : ['Patient Type', 'Patient Selection', 'Visit Details', 'Vital Signs & Notes', 'Payment'][currentStep - 1]}
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
