@@ -325,9 +325,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           }
         }
       } else {
+        // Convert prescription to uppercase as user types
+        const finalValue = name === 'prescription' ? value.toUpperCase() : value;
         setFormData({
           ...formData,
-          [name]: value
+          [name]: finalValue
         });
       }
     }
@@ -481,12 +483,12 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           chief_complaint: formData.chief_complaint,
           symptoms: formData.symptoms,
           diagnosis: formData.diagnosis,
-          prescription: formData.prescription,
+          prescription: formData.prescription.toUpperCase(),
           notes: formData.notes,
           follow_up_date: formData.follow_up_date ? formatDateForAPI(formData.follow_up_date) : null,
           vitals: Object.keys(vitalsData).length > 0 ? vitalsData : null,
           // Payment fields
-          consultation_fee: formData.consultation_fee,
+          consultation_fee: formData.consultation_fee === '' ? null : Number(formData.consultation_fee),
           payment_status: formData.payment_status,
           payment_method: formData.payment_status === 'P' ? formData.payment_method : null
         }),

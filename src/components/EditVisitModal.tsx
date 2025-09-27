@@ -61,9 +61,9 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
       o2: visit?.vitals?.o2 || ''
     },
     // Payment fields
-    consultation_fee: visit.consultation_fee || 0,
-    payment_status: visit.payment_status || 'D',
-    payment_method: visit.payment_method || 'C'
+    consultation_fee: visit.consultation_fee ?? '',
+    payment_status: visit.payment_status ?? '',
+    payment_method: visit.payment_method ?? ''
   });
 
   const originalData = {
@@ -82,9 +82,9 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
       o2: visit?.vitals?.o2 || ''
     },
     // Payment fields
-    consultation_fee: visit.consultation_fee || 0,
-    payment_status: visit.payment_status || 'D',
-    payment_method: visit.payment_method || 'C'
+    consultation_fee: visit.consultation_fee ?? '',
+    payment_status: visit.payment_status ?? '',
+    payment_method: visit.payment_method ?? ''
   };
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -102,15 +102,8 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
 
   // Check if form data has changed
   const hasChanges = () => {
-    // Compare dates separately since Date objects need special handling
-    const formDateStr = formData.visit_date ? formatDateForAPI(formData.visit_date) : '';
-    const originalDateStr = originalData.visit_date ? formatDateForAPI(originalData.visit_date) : '';
-    const formFollowUpStr = formData.follow_up_date ? formatDateForAPI(formData.follow_up_date) : '';
-    const originalFollowUpStr = originalData.follow_up_date ? formatDateForAPI(originalData.follow_up_date) : '';
-    
     const changes = {
-      dateChanged: formDateStr !== originalDateStr,
-      followUpChanged: formFollowUpStr !== originalFollowUpStr,
+      dateChanged: formData.visit_date.toDateString() !== originalData.visit_date.toDateString(),
       complaintChanged: formData.chief_complaint !== originalData.chief_complaint,
       symptomsChanged: formData.symptoms !== originalData.symptoms,
       diagnosisChanged: formData.diagnosis !== originalData.diagnosis,
@@ -122,13 +115,16 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
       methodChanged: formData.payment_status === 'P' && formData.payment_method !== originalData.payment_method
     };
     
-    console.log('Change detection:', changes);
-    console.log('Form data:', formData);
-    console.log('Original data:', originalData);
-    
     return Object.values(changes).some(changed => changed);
   };
 
+  const isFormValid = () => {
+    // If consultation fee is entered, payment status must be selected
+    if (formData.consultation_fee && formData.consultation_fee !== '' && !formData.payment_status) {
+      return false;
+    }
+    return true;
+  };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -142,11 +138,14 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
     }
 
     // Payment validation
-    if (formData.consultation_fee < 0) {
+    if (formData.consultation_fee && Number(formData.consultation_fee) < 0) {
       newErrors.consultation_fee = 'Consultation fee cannot be negative';
     }
 
-    // Remove this validation - payment method can have a default value when status is Due
+    // Require payment status when consultation fee is entered
+    if (formData.consultation_fee && formData.consultation_fee !== '' && !formData.payment_status) {
+      newErrors.payment_status = 'Payment status is required when consultation fee is entered';
+    }
 
     if (formData.payment_status === 'P' && !formData.payment_method) {
       newErrors.payment_method = 'Payment method is required when payment is marked as paid';
@@ -167,14 +166,9 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted, validating...');
-
     if (!validateForm()) {
-      console.log('Validation failed:', errors);
       return;
     }
-
-    console.log('Validation passed, submitting...');
     setLoading(true);
 
     try {
@@ -196,8 +190,8 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
         follow_up_date: formData.follow_up_date ? formatDateForAPI(formData.follow_up_date) : null,
         vitals: Object.keys(vitalsData).length > 0 ? vitalsData : null,
         // Payment fields
-        consultation_fee: formData.consultation_fee,
-        payment_status: formData.payment_status,
+        consultation_fee: formData.consultation_fee === '' ? null : Number(formData.consultation_fee),
+        payment_status: formData.payment_status === '' ? null : formData.payment_status,
         payment_method: formData.payment_status === 'P' ? formData.payment_method : null
       };
 
@@ -262,9 +256,11 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
         }
       });
     } else {
+      // Convert prescription to uppercase as user types
+      const finalValue = name === 'prescription' ? value.toUpperCase() : value;
       setFormData({
         ...formData,
-        [name]: value
+        [name]: finalValue
       });
     }
   };
@@ -534,15 +530,9 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
           <button
             type="submit"
             form="edit-visit-form"
-            disabled={loading || !hasChanges()}
+            disabled={loading || !hasChanges() || !isFormValid()}
             className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors"
-            onClick={(e) => {
-              console.log('Button clicked!');
-              console.log('Loading:', loading);
-              console.log('Has changes:', hasChanges());
-              console.log('Button disabled:', loading || !hasChanges());
-              handleSubmit(e);
-            }}
+            onClick={handleSubmit}
           >
             {loading ? 'Updating...' : 'Update Visit'}
           </button>
