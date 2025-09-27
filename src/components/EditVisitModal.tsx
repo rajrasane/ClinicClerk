@@ -89,19 +89,8 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const [prescriptionTags, setPrescriptionTags] = useState<string[]>([]);
-  const [prescriptionInput, setPrescriptionInput] = useState('');
 
   useEffect(() => {
-    // Initialize prescription tags from existing prescription
-    if (visit.prescription) {
-      const existingTags = visit.prescription
-        .split(/[,;\n]/)
-        .map(tag => tag.trim())
-        .filter(tag => tag.length > 0);
-      setPrescriptionTags(existingTags);
-    }
-    
     // Prevent background scrolling when modal is open
     document.body.style.overflow = 'hidden';
     
@@ -109,7 +98,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
       // Restore background scrolling when modal closes
       document.body.style.overflow = 'unset';
     };
-  }, [visit.prescription]);
+  }, []);
 
   // Check if form data has changed
   const hasChanges = () => {
@@ -125,7 +114,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
       complaintChanged: formData.chief_complaint !== originalData.chief_complaint,
       symptomsChanged: formData.symptoms !== originalData.symptoms,
       diagnosisChanged: formData.diagnosis !== originalData.diagnosis,
-      prescriptionChanged: prescriptionTags.join(', ') !== originalData.prescription,
+      prescriptionChanged: formData.prescription !== originalData.prescription,
       notesChanged: formData.notes !== originalData.notes,
       vitalsChanged: JSON.stringify(formData.vitals) !== JSON.stringify(originalData.vitals),
       feeChanged: formData.consultation_fee !== originalData.consultation_fee,
@@ -140,51 +129,6 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
     return Object.values(changes).some(changed => changed);
   };
 
-  const handlePrescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    setPrescriptionInput(value);
-    
-    // Check for comma or newline to create tags
-    if (value.includes(',') || value.includes('\n')) {
-      const newTags = value
-        .split(/[,\n]/)
-        .map(tag => tag.trim())
-        .filter(tag => tag.length > 0);
-      
-      if (newTags.length > 0) {
-        // Add new tags that aren't already in the list
-        const uniqueNewTags = newTags.filter(tag => !prescriptionTags.includes(tag));
-        setPrescriptionTags(prev => [...prev, ...uniqueNewTags]);
-        
-        // Clear the input or keep the last incomplete part
-        const lastPart = value.split(/[,\n]/).pop() || '';
-        setPrescriptionInput(lastPart);
-        
-        // Update form data with all tags
-        const allTags = [...prescriptionTags, ...uniqueNewTags];
-        setFormData(prev => ({
-          ...prev,
-          prescription: allTags.join(', ')
-        }));
-      }
-    }
-  };
-
-  const removePrescriptionTag = (indexToRemove: number) => {
-    const newTags = prescriptionTags.filter((_, index) => index !== indexToRemove);
-    setPrescriptionTags(newTags);
-    setFormData(prev => ({
-      ...prev,
-      prescription: newTags.join(', ')
-    }));
-  };
-
-  const handlePrescriptionKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Backspace' && prescriptionInput === '' && prescriptionTags.length > 0) {
-      // Remove last tag if input is empty and backspace is pressed
-      removePrescriptionTag(prescriptionTags.length - 1);
-    }
-  };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -247,7 +191,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
         chief_complaint: formData.chief_complaint,
         symptoms: formData.symptoms,
         diagnosis: formData.diagnosis,
-        prescription: prescriptionTags.join(', '),
+        prescription: formData.prescription,
         notes: formData.notes,
         follow_up_date: formData.follow_up_date ? formatDateForAPI(formData.follow_up_date) : null,
         vitals: Object.keys(vitalsData).length > 0 ? vitalsData : null,
@@ -427,47 +371,13 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Prescription</label>
-                  <div className="mt-1">
-                    {prescriptionTags.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        {prescriptionTags.map((tag, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"
-                          >
-                            {tag}
-                            <button
-                              type="button"
-                              onClick={() => removePrescriptionTag(index)}
-                              className="ml-1 text-yellow-600 hover:text-yellow-800 focus:outline-none"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <textarea
-                      name="prescription"
-                      value={prescriptionInput}
-                      onChange={handlePrescriptionChange}
-                      onKeyDown={handlePrescriptionKeyDown}
-                      rows={2}
-                      placeholder="Type medications and press comma or enter to create tags"
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Notes</label>
                   <textarea
-                    name="notes"
-                    value={formData.notes}
+                    name="prescription"
+                    value={formData.prescription}
                     onChange={handleInputChange}
                     rows={3}
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Additional notes"
+                    placeholder="Enter prescription details (e.g., Paracetamol 500mg, Amoxicillin 250mg)"
                   />
                 </div>
               </div>
