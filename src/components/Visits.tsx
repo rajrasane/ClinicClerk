@@ -175,7 +175,7 @@ export default function AdminVisits() {
         </div>
 
         {/* Search and Date Filters */}
-        <div className='mt-2 mb-[-8]'>
+        <div className='mt-2'>
           {/* Search Input with Filter Button */}
           <div className="relative w-full flex items-center">
             <div className="relative flex-grow mr-1 sm:mr-2">
@@ -277,23 +277,23 @@ export default function AdminVisits() {
 
       {/* Visits Table */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
+        <div className="overflow-x-auto md:overflow-x-visible">
+          <table className="min-w-full md:w-full md:table-fixed">
             <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
               <tr>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider md:w-[15%] lg:w-[12%]">
                   Visit
                 </th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell md:w-[22%] lg:w-[18%]">
                   Patient
                 </th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell md:w-[30%] lg:w-[28%]">
                   Chief Complaint
                 </th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell lg:w-[22%]">
                   Diagnosis
                 </th>
-                <th className="px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider md:w-[33%] lg:w-[20%]">
                   Actions
                 </th>
               </tr>
@@ -356,33 +356,33 @@ export default function AdminVisits() {
                       </div>
                     </td>
                     <td className="px-3 sm:px-6 py-4 text-center">
-                      <div className="flex justify-center items-center space-x-2 lg:space-x-3">
+                      <div className="flex justify-center items-center space-x-2 md:space-x-1 lg:space-x-1.5">
                         <button
                           onClick={() => handleViewVisit(visit)}
-                          className="px-3 py-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors text-sm font-medium"
+                          className="px-3 py-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors text-sm font-medium md:text-xs md:px-2 lg:text-xs lg:px-2.5 whitespace-nowrap"
                           title="View Details"
                         >
                           View
                         </button>
                         <button
                           onClick={() => handleEditVisit(visit)}
-                          className="inline-flex items-center justify-center h-9 w-9 sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 rounded-full sm:rounded-md bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors"
+                          className="inline-flex items-center justify-center h-9 w-9 sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 rounded-full sm:rounded-md bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors md:px-2 lg:px-2.5 whitespace-nowrap"
                           title="Edit Visit"
                         >
                           <svg className="h-4 w-4 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
-                          <span className="hidden sm:inline sm:ml-2 text-sm font-medium">Edit</span>
+                          <span className="hidden sm:inline sm:ml-2 text-sm font-medium md:ml-1 md:text-xs lg:text-xs">Edit</span>
                         </button>
                         <button
                           onClick={() => handleDeleteVisit(visit.id, `${visit.first_name} ${visit.last_name}`)}
-                          className="inline-flex items-center justify-center h-9 w-9 sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 rounded-full sm:rounded-md bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors"
+                          className="inline-flex items-center justify-center h-9 w-9 sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 rounded-full sm:rounded-md bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors md:px-2 lg:px-2.5 whitespace-nowrap"
                           title="Delete Visit"
                         >
                           <svg className="h-4 w-4 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
-                          <span className="hidden sm:inline sm:ml-2 text-sm font-medium">Delete</span>
+                          <span className="hidden sm:inline sm:ml-2 text-sm font-medium md:ml-1 md:text-xs lg:text-xs">Delete</span>
                         </button>
                       </div>
                     </td>

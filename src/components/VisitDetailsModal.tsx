@@ -141,7 +141,7 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
         {/* Vital Signs - Separate Section */}
         {Object.keys(visit.vitals || {}).length > 0 && (
           <div className="space-y-4">
-            <hr className="border-gray-200" />
+            <hr className="border-gray-200 mt-4" />
             <h3 className="text-lg font-semibold text-gray-900">Vital Signs</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {Object.entries(formatVitals(visit.vitals)).map(([key, value]) => (
@@ -170,7 +170,7 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
         {/* Notes */}
         {visit.notes && (
           <div className="md:col-span-2 space-y-4">
-            <hr className="border-gray-200" />
+            <hr className="border-gray-200 mt-4" />
             <div>
               <label className="block text-sm font-medium text-gray-700">Additional Notes</label>
               <p className="mt-1 text-sm text-gray-900 whitespace-pre-line">{visit.notes}</p>
