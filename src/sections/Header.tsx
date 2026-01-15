@@ -61,7 +61,7 @@ export const Header = ({ activeTab, setActiveTab }: HeaderProps) => {
           <div className="flex justify-between items-center py-3 sm:py-6">
             {/* Logo and Title */}
             <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <Image 
                   src="/logo.png" 
                   alt="ClinicClerk Logo" 
@@ -79,7 +79,7 @@ export const Header = ({ activeTab, setActiveTab }: HeaderProps) => {
             </div>
             
             {/* Welcome Message and Avatar Dropdown */}
-            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               {/* Welcome message - hidden on xs screens */}
               <div className="hidden sm:block text-right">
                 <div className="text-xs sm:text-sm font-medium text-gray-900">

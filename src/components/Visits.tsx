@@ -178,7 +178,7 @@ export default function AdminVisits() {
         <div className='mt-2'>
           {/* Search Input with Filter Button */}
           <div className="relative w-full flex items-center">
-            <div className="relative flex-grow mr-1 sm:mr-2">
+            <div className="relative grow mr-1 sm:mr-2">
               <input
                 type="text"
                 placeholder="Search by patient name or complaint..."
@@ -221,7 +221,7 @@ export default function AdminVisits() {
                 }
               }}
               disabled={!!(dateRange.startDate && dateRange.endDate)}
-              className={`ml-1 sm:ml-2 p-[11px] rounded-lg transition-colors flex items-center gap-2 ${
+              className={`ml-1 sm:ml-2 p-2.75 rounded-lg transition-colors flex items-center gap-2 ${
                 dateRange.startDate && dateRange.endDate
                   ? 'bg-red-100 text-red-700 cursor-not-allowed opacity-75'
                   : showDateFilter 
@@ -279,7 +279,7 @@ export default function AdminVisits() {
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto md:overflow-x-visible">
           <table className="min-w-full md:w-full md:table-fixed">
-            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+            <thead className="bg-linear-to-r from-gray-50 to-gray-100 border-b border-gray-200">
               <tr>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider md:w-[15%] lg:w-[12%]">
                   Visit
