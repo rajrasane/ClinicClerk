@@ -224,7 +224,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
   };
 
   return (
-    <div className="fixed inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center z-[99999] p-4">
+    <div className="fixed inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center z-99999 p-4">
       <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b">
