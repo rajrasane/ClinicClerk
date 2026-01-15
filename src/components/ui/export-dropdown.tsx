@@ -114,7 +114,7 @@ export function ExportDropdown({
 
   if (variant === 'icon') {
     return (
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <button
             disabled={isExporting || !hasRecords}
@@ -153,7 +153,7 @@ export function ExportDropdown({
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <button
           disabled={isExporting || !hasRecords}
