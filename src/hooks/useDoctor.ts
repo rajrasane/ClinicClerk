@@ -54,7 +54,7 @@ export function useUpdateDoctor() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ userId, data }: { userId: string; data: Partial<Doctor> }) => {
+    mutationFn: async ({ data }: { userId: string; data: Partial<Doctor> }) => {
       const { data: { session } } = await supabase.auth.getSession();
       
       const response = await fetch('/api/profile', {
@@ -74,9 +74,9 @@ export function useUpdateDoctor() {
 
       return response.json();
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (_, { userId }) => {
       // Invalidate the doctor query to refetch fresh data
-      queryClient.invalidateQueries({ queryKey: ['doctor', variables.userId] });
+      queryClient.invalidateQueries({ queryKey: ['doctor', userId] });
     },
   });
 }

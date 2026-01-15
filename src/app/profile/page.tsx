@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDoctor } from '@/hooks/useDoctor';
 import { toast } from 'react-hot-toast';
@@ -20,7 +20,7 @@ interface DoctorProfile {
 
 export default function ProfilePage() {
   const { user, signOut } = useAuth();
-  const { doctor, loading: doctorLoading, refetch: refetchDoctor } = useDoctor(user?.id ?? null);
+  const { doctor, refetch: refetchDoctor } = useDoctor(user?.id ?? null);
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);

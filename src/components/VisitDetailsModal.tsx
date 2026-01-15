@@ -57,13 +57,13 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
     return new Date(dateString).toLocaleDateString('en-IN');
   };
 
-  const formatVitals = (vitals: Record<string, string> | null) => {
-    if (!vitals) return {};
+  const formatVitals = (vitals: Record<string, unknown> | undefined) => {
+    if (!vitals || typeof vitals !== 'object') return {};
     // Filter out empty values and return only non-empty vitals
     const filtered: Record<string, string> = {};
     Object.entries(vitals).forEach(([key, value]) => {
       if (value && value.toString().trim() !== '') {
-        filtered[key] = value;
+        filtered[key] = value.toString();
       }
     });
     return filtered;

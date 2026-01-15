@@ -56,11 +56,11 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
     notes: visit.notes || '',
     follow_up_date: visit.follow_up_date ? new Date(visit.follow_up_date) : undefined,
     vitals: {
-      temperature: visit?.vitals?.temperature || '',
-      bp: visit?.vitals?.bp || '',
-      pulse: visit?.vitals?.pulse || '',
-      weight: visit?.vitals?.weight || '',
-      o2: visit?.vitals?.o2 || ''
+      temperature: (visit?.vitals?.temperature as string) || '',
+      bp: (visit?.vitals?.bp as string) || '',
+      pulse: (visit?.vitals?.pulse as string) || '',
+      weight: (visit?.vitals?.weight as string) || '',
+      o2: (visit?.vitals?.o2 as string) || ''
     },
     // Payment fields
     consultation_fee: visit.consultation_fee ?? '',
@@ -77,11 +77,11 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
     notes: visit.notes || '',
     follow_up_date: visit.follow_up_date ? new Date(visit.follow_up_date) : undefined,
     vitals: {
-      temperature: visit?.vitals?.temperature || '',
-      bp: visit?.vitals?.bp || '',
-      pulse: visit?.vitals?.pulse || '',
-      weight: visit?.vitals?.weight || '',
-      o2: visit?.vitals?.o2 || ''
+      temperature: (visit?.vitals?.temperature as string) || '',
+      bp: (visit?.vitals?.bp as string) || '',
+      pulse: (visit?.vitals?.pulse as string) || '',
+      weight: (visit?.vitals?.weight as string) || '',
+      o2: (visit?.vitals?.o2 as string) || ''
     },
     // Payment fields
     consultation_fee: visit.consultation_fee ?? '',
@@ -176,9 +176,9 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
     try {
       // Prepare vitals data - only include non-empty values
       const vitalsData = Object.entries(formData.vitals)
-        .filter(([, value]) => value.trim() !== '')
+        .filter(([, value]) => typeof value === 'string' && value.trim() !== '')
         .reduce((acc, [key, value]) => {
-          acc[key] = value;
+          acc[key] = value as string;
           return acc;
         }, {} as Record<string, string>);
 

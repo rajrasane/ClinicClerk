@@ -59,8 +59,6 @@ async function fetchPatients(page: number, searchTerm: string, limit: number): P
 
 // Hook for fetching patients with React Query
 export function usePatients(page: number = 1, searchTerm: string = '', limit: number = 10) {
-  const queryClient = useQueryClient();
-
   const query = useQuery({
     queryKey: ['patients', page, searchTerm, limit],
     queryFn: () => fetchPatients(page, searchTerm, limit),
