@@ -1,19 +1,20 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import toast from 'react-hot-toast';
-import { useVisits } from '@/hooks/useVisits';
-import { apiCache } from '@/lib/cache';
+import { useVisits, useDeleteVisit } from '@/hooks/useVisits';
+import { useVisitStore } from '@/stores/useVisitStore';
+import { useDebounce } from '@/hooks/useDebounce';
 import AddVisitModal from './AddVisitModal';
 import VisitDetailsModal from './VisitDetailsModal';
 import EditVisitModal from './EditVisitModal';
 import { DatePicker } from '@/components/ui/date-picker';
-import { supabase } from '@/lib/supabase';
 import { ExportDropdown } from '@/components/ui/export-dropdown';
 
 interface Visit {
   id: number;
   patient_id: number;
+  patient_name: string;
   visit_date: string;
   chief_complaint: string;
   symptoms: string;
@@ -21,8 +22,9 @@ interface Visit {
   prescription: string;
   notes: string;
   follow_up_date: string;
-  vitals: Record<string, string> | null;
+  vitals: Record<string, unknown> | undefined;
   created_at: string;
+  updated_at: string;
   first_name: string;
   last_name: string;
   phone: string;
@@ -35,13 +37,29 @@ interface Visit {
 }
 
 export default function AdminVisits() {
-  // State for filters and pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [dateRange, setDateRange] = useState({
-    startDate: undefined as Date | undefined,
-    endDate: undefined as Date | undefined
-  });
+  // Zustand store for UI state
+  const {
+    currentPage,
+    searchQuery,
+    dateRange,
+    showDateFilter,
+    showAddModal,
+    showEditModal,
+    showDetailsModal,
+    selectedVisit,
+    editingVisit,
+    setCurrentPage,
+    setSearchQuery,
+    setDateRange,
+    clearDateRange,
+    toggleDateFilter,
+    openAddModal,
+    closeAddModal,
+    openEditModal,
+    closeEditModal,
+    openDetailsModal,
+    closeDetailsModal,
+  } = useVisitStore();
 
   // Helper function to format date without timezone issues
   const formatDateForAPI = (date: Date): string => {
@@ -57,33 +75,21 @@ export default function AdminVisits() {
     endDate: dateRange.endDate ? formatDateForAPI(dateRange.endDate) : ''
   };
 
-  // Use the custom hook for data management
-  const { visits, loading, pagination, refetch, removeVisit } = useVisits(currentPage, searchQuery, dateRangeForAPI, 5);
+  // Debounce search query to avoid excessive API calls
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  // Modal state
-  const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
-  const [showModal, setShowModal] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingVisit, setEditingVisit] = useState<Visit | null>(null);
-  const [showDateFilter, setShowDateFilter] = useState(false);
+  // React Query for data management (uses debounced search)
+  const { visits, loading, pagination, refetch } = useVisits(currentPage, debouncedSearchQuery, dateRangeForAPI, 5);
+  const deleteVisitMutation = useDeleteVisit();
 
   const totalPages = pagination?.totalPages || 1;
 
-  // Refetch function for callbacks - now uses the hook
-  const fetchVisitsData = () => {
-    apiCache.invalidate('/api/visits');
-    refetch();
-  };
-
   const handleViewVisit = (visit: Visit) => {
-    setSelectedVisit(visit);
-    setShowModal(true);
+    openDetailsModal(visit);
   };
 
   const handleEditVisit = (visit: Visit) => {
-    setEditingVisit(visit);
-    setShowEditModal(true);
+    openEditModal(visit);
   };
 
   const handleDeleteVisit = async (visitId: number, patientName: string) => {
@@ -91,36 +97,16 @@ export default function AdminVisits() {
       return;
     }
 
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        toast.error('Authentication required');
-        return;
-      }
-
-      const response = await fetch(`/api/visits/${visitId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      });
-      
-      if (response.ok) {
+    deleteVisitMutation.mutate(visitId, {
+      onSuccess: () => {
         toast.success('Visit deleted successfully!');
-        apiCache.invalidate('/api/patients'); // Clear patients cache to update visit counts
-        apiCache.invalidate('/api/visits'); // Clear visits cache
-        removeVisit(visitId); // Optimistic update
-        // Trigger immediate refetch to sync with server
-        await refetch();
-      } else {
-        const errorMessage = 'Failed to delete visit';
-        console.error('Error deleting visit:', response);
-        toast.error(errorMessage);
-      }
-    } catch (error) {
-      console.error('Error deleting visit:', error);
-      toast.error('Failed to delete visit. Please try again.');
-    }
+        // React Query automatically refetches - no manual cache management needed!
+      },
+      onError: (error: Error) => {
+        console.error('Error deleting visit:', error);
+        toast.error('Failed to delete visit. Please try again.');
+      },
+    });
   };
 
   const formatDate = (dateString: string) => {
@@ -139,7 +125,7 @@ export default function AdminVisits() {
           </div>
           <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
             <button
-              onClick={() => setShowAddModal(true)}
+              onClick={openAddModal}
               className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm sm:text-base"
             >
               <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -217,7 +203,7 @@ export default function AdminVisits() {
                   // If both dates are selected, do nothing
                   return;
                 } else {
-                  setShowDateFilter(!showDateFilter);
+                  toggleDateFilter();
                 }
               }}
               disabled={!!(dateRange.startDate && dateRange.endDate)}
@@ -245,13 +231,13 @@ export default function AdminVisits() {
                 <div className="grid grid-cols-2 gap-3">
                   <DatePicker
                     date={dateRange.startDate}
-                    onDateChange={(date) => setDateRange(prev => ({ ...prev, startDate: date }))}
+                    onDateChange={(date) => setDateRange({ ...dateRange, startDate: date })}
                     placeholder="Start date"
                     className="text-xs"
                   />
                   <DatePicker
                     date={dateRange.endDate}
-                    onDateChange={(date) => setDateRange(prev => ({ ...prev, endDate: date }))}
+                    onDateChange={(date) => setDateRange({ ...dateRange, endDate: date })}
                     placeholder="End date"
                     className="text-xs"
                     disabled={!dateRange.startDate}
@@ -262,7 +248,7 @@ export default function AdminVisits() {
                 {(dateRange.startDate || dateRange.endDate) && (
                   <div className="flex justify-end">
                     <button
-                      onClick={() => setDateRange({ startDate: undefined, endDate: undefined })}
+                      onClick={clearDateRange}
                       className="text-sm text-gray-600 hover:text-gray-800 underline transition-colors"
                     >
                       Clear date filters
@@ -323,7 +309,7 @@ export default function AdminVisits() {
                         </div>
                         
                         <div className="sm:hidden space-y-1 mt-1">
-                          <div className="text-sm text-gray-700 font-medium">
+                          <div className="text-sm  text-gray-700 font-medium">
                             {visit.first_name} {visit.last_name}
                           </div>
                           <div className="text-xs text-gray-600">
@@ -338,7 +324,7 @@ export default function AdminVisits() {
                       </div>
                     </td>
                     <td className="px-3 sm:px-6 py-4 hidden sm:table-cell">
-                      <div className="text-sm sm:text-base font-medium text-gray-900">
+                      <div className="text-xs md:text-base font-medium text-gray-900">
                         {visit.first_name} {visit.last_name}
                       </div>
                       <div className="text-xs text-gray-500">
@@ -401,14 +387,14 @@ export default function AdminVisits() {
             </div>
             <div className="flex space-x-2">
               <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
                 disabled={currentPage === 1}
                 className="px-3 sm:px-4 py-2 border rounded-md text-sm disabled:opacity-50 hover:bg-gray-50"
               >
                 Previous
               </button>
               <button
-                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
                 disabled={currentPage === totalPages}
                 className="px-3 sm:px-4 py-2 border rounded-md text-sm disabled:opacity-50 hover:bg-gray-50"
               >
@@ -420,22 +406,19 @@ export default function AdminVisits() {
       </div>
 
       {/* Visit Details Modal */}
-      {showModal && selectedVisit && (
+      {showDetailsModal && selectedVisit && (
         <VisitDetailsModal
           visit={selectedVisit}
-          onClose={() => {
-            setShowModal(false);
-            setSelectedVisit(null);
-          }}
-          onUpdate={fetchVisitsData}
+          onClose={closeDetailsModal}
+          onUpdate={refetch}
         />
       )}
 
       {/* Add Visit Modal */}
       {showAddModal && (
         <AddVisitModal
-          onClose={() => setShowAddModal(false)}
-          onSuccess={fetchVisitsData}
+          onClose={closeAddModal}
+          onSuccess={refetch}
         />
       )}
 
@@ -443,11 +426,8 @@ export default function AdminVisits() {
       {showEditModal && editingVisit && (
         <EditVisitModal
           visit={editingVisit}
-          onClose={() => {
-            setShowEditModal(false);
-            setEditingVisit(null);
-          }}
-          onSuccess={fetchVisitsData}
+          onClose={closeEditModal}
+          onSuccess={refetch}
         />
       )}
     </div>

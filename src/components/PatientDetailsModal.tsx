@@ -9,6 +9,9 @@ import toast from 'react-hot-toast';
 interface Visit {
   id: number;
   patient_id: number;
+  patient_name: string;
+  age: number;
+  gender: string;
   visit_date: string;
   chief_complaint: string;
   symptoms: string;
@@ -16,15 +19,15 @@ interface Visit {
   prescription: string;
   notes: string;
   follow_up_date: string;
-  vitals: Record<string, string> | null;
+  vitals: Record<string, unknown> | undefined;
   created_at: string;
+  updated_at: string;
   first_name: string;
   last_name: string;
   phone: string;
-  // Payment fields
-  consultation_fee: number;
-  payment_status: 'P' | 'D';
-  payment_method: 'C' | 'O';
+  consultation_fee: number | null;
+  payment_status: 'P' | 'D' | null;
+  payment_method: 'C' | 'O' | null;
 }
 
 interface Patient {
@@ -33,6 +36,7 @@ interface Patient {
   middle_name?: string;
   last_name: string;
   age: number;
+  age_recorded_at: string;
   gender: 'M' | 'F' | 'O';
   phone: string;
   address: string;
@@ -425,43 +429,43 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
                         <div className="mb-3">
                           <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-start gap-x-4 gap-y-2 text-xs sm:text-sm text-gray-600 bg-white/50 sm:bg-transparent p-2.5 sm:p-0 rounded-lg sm:rounded-none">
                             {/* Temperature with unit */}
-                            {visit.vitals.temperature && (
+                            {Boolean(visit.vitals.temperature) && (
                               <div className="flex items-center whitespace-nowrap">
                                 <span className="w-11 sm:w-auto font-medium">Temp</span>
                                 <span className="mx-1">:</span>
-                                <span>{String(visit.vitals.temperature).includes('°F') ? visit.vitals.temperature : `${visit.vitals.temperature}°F`}</span>
+                                <span>{String(visit.vitals.temperature).includes('°F') ? String(visit.vitals.temperature) : `${visit.vitals.temperature}°F`}</span>
                               </div>
                             )}
                             {/* Pulse */}
-                            {visit.vitals.pulse && (
+                            {Boolean(visit.vitals.pulse) && (
                               <div className="flex items-center whitespace-nowrap">
                                 <span className="w-11 sm:w-auto font-medium">Pulse</span>
                                 <span className="mx-1">:</span>
-                                <span>{String(visit.vitals.pulse).toLowerCase().includes('bpm') ? visit.vitals.pulse : `${visit.vitals.pulse} bpm`}</span>
+                                <span>{String(visit.vitals.pulse).toLowerCase().includes('bpm') ? String(visit.vitals.pulse) : `${visit.vitals.pulse} bpm`}</span>
                               </div>
                             )}
                             {/* Blood Pressure */}
-                            {visit.vitals.bp && (
+                            {Boolean(visit.vitals.bp) && (
                               <div className="flex items-center whitespace-nowrap">
                                 <span className="w-11 sm:w-auto font-medium">BP</span>
                                 <span className="mx-1">:</span>
-                                <span>{visit.vitals.bp}</span>
+                                <span>{String(visit.vitals.bp)}</span>
                               </div>
                             )}
                             {/* Weight with unit */}
-                            {visit.vitals.weight && (
+                            {Boolean(visit.vitals.weight) && (
                               <div className="flex items-center whitespace-nowrap">
                                 <span className="w-11 sm:w-auto font-medium">Wt</span>
                                 <span className="mx-1">:</span>
-                                <span>{String(visit.vitals.weight).toLowerCase().includes('kg') ? visit.vitals.weight : `${visit.vitals.weight} kg`}</span>
+                                <span>{String(visit.vitals.weight).toLowerCase().includes('kg') ? String(visit.vitals.weight) : `${visit.vitals.weight} kg`}</span>
                               </div>
                             )}
                             {/* O2 Saturation */}
-                            {visit.vitals.o2 && (
+                            {Boolean(visit.vitals.o2) && (
                               <div className="flex items-center whitespace-nowrap">
                                 <span className="w-11 sm:w-auto font-medium">O2</span>
                                 <span className="mx-1">:</span>
-                                <span>{String(visit.vitals.o2).includes('%') ? visit.vitals.o2 : `${visit.vitals.o2}%`}</span>
+                                <span>{String(visit.vitals.o2).includes('%') ? String(visit.vitals.o2) : `${visit.vitals.o2}%`}</span>
                               </div>
                             )}
                           </div>

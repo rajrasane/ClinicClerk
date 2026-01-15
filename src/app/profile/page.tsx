@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 import { ArrowLeft, Save, Trash2, User, Phone, Building, MapPin } from 'lucide-react';
@@ -44,8 +44,10 @@ export default function ProfilePage() {
     clinic_address: ''
   });
 
+  const [isInitialized, setIsInitialized] = useState(false);
+
   useEffect(() => {
-    if (doctor && !originalProfile.first_name) {
+    if (doctor && !isInitialized) {
       const doctorProfile = {
         first_name: doctor.first_name || '',
         middle_name: doctor.middle_name || '',
@@ -57,8 +59,9 @@ export default function ProfilePage() {
       };
       setProfile(doctorProfile);
       setOriginalProfile(doctorProfile);
+      setIsInitialized(true);
     }
-  }, [doctor, originalProfile.first_name]);
+  }, [doctor, isInitialized]);
 
   const handleInputChange = (field: keyof DoctorProfile, value: string) => {
     setProfile(prev => ({ ...prev, [field]: value }));
@@ -248,7 +251,7 @@ export default function ProfilePage() {
 
                 {/* Phone */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                  <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                     <Phone className="h-4 w-4 mr-1" />
                     Phone Number
                   </label>
@@ -288,7 +291,7 @@ export default function ProfilePage() {
 
                   {/* Clinic Address */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                    <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                       <MapPin className="h-4 w-4 mr-1" />
                       Clinic Address
                     </label>

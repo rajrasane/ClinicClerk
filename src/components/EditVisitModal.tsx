@@ -17,6 +17,7 @@ const formatDateForAPI = (date: Date): string => {
 interface Visit {
   id: number;
   patient_id: number;
+  patient_name: string;
   visit_date: string;
   chief_complaint: string;
   symptoms: string;
@@ -24,7 +25,9 @@ interface Visit {
   prescription: string;
   notes: string;
   follow_up_date: string;
-  vitals: Record<string, string> | null;
+  vitals: Record<string, unknown> | undefined;
+  created_at: string;
+  updated_at: string;
   first_name: string;
   last_name: string;
   phone: string;

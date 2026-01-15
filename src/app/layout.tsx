@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { QueryProvider } from '@/providers/QueryProvider';
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -42,37 +43,39 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <AuthProvider>
-          {children}
-          <Toaster 
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: '#363636',
-                color: '#fff',
-                zIndex: 999999,
-              },
-              success: {
-                duration: 3000,
-                iconTheme: {
-                  primary: '#10B981',
-                  secondary: '#fff',
-                },
-              },
-              error: {
+        <QueryProvider>
+          <AuthProvider>
+            {children}
+            <Toaster 
+              position="top-right"
+              toastOptions={{
                 duration: 4000,
-                iconTheme: {
-                  primary: '#EF4444',
-                  secondary: '#fff',
+                style: {
+                  background: '#363636',
+                  color: '#fff',
+                  zIndex: 999999,
                 },
-              },
-            }}
-            containerStyle={{
-              zIndex: 999999,
-            }}
-          />
-        </AuthProvider>
+                success: {
+                  duration: 3000,
+                  iconTheme: {
+                    primary: '#10B981',
+                    secondary: '#fff',
+                  },
+                },
+                error: {
+                  duration: 4000,
+                  iconTheme: {
+                    primary: '#EF4444',
+                    secondary: '#fff',
+                  },
+                },
+              }}
+              containerStyle={{
+                zIndex: 999999,
+              }}
+            />
+          </AuthProvider>
+        </QueryProvider>
       </body>
     </html>
   );

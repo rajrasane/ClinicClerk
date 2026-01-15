@@ -38,14 +38,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [doctorLoading, setDoctorLoading] = useState(false)
   const fetchingRef = useRef(false)
   const currentUserIdRef = useRef<string | null>(null)
+  const lastFetchTimeRef = useRef<number>(0)
 
   // Fetch doctor data when user is available
-  const fetchDoctorData = async (userId: string) => {
+  const fetchDoctorData = async (userId: string, force = false) => {
     // Prevent duplicate calls for the same user
-    if (fetchingRef.current && currentUserIdRef.current === userId) {
+    if (!force && fetchingRef.current && currentUserIdRef.current === userId) {
+      console.log('[AuthContext] Skipping duplicate fetch - already fetching for user:', userId);
       return
     }
 
+    // Cache for 10 minutes - don't refetch if we fetched recently
+    const now = Date.now()
+    const tenMinutes = 10 * 60 * 1000
+    if (!force && currentUserIdRef.current === userId && (now - lastFetchTimeRef.current) < tenMinutes) {
+      console.log('[AuthContext] Skipping fetch - using cached data (age:', Math.round((now - lastFetchTimeRef.current) / 1000), 'seconds)');
+      return // Use cached data
+    }
+
+    console.log('[AuthContext] Fetching doctor data for user:', userId, 'force:', force);
     fetchingRef.current = true
     currentUserIdRef.current = userId
     setDoctorLoading(true)
@@ -58,6 +69,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (data && !error) {
         setDoctor(data)
+        lastFetchTimeRef.current = Date.now() // Update cache timestamp
+        console.log('[AuthContext] Doctor data fetched successfully');
       } else {
         // If doctor record doesn't exist (account deleted), sign out the user
         if (error?.code === 'PGRST116') {
@@ -71,6 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return
         }
         setDoctor(null)
+        console.error('[AuthContext] Error fetching doctor data:', error);
       }
     } catch (error) {
       console.error('Error fetching doctor data:', error)
@@ -141,6 +155,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Clear all cached data before signing out
     apiCache.clear()
     
+    // Reset cache timestamp
+    lastFetchTimeRef.current = 0
+    currentUserIdRef.current = null
+    
     // Clear any stored tokens
     if (typeof window !== 'undefined') {
       localStorage.removeItem('supabase.auth.token')
@@ -152,7 +170,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshDoctorData = async () => {
     if (user?.id) {
-      await fetchDoctorData(user.id)
+      // Force refresh by clearing cache timestamp and forcing fetch
+      console.log('[AuthContext] Forcing doctor data refresh');
+      lastFetchTimeRef.current = 0
+      await fetchDoctorData(user.id, true)
     }
   }
 

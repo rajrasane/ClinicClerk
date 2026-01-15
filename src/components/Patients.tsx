@@ -1,15 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import toast from 'react-hot-toast';
-import { usePatients } from '@/hooks/usePatients';
-import { apiCache } from '@/lib/cache';
+import { usePatients, useDeletePatient } from '@/hooks/usePatients';
+import { usePatientStore } from '@/stores/usePatientStore';
+import { useDebounce } from '@/hooks/useDebounce';
 import AddPatientModalNew from './AddPatientModalNew';
 import PatientDetailsModal from './PatientDetailsModal';
 import EditPatientModal from './EditPatientModal';
 import AddVisitModal from './AddVisitModal';
 import VisitDetailsModal from './VisitDetailsModal';
-import { supabase } from '@/lib/supabase';
 import { ExportDropdown } from '@/components/ui/export-dropdown';
 
 
@@ -34,6 +34,9 @@ interface Patient {
 interface Visit {
   id: number;
   patient_id: number;
+  patient_name: string;
+  age: number;
+  gender: string;
   visit_date: string;
   chief_complaint: string;
   symptoms: string;
@@ -41,8 +44,9 @@ interface Visit {
   prescription: string;
   notes: string;
   follow_up_date: string;
-  vitals: Record<string, string> | null;
+  vitals: Record<string, unknown> | undefined;
   created_at: string;
+  updated_at: string;
   first_name: string;
   last_name: string;
   phone: string;
@@ -52,34 +56,48 @@ interface Visit {
 }
 
 export default function AdminPatients() {
-  // Use the custom hook for data management
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
-  const { patients, loading, pagination, refetch, removePatient } = usePatients(currentPage, searchTerm, 5);
+  // Zustand store for UI state
+  const {
+    currentPage,
+    searchTerm,
+    showAddModal,
+    showEditModal,
+    showDetailsModal,
+    showAddVisitModal,
+    showVisitDetailsModal,
+    selectedPatient,
+    editingPatient,
+    preselectedPatientId,
+    selectedVisit,
+    setCurrentPage,
+    setSearchTerm,
+    openAddModal,
+    closeAddModal,
+    openEditModal,
+    closeEditModal,
+    openDetailsModal,
+    closeDetailsModal,
+    openAddVisitModal,
+    closeAddVisitModal,
+    openVisitDetailsModal,
+    closeVisitDetailsModal,
+  } = usePatientStore();
 
-  // Component state for modals
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-  const [showModal, setShowModal] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
-  const [showAddVisitModal, setShowAddVisitModal] = useState(false);
-  const [preselectedPatientId, setPreselectedPatientId] = useState<number | null>(null);
-  const [showVisitDetailsModal, setShowVisitDetailsModal] = useState(false);
-  const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
+  // Debounce search term to avoid excessive API calls
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  // React Query for data management (uses debounced search)
+  const { patients, loading, pagination, refetch } = usePatients(currentPage, debouncedSearchTerm, 5);
+  const deletePatientMutation = useDeletePatient();
 
   const totalPages = pagination?.totalPages || 1;
 
   const handleViewPatient = (patient: Patient) => {
-    // Show modal immediately with existing patient data
-    setSelectedPatient(patient);
-    setShowModal(true);
+    openDetailsModal(patient);
   };
 
-
   const handleEditPatient = (patient: Patient) => {
-    setEditingPatient(patient);
-    setShowEditModal(true);
+    openEditModal(patient);
   };
 
   const handleDeletePatient = async (patientId: number, patientName: string) => {
@@ -87,44 +105,24 @@ export default function AdminPatients() {
       return;
     }
 
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        toast.error('Authentication required');
-        return;
-      }
-
-      const response = await fetch(`/api/patients/${patientId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      });
-      
-      if (response.ok) {
+    deletePatientMutation.mutate(patientId, {
+      onSuccess: () => {
         toast.success('Patient deleted successfully!');
-        // Clear cache and refresh
-        apiCache.invalidate('/api/patients');
-        apiCache.invalidate('/api/visits'); // Clear visits cache since patient visits are deleted
-        removePatient(patientId); // Optimistic update
-        refetch(); // Fetch fresh data and cache it
-      } else {
-        toast.error('Failed to delete patient');
-      }
-    } catch (error) {
-      console.error('Error deleting patient:', error);
-      toast.error('Failed to delete patient. Please try again.');
-    }
+        // React Query automatically refetches - no manual cache management needed!
+      },
+      onError: (error: Error) => {
+        console.error('Error deleting patient:', error);
+        toast.error('Failed to delete patient. Please try again.');
+      },
+    });
   };
 
   const handleAddVisit = (patientId: number) => {
-    setPreselectedPatientId(patientId);
-    setShowAddVisitModal(true);
+    openAddVisitModal(patientId);
   };
 
   const handleViewVisit = (visit: Visit) => {
-    setSelectedVisit(visit);
-    setShowVisitDetailsModal(true);
+    openVisitDetailsModal(visit);
   };
 
   // Removed unused formatDate function
@@ -140,7 +138,7 @@ export default function AdminPatients() {
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
         <button
-          onClick={() => setShowAddModal(true)}
+          onClick={openAddModal}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm sm:text-base"
         >
           <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -242,7 +240,7 @@ export default function AdminPatients() {
                   <tr key={patient.id} className="hover:bg-gray-50">
                     <td className="px-3 sm:px-6 py-4">
                       <div className="flex items-center">
-                        <div className="shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-blue-100 text-blue-800 font-medium text-sm sm:text-base">
+                        <div className="shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-blue-100 text-blue-800 font-medium text-sm md:text-base">
                           {`${patient.first_name[0]}${patient.last_name[0]}`}
                         </div>
                         <div className="ml-3">
@@ -312,14 +310,14 @@ export default function AdminPatients() {
             </div>
             <div className="flex space-x-2">
               <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
                 disabled={currentPage === 1}
                 className="px-3 sm:px-4 py-2 border rounded-md text-sm disabled:opacity-50 hover:bg-gray-50"
               >
                 Previous
               </button>
               <button
-                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
                 disabled={currentPage === totalPages}
                 className="px-3 sm:px-4 py-2 border rounded-md text-sm disabled:opacity-50 hover:bg-gray-50"
               >
@@ -331,13 +329,10 @@ export default function AdminPatients() {
       </div>
 
       {/* Patient Details Modal */}
-      {showModal && selectedPatient && (
+      {showDetailsModal && selectedPatient && (
         <PatientDetailsModal
           patient={selectedPatient}
-          onClose={() => {
-            setShowModal(false);
-            setSelectedPatient(null);
-          }}
+          onClose={closeDetailsModal}
           onUpdate={refetch}
           onAddVisit={handleAddVisit}
           onViewVisit={handleViewVisit}
@@ -347,10 +342,9 @@ export default function AdminPatients() {
       {/* Add Patient Modal */}
       {showAddModal && (
         <AddPatientModalNew
-          onClose={() => setShowAddModal(false)}
+          onClose={closeAddModal}
           onSuccess={() => {
-            apiCache.invalidate('/api/patients');
-            refetch();
+            refetch(); // React Query handles cache automatically
           }}
         />
       )}
@@ -359,14 +353,9 @@ export default function AdminPatients() {
       {showEditModal && editingPatient && (
         <EditPatientModal
           patient={editingPatient}
-          onClose={() => {
-            setShowEditModal(false);
-            setEditingPatient(null);
-          }}
+          onClose={closeEditModal}
           onSuccess={() => {
-            apiCache.invalidate('/api/patients');
-            apiCache.invalidate('/api/visits'); // Clear visits cache since patient data changed
-            refetch(); // Fetch fresh data and cache it
+            refetch(); // React Query handles cache automatically
           }}
         />
       )}
@@ -374,15 +363,10 @@ export default function AdminPatients() {
       {/* Add Visit Modal */}
       {showAddVisitModal && (
         <AddVisitModal
-          onClose={() => {
-            setShowAddVisitModal(false);
-            setPreselectedPatientId(null);
-          }}
+          onClose={closeAddVisitModal}
           onSuccess={() => {
-            apiCache.invalidate('/api/patients');
             refetch(); // Refresh patient data to update visit counts
-            setShowAddVisitModal(false);
-            setPreselectedPatientId(null);
+            closeAddVisitModal();
           }}
           preselectedPatientId={preselectedPatientId || undefined}
         />
@@ -392,10 +376,7 @@ export default function AdminPatients() {
       {showVisitDetailsModal && selectedVisit && (
         <VisitDetailsModal
           visit={selectedVisit}
-          onClose={() => {
-            setShowVisitDetailsModal(false);
-            setSelectedVisit(null);
-          }}
+          onClose={closeVisitDetailsModal}
           onUpdate={() => {
             // Refresh data if needed
             refetch();

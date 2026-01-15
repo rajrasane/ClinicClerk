@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { cachedFetch, apiCache } from '@/lib/cache';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 
 interface Visit {
   id: number;
   patient_id: number;
+  patient_name: string;
   visit_date: string;
   chief_complaint: string;
   symptoms: string;
@@ -11,14 +12,14 @@ interface Visit {
   prescription: string;
   notes: string;
   follow_up_date: string;
-  vitals: Record<string, string> | null;
+  vitals: Record<string, unknown> | undefined;
   created_at: string;
+  updated_at: string;
   first_name: string;
   last_name: string;
   phone: string;
   age: number;
   gender: string;
-  // Payment fields - nullable for existing visits
   consultation_fee: number | null;
   payment_status: 'P' | 'D' | null;
   payment_method: 'C' | 'O' | null;
@@ -32,109 +33,159 @@ interface PaginationData {
   hasPrev: boolean;
 }
 
-interface UseVisitsReturn {
-  visits: Visit[];
-  loading: boolean;
-  pagination: PaginationData | null;
-  refetch: () => Promise<void>;
-  updateVisit: (id: number, updates: Partial<Visit>) => void;
-  removeVisit: (id: number) => void;
-  addVisit: (visit: Visit) => void;
+interface VisitsResponse {
+  success: boolean;
+  data: Visit[];
+  pagination: PaginationData;
 }
 
+// Fetch visits function
+async function fetchVisits(
+  page: number,
+  searchQuery: string,
+  dateRange: { startDate: string; endDate: string },
+  limit: number
+): Promise<VisitsResponse> {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString()
+  });
+
+  if (searchQuery.trim()) {
+    params.append('search', searchQuery.trim());
+  }
+
+  if (dateRange.startDate && dateRange.endDate) {
+    params.append('startDate', dateRange.startDate);
+    params.append('endDate', dateRange.endDate);
+  }
+
+  const { data: { session } } = await supabase.auth.getSession();
+  const response = await fetch(`/api/visits?${params}`, {
+    credentials: 'include',
+    headers: session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch visits');
+  }
+
+  return response.json();
+}
+
+// Hook for fetching visits with React Query
 export function useVisits(
-  page: number = 1, 
-  searchQuery: string = '', 
+  page: number = 1,
+  searchQuery: string = '',
   dateRange: { startDate: string; endDate: string } = { startDate: '', endDate: '' },
   limit: number = 5
-): UseVisitsReturn {
-  const [visits, setVisits] = useState<Visit[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState<PaginationData | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  const fetchVisits = useCallback(async () => {
-    // Cancel any pending request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    // Create new abort controller for this request
-    abortControllerRef.current = new AbortController();
-    
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString()
-      });
-
-      if (searchQuery.trim()) {
-        params.append('search', searchQuery.trim());
-      }
-
-      if (dateRange.startDate && dateRange.endDate) {
-        params.append('startDate', dateRange.startDate);
-        params.append('endDate', dateRange.endDate);
-      }
-
-      const data = await cachedFetch(`/api/visits?${params}`, undefined, 10); // 10 min cache
-      
-      if (data.success) {
-        setVisits(data.data);
-        setPagination(data.pagination);
-      }
-    } catch (error) {
-      console.error('Error fetching visits:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, searchQuery, dateRange.startDate, dateRange.endDate, limit]);
-
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-    
-    if (searchQuery || dateRange.startDate || dateRange.endDate) {
-      // Debounce search and filter changes
-      timeoutId = setTimeout(fetchVisits, 300);
-    } else {
-      // Immediate load for page changes
-      fetchVisits();
-    }
-
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-      // Abort any pending request when component unmounts or dependencies change
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, [fetchVisits, searchQuery, dateRange.startDate, dateRange.endDate]);
-
-  // Optimistic updates
-  const updateVisit = useCallback((id: number, updates: Partial<Visit>) => {
-    setVisits(prev => prev.map(v => v.id === id ? { ...v, ...updates } : v));
-    // Only invalidate list cache - individual visit cache not needed for optimistic updates
-    apiCache.invalidate('/api/visits?');
-  }, []);
-
-  const removeVisit = useCallback((id: number) => {
-    setVisits(prev => prev.filter(v => v.id !== id));
-    // No cache invalidation needed - UI is already updated optimistically
-  }, []);
-
-  const addVisit = useCallback((visit: Visit) => {
-    setVisits(prev => [visit, ...prev]);
-    apiCache.invalidate('/api/visits?');
-  }, []);
+) {
+  const query = useQuery({
+    queryKey: ['visits', page, searchQuery, dateRange.startDate, dateRange.endDate, limit],
+    queryFn: () => fetchVisits(page, searchQuery, dateRange, limit),
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    select: (data) => ({
+      visits: data.data,
+      pagination: data.pagination,
+    }),
+  });
 
   return {
-    visits,
-    loading,
-    pagination,
-    refetch: fetchVisits,
-    updateVisit,
-    removeVisit,
-    addVisit
+    visits: query.data?.visits ?? [],
+    pagination: query.data?.pagination ?? null,
+    loading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
   };
+}
+
+// Mutation for adding a visit
+export function useAddVisit() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (visitData: Partial<Visit>) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch('/api/visits', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify(visitData),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to add visit');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate visits and patients queries to refetch
+      queryClient.invalidateQueries({ queryKey: ['visits'] });
+      queryClient.invalidateQueries({ queryKey: ['patients'] }); // Update patient visit counts
+    },
+  });
+}
+
+// Mutation for updating a visit
+export function useUpdateVisit() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, updates }: { id: number; updates: Partial<Visit> }) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(`/api/visits/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify(updates),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update visit');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['visits'] });
+    },
+  });
+}
+
+// Mutation for deleting a visit
+export function useDeleteVisit() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(`/api/visits/${id}`, {
+        method: 'DELETE',
+        headers: {
+          ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete visit');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['visits'] });
+      queryClient.invalidateQueries({ queryKey: ['patients'] }); // Update patient visit counts
+    },
+  });
 }

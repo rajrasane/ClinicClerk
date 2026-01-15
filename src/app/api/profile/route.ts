@@ -1,6 +1,62 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+// Disable caching for this route to ensure fresh data
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+export async function GET(request: NextRequest) {
+  try {
+    // Get the authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json({ error: 'No authorization header' }, { status: 401 });
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+
+    // Create Supabase client with the JWT token for proper RLS context
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      }
+    );
+
+    // Get user from Supabase Auth using the access token
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Fetch doctor profile
+    const { data: doctor, error: fetchError } = await supabase
+      .from('doctors')
+      .select('id, first_name, middle_name, last_name, email, phone, clinic_name, clinic_address')
+      .eq('id', user.id)
+      .single();
+
+    if (fetchError) {
+      if (fetchError.code === 'PGRST116') {
+        return NextResponse.json({ error: 'Doctor profile not found' }, { status: 404 });
+      }
+      console.error('Error fetching doctor profile:', fetchError);
+      return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 });
+    }
+
+    return NextResponse.json({ data: doctor });
+  } catch (error) {
+    console.error('Error in GET /api/profile:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();

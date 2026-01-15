@@ -1,14 +1,14 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { cachedFetch, apiCache } from '@/lib/cache';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 
 interface Patient {
   id: number;
   first_name: string;
-  middle_name?: string;  // New optional field
+  middle_name?: string;
   last_name: string;
   age: number;
   age_recorded_at: string;
-  gender: 'M' | 'F' | 'O';  // Optimized to single character
+  gender: 'M' | 'F' | 'O';
   phone: string;
   address: string;
   blood_group: string;
@@ -27,117 +27,146 @@ interface PaginationData {
   hasPrev: boolean;
 }
 
-interface UsePatientsReturn {
-  patients: Patient[];
-  loading: boolean;
-  pagination: PaginationData | null;
-  refetch: () => Promise<void>;
-  updatePatient: (id: number, updates: Partial<Patient>) => void;
-  removePatient: (id: number) => void;
-  addPatient: (patient: Patient) => void;
+interface PatientsResponse {
+  success: boolean;
+  data: Patient[];
+  pagination: PaginationData;
 }
 
-export function usePatients(page: number = 1, searchTerm: string = '', limit: number = 10): UsePatientsReturn {
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState<PaginationData | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
+// Fetch patients function
+async function fetchPatients(page: number, searchTerm: string, limit: number): Promise<PatientsResponse> {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString()
+  });
+  
+  if (searchTerm.trim()) {
+    params.append('search', searchTerm.trim());
+  }
 
-  const fetchPatients = useCallback(async (forceRefresh = false) => {
-    // Cancel any pending request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
+  const { data: { session } } = await supabase.auth.getSession();
+  const response = await fetch(`/api/patients?${params}`, {
+    credentials: 'include',
+    headers: session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}
+  });
 
-    // Create new abort controller for this request
-    abortControllerRef.current = new AbortController();
-    
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString()
-      });
-      
-      if (searchTerm.trim()) {
-        params.append('search', searchTerm.trim());
-      }
+  if (!response.ok) {
+    throw new Error('Failed to fetch patients');
+  }
 
-      let data;
-      if (forceRefresh) {
-        // Bypass cache for forced refresh
-        const { supabase } = await import('@/lib/supabase');
-        const { data: { session } } = await supabase.auth.getSession();
-        const response = await fetch(`/api/patients?${params}`, {
-          credentials: 'include',
-          headers: session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}
-        });
-        data = await response.json();
-        
-        // Cache the fresh data for subsequent requests
-        if (data.success) {
-          apiCache.set(`/api/patients?${params}{}`, data, 10);
-        }
-      } else {
-        data = await cachedFetch(`/api/patients?${params}`, undefined, 10); // 10 min cache
-      }
-      
-      if (data.success) {
-        setPatients(data.data);
-        setPagination(data.pagination);
-      }
-    } catch (error) {
-      console.error('Error fetching patients:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, searchTerm, limit]);
+  return response.json();
+}
 
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-    
-    if (searchTerm) {
-      // Debounce search
-      timeoutId = setTimeout(fetchPatients, 300);
-    } else {
-      // Immediate load for page changes
-      fetchPatients();
-    }
+// Hook for fetching patients with React Query
+export function usePatients(page: number = 1, searchTerm: string = '', limit: number = 10) {
+  const queryClient = useQueryClient();
 
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-      // Abort any pending request when component unmounts or dependencies change
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, [fetchPatients, searchTerm]);
-
-  // Optimistic updates to avoid unnecessary refetches
-  const updatePatient = useCallback((id: number, updates: Partial<Patient>) => {
-    setPatients(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
-    // Only invalidate list cache - individual patient cache not needed for optimistic updates
-    apiCache.invalidate('/api/patients?');
-  }, []);
-
-  const removePatient = useCallback((id: number) => {
-    setPatients(prev => prev.filter(p => p.id !== id));
-    // No cache invalidation needed - UI is already updated optimistically
-  }, []);
-
-  const addPatient = useCallback((patient: Patient) => {
-    setPatients(prev => [patient, ...prev]);
-    // Invalidate cache to ensure fresh data on next fetch
-    apiCache.invalidate('/api/patients?');
-  }, []);
+  const query = useQuery({
+    queryKey: ['patients', page, searchTerm, limit],
+    queryFn: () => fetchPatients(page, searchTerm, limit),
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    select: (data) => ({
+      patients: data.data,
+      pagination: data.pagination,
+    }),
+  });
 
   return {
-    patients,
-    loading,
-    pagination,
-    refetch: () => fetchPatients(true), // Force refresh when manually called
-    updatePatient,
-    removePatient,
-    addPatient
+    patients: query.data?.patients ?? [],
+    pagination: query.data?.pagination ?? null,
+    loading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
   };
+}
+
+// Mutation for adding a patient
+export function useAddPatient() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (patientData: Partial<Patient>) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch('/api/patients', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify(patientData),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to add patient');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate all patient queries to refetch
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+    },
+  });
+}
+
+// Mutation for updating a patient
+export function useUpdatePatient() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, updates }: { id: number; updates: Partial<Patient> }) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(`/api/patients/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify(updates),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update patient');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate all patient queries
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+    },
+  });
+}
+
+// Mutation for deleting a patient
+export function useDeletePatient() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(`/api/patients/${id}`, {
+        method: 'DELETE',
+        headers: {
+          ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete patient');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate all patient queries
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+    },
+  });
 }
