@@ -1603,7 +1603,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center z-[99999] p-2 sm:p-4"
+        className="fixed inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center z-99999 p-2 sm:p-4"
         onClick={onClose}
         onKeyDown={handleOverlayKeyDown}
         aria-hidden={false}
@@ -1621,7 +1621,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           ref={modalRef}
         >
           {/* Header */}
-          <div className="border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex-shrink-0">
+          <div className="border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 shrink-0">
             <div className="flex justify-between items-center">
               <div>
                 <h2 id="modal-title" className="text-xl sm:text-2xl font-bold text-gray-800">Add New Visit</h2>
@@ -1695,7 +1695,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
             </div>
 
             {/* Footer */}
-            <div className="bg-gray-50 px-4 sm:px-6 py-2.5 sm:py-3 flex justify-between items-center border-t flex-shrink-0">
+            <div className="bg-gray-50 px-4 sm:px-6 py-2.5 sm:py-3 flex justify-between items-center border-t shrink-0">
               <button
                 type="button"
                 onClick={prevStep}

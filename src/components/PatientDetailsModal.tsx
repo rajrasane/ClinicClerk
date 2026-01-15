@@ -180,7 +180,7 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center z-[99999] p-4"
+        className="fixed inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center z-99999 p-4"
         style={{ zIndex: 99999 }}
         onClick={onClose}
       >
@@ -409,7 +409,7 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
                               onClose(); // Close patient details modal first
                               onViewVisit(visit); // Open visit details modal
                             }}
-                            className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white rounded-full transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 border-2 border-blue-200 hover:border-blue-600"
+                            className="shrink-0 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white rounded-full transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 border-2 border-blue-200 hover:border-blue-600"
                             title="View visit details"
                             aria-label="View visit details"
                           >

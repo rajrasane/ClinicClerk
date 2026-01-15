@@ -206,7 +206,7 @@ export default function AdminPatients() {
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full">
-            <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+            <thead className="bg-linear-to-r from-gray-50 to-gray-100 border-b border-gray-200">
               <tr>
                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Patient
@@ -242,7 +242,7 @@ export default function AdminPatients() {
                   <tr key={patient.id} className="hover:bg-gray-50">
                     <td className="px-3 sm:px-6 py-4">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-blue-100 text-blue-800 font-medium text-sm sm:text-base">
+                        <div className="shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-blue-100 text-blue-800 font-medium text-sm sm:text-base">
                           {`${patient.first_name[0]}${patient.last_name[0]}`}
                         </div>
                         <div className="ml-3">

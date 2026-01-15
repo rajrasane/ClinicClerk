@@ -188,7 +188,7 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center z-[99999] p-4"
+        className="fixed inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center z-99999 p-4"
         style={{ zIndex: 99999 }}
         onClick={onClose}
       >
