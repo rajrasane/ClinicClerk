@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDoctor } from '@/hooks/useDoctor';
 import { toast } from 'react-hot-toast';
 import { ArrowLeft, Save, Trash2, User, Phone, Building, MapPin } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -18,7 +19,8 @@ interface DoctorProfile {
 }
 
 export default function ProfilePage() {
-  const { doctor, signOut, refreshDoctorData } = useAuth();
+  const { user, signOut } = useAuth();
+  const { doctor, loading: doctorLoading, refetch: refetchDoctor } = useDoctor(user?.id ?? null);
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -107,8 +109,8 @@ export default function ProfilePage() {
         toast.success('Profile updated successfully');
         // Update the original profile state to reflect changes
         setOriginalProfile(profile);
-        // Refresh the doctor data in AuthContext
-        await refreshDoctorData();
+        // Refresh the doctor data using React Query
+        await refetchDoctor();
         // Navigate back smoothly without full page reload
         router.push('/');
       } else {

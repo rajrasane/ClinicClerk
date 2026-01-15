@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDoctor } from '@/hooks/useDoctor';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -22,7 +23,8 @@ interface HeaderProps {
 }
 
 export const Header = ({ activeTab, setActiveTab }: HeaderProps) => {
-  const { user, doctor, doctorLoading, signOut } = useAuth();
+  const { user, signOut } = useAuth();
+  const { doctor, loading: doctorLoading } = useDoctor(user?.id ?? null);
   const router = useRouter();
   
   const tabs = [

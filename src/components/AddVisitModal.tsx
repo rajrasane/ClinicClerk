@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
-import { apiCache } from '@/lib/cache';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
@@ -498,9 +497,6 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
 
       if (result.success) {
         toast.success('Visit added successfully!');
-        // Clear cache for both patients and visits
-        apiCache.invalidate('/api/patients');
-        apiCache.invalidate('/api/visits');
         onSuccess();
         onClose();
       } else {

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { apiCache } from '@/lib/cache';
 import { DatePicker } from '@/components/ui/date-picker';
 import { supabase } from '@/lib/supabase';
 
@@ -217,9 +216,6 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
 
       if (result.success) {
         toast.success('Visit updated successfully!');
-        // Clear cache for both patients and visits
-        apiCache.invalidate('/api/patients');
-        apiCache.invalidate('/api/visits');
         onSuccess();
         onClose();
       } else {

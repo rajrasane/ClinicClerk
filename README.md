@@ -18,9 +18,10 @@ A modern, secure digital patient records management system built for solo medica
 
 ### 🚀 Performance & Optimization
 - **Optimized Database Schema** - 90% storage reduction with smart data types
-- **Intelligent Caching** - Optimized cache management for faster load times
+- **Intelligent Caching** - React Query with 10-minute stale time and automatic cache invalidation
+- **Optimistic Updates** - Instant UI feedback with background synchronization
+- **Smart Data Fetching** - Automatic deduplication and request batching
 - **Responsive Design** - Mobile-first UI with modern glass morphism effects
-- **Real-time Updates** - Optimistic updates for seamless user experience
 
 ### 💻 Modern UI/UX
 - **Clean Interface** - Modern, intuitive design with Tailwind CSS v4
@@ -34,6 +35,10 @@ A modern, secure digital patient records management system built for solo medica
 - **Framework**: Next.js 15.2.4 with TypeScript & React 19
 - **Database**: Supabase (PostgreSQL) with Row Level Security
 - **Authentication**: Supabase Auth with custom forms
+- **State Management**: 
+  - **React Query (TanStack Query)** - Server state management, caching, and data fetching (patients, visits, doctor profile)
+  - **Zustand** - Client-side UI state management (modals, pagination, filters)
+  - **React Context** - Authentication state only (user, session)
 - **Styling**: Tailwind CSS v4 with custom components
 - **UI Components**: Radix UI primitives + custom components
 - **Forms**: React Hook Form with validation
@@ -107,16 +112,25 @@ src/
 │   ├── Patients.tsx           # Patient management interface
 │   └── Visits.tsx             # Visit management interface
 ├── contexts/
-│   └── AuthContext.tsx        # Authentication context provider
+│   └── AuthContext.tsx        # Authentication context (user, session only)
 ├── hooks/
-│   ├── usePatients.ts         # Patient data management hooks
-│   └── useVisits.ts           # Visit data management hooks
+│   ├── useDoctor.ts           # React Query hooks for doctor profile
+│   ├── usePatients.ts         # React Query hooks for patient data
+│   ├── useVisits.ts           # React Query hooks for visit data
+│   └── useDebounce.ts         # Debounce hook for search optimization
 ├── lib/
 │   ├── supabase.ts            # Supabase client configuration
 │   ├── supabase-server.ts     # Server-side Supabase client
 │   ├── schema.sql             # Optimized database schema
-│   ├── cache.ts               # Cache management utilities
+│   ├── query-client.ts        # React Query configuration
+│   ├── excel-generator-server.ts # Server-side Excel export
+│   ├── pdf-generator-server.ts   # Server-side PDF export
 │   └── utils.ts               # Utility functions
+├── providers/
+│   └── QueryProvider.tsx      # React Query provider wrapper
+├── stores/
+│   ├── usePatientStore.ts     # Zustand store for patient UI state
+│   └── useVisitStore.ts       # Zustand store for visit UI state
 └── sections/
     └── Header.tsx             # Main navigation header
 ```
@@ -158,6 +172,43 @@ src/
 - **Visit Documentation** - Record chief complaints, symptoms, diagnosis, and treatment plans
 - **Medical History Review** - Access complete patient timeline with all previous visits
 - **Search Operations** - Find patients by name, phone, or filter visits by date range
+
+## 🏗️ State Management Architecture
+
+### Three-Layer State Strategy
+
+**1. Server State (React Query)**
+- Manages all data from the database (patients, visits, doctor profile)
+- Automatic caching with 10-minute stale time
+- Background refetching and revalidation
+- Optimistic updates for instant UI feedback
+- Automatic request deduplication
+- Configuration: `src/lib/query-client.ts`
+
+**2. UI State (Zustand)**
+- Modal visibility states (add, edit, details)
+- Pagination state (current page, page size)
+- Search and filter states
+- Date range selections
+- Selected items for operations
+- No data fetching or API calls
+- Stores: `src/stores/usePatientStore.ts`, `src/stores/useVisitStore.ts`
+
+**3. Global Auth State (React Context)**
+- User authentication status (user, session)
+- Session management
+- Sign in/out operations
+- **No data fetching** - purely for authentication
+- Context: `src/contexts/AuthContext.tsx`
+
+### Benefits
+- **Clean Separation**: Server state, UI state, and auth state are clearly separated
+- **No Prop Drilling**: Zustand eliminates the need to pass state through components
+- **Single Source of Truth**: All server data (including profile) managed by React Query
+- **Type Safety**: Full TypeScript support across all state layers
+- **Developer Experience**: Easy to debug and maintain
+- **Performance**: Auth Context is lightweight with no data fetching overheadstate layers
+- **Developer Experience**: Easy to debug and maintain
 
 ## 🔒 Security Features
 

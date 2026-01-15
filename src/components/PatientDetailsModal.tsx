@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { usePatientVisits } from '@/hooks/useVisits';
 
 interface Visit {
   id: number;
@@ -59,9 +60,9 @@ interface PatientDetailsModalProps {
 export default function PatientDetailsModal({ patient, onClose, onAddVisit, onViewVisit }: PatientDetailsModalProps) {
   const [activeTab, setActiveTab] = useState('details');
   const [mounted, setMounted] = useState(false);
-  const [visits, setVisits] = useState<Visit[]>([]);
-  const [visitsLoading, setVisitsLoading] = useState(false);
-  const [visitsLoaded, setVisitsLoaded] = useState(false);
+  
+  // Use React Query hook for visits
+  const { visits, loading: visitsLoading } = usePatientVisits(activeTab === 'visits' ? patient.id : null);
   
   // Touch/swipe handling
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -83,43 +84,11 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
     };
   }, []);
 
-  const loadVisits = async () => {
-    if (visitsLoaded || visitsLoading || typeof window === 'undefined') return;
-    
-    // Skip API call if we know there are no visits
-    const visitCount = Number(patient.visit_count);
-    if (visitCount === 0) {
-      setVisits([]);
-      setVisitsLoaded(true);
-      return;
-    }
-    
-    setVisitsLoading(true);
-    try {
-      // Use cached fetch for visit history
-      const { cachedFetch } = await import('@/lib/cache');
-      const data = await cachedFetch(`/api/visits?patient_id=${patient.id}`, undefined, 5); // 5 min cache
-      
-      if (data.success && data.data) {
-        setVisits(data.data);
-        setVisitsLoaded(true);
-      }
-    } catch (error) {
-      console.error('Error loading visits:', error);
-    } finally {
-      setVisitsLoading(false);
-    }
-  };
-
   const handleVisitsTab = () => {
     setActiveTab('visits');
     // Reset scroll position to top when switching to visits tab
     if (contentRef.current) {
       contentRef.current.scrollTop = 0;
-    }
-    // Only load visits if we haven't loaded them AND there are visits to load
-    if (!visitsLoaded && Number(patient.visit_count) > 0) {
-      loadVisits();
     }
   };
 

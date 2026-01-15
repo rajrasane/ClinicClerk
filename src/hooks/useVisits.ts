@@ -99,6 +99,39 @@ export function useVisits(
   };
 }
 
+// Fetch visits by patient ID
+async function fetchVisitsByPatient(patientId: number): Promise<Visit[]> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const response = await fetch(`/api/visits?patient_id=${patientId}`, {
+    credentials: 'include',
+    headers: session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch patient visits');
+  }
+
+  const result = await response.json();
+  return result.success ? result.data : [];
+}
+
+// Hook for fetching visits for a specific patient
+export function usePatientVisits(patientId: number | null) {
+  const query = useQuery({
+    queryKey: ['visits', 'patient', patientId],
+    queryFn: () => fetchVisitsByPatient(patientId!),
+    enabled: !!patientId,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+
+  return {
+    visits: query.data ?? [],
+    loading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
+  };
+}
+
 // Mutation for adding a visit
 export function useAddVisit() {
   const queryClient = useQueryClient();
