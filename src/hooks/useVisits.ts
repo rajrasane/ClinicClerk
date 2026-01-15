@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { cachedFetch, apiCache } from '@/lib/cache';
 
 interface Visit {
@@ -51,8 +51,17 @@ export function useVisits(
   const [visits, setVisits] = useState<Visit[]>([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState<PaginationData | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchVisits = useCallback(async () => {
+    // Cancel any pending request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -95,6 +104,10 @@ export function useVisits(
 
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
+      // Abort any pending request when component unmounts or dependencies change
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
     };
   }, [fetchVisits, searchQuery, dateRange.startDate, dateRange.endDate]);
 

@@ -95,7 +95,7 @@ export const Header = ({ activeTab, setActiveTab }: HeaderProps) => {
               </div>
 
               {/* Avatar Dropdown for all screens */}
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center space-x-2 hover:opacity-80 transition-opacity focus:outline-none rounded-full">
                     <Avatar className="h-8 w-8 sm:h-10 sm:w-10">

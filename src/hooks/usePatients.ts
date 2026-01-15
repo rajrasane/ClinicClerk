@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { cachedFetch, apiCache } from '@/lib/cache';
 
 interface Patient {
@@ -41,8 +41,17 @@ export function usePatients(page: number = 1, searchTerm: string = '', limit: nu
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState<PaginationData | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchPatients = useCallback(async (forceRefresh = false) => {
+    // Cancel any pending request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -97,6 +106,10 @@ export function usePatients(page: number = 1, searchTerm: string = '', limit: nu
 
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
+      // Abort any pending request when component unmounts or dependencies change
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
     };
   }, [fetchPatients, searchTerm]);
 

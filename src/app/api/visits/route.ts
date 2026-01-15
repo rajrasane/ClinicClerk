@@ -42,9 +42,23 @@ export async function GET(request: NextRequest) {
       query = query.eq('patient_id', parseInt(patientId));
     }
 
-    // Add search filter
+    // Add search filter - first find matching patients if search is present
     if (search) {
-      query = query.or(`chief_complaint.ilike.%${search}%,diagnosis.ilike.%${search}%`);
+      // Search for matching patients
+      const { data: matchingPatients } = await supabase
+        .from('patients')
+        .select('id')
+        .or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%`);
+
+      const patientIds = matchingPatients?.map(p => p.id) || [];
+
+      // Build condition: search in visit fields OR patient IDs
+      if (patientIds.length > 0) {
+        query = query.or(`chief_complaint.ilike.%${search}%,diagnosis.ilike.%${search}%,patient_id.in.(${patientIds.join(',')})`);
+      } else {
+        // No matching patients, just search in visit fields
+        query = query.or(`chief_complaint.ilike.%${search}%,diagnosis.ilike.%${search}%`);
+      }
     }
 
     // Add date range filter

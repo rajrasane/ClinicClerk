@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { apiCache } from '@/lib/cache'
@@ -36,9 +36,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [doctor, setDoctor] = useState<Doctor | null>(null)
   const [loading, setLoading] = useState(true)
   const [doctorLoading, setDoctorLoading] = useState(false)
+  const fetchingRef = useRef(false)
+  const currentUserIdRef = useRef<string | null>(null)
 
   // Fetch doctor data when user is available
   const fetchDoctorData = async (userId: string) => {
+    // Prevent duplicate calls for the same user
+    if (fetchingRef.current && currentUserIdRef.current === userId) {
+      return
+    }
+
+    fetchingRef.current = true
+    currentUserIdRef.current = userId
     setDoctorLoading(true)
     try {
       const { data, error } = await supabase
@@ -68,6 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setDoctor(null)
     } finally {
       setDoctorLoading(false)
+      fetchingRef.current = false
     }
   }
 

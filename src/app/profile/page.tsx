@@ -172,7 +172,7 @@ export default function ProfilePage() {
                 router.back();
               }, 100);
             }}
-            className="flex items-center text-gray-600 hover:text-gray-900 mb-4 transition-all duration-200 hover:transform hover:translate-x-1"
+            className="flex items-center text-gray-600 hover:text-gray-900 mb-4 transition-all duration-200 cursor-pointer"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
