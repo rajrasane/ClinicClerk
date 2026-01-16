@@ -14,14 +14,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { LogOut, User, Settings } from 'lucide-react';
-import { UserGroupIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { UserGroupIcon, ClockIcon, SparklesIcon } from '@heroicons/react/24/outline';
 
 interface HeaderProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  onAIClick?: () => void;
 }
 
-export const Header = ({ activeTab, setActiveTab }: HeaderProps) => {
+export const Header = ({ activeTab, setActiveTab, onAIClick }: HeaderProps) => {
   const { user, doctor, doctorLoading, signOut } = useAuth();
   const router = useRouter();
   
@@ -78,8 +79,20 @@ export const Header = ({ activeTab, setActiveTab }: HeaderProps) => {
               </h1>
             </div>
             
-            {/* Welcome Message and Avatar Dropdown */}
+            {/* AI Assistant Button, Welcome Message and Avatar Dropdown */}
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              {/* AI Assistant Button */}
+              {onAIClick && (
+                <button
+                  onClick={onAIClick}
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors group relative"
+                  title="AI Assistant"
+                >
+                  <SparklesIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 group-hover:text-blue-700" />
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                </button>
+              )}
+              
               {/* Welcome message - hidden on xs screens */}
               <div className="hidden sm:block text-right">
                 <div className="text-xs sm:text-sm font-medium text-gray-900">

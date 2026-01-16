@@ -6,11 +6,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Header } from '@/sections/Header';
 import AdminPatients from '@/components/Patients';
 import AdminVisits from '@/components/Visits';
+import AIChatSidebar from '@/components/AIChatSidebar';
 import LandingPage from './landing/page';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('patients');
   const [visitedTabs, setVisitedTabs] = useState(new Set(['patients'])); // Track which tabs have been visited
+  const [isAISidebarOpen, setIsAISidebarOpen] = useState(false);
   const { user, loading } = useAuth();
 
   const handleTabChange = (tab: string) => {
@@ -34,7 +36,11 @@ export default function Home() {
   // Show dashboard for authenticated users
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#f3f3f7' }}>
-      <Header activeTab={activeTab} setActiveTab={handleTabChange} />
+      <Header 
+        activeTab={activeTab} 
+        setActiveTab={handleTabChange}
+        onAIClick={() => setIsAISidebarOpen(true)}
+      />
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
@@ -45,6 +51,12 @@ export default function Home() {
           transition={{ duration: 0.3 }}
         >
           {/* Only render components that have been visited */}
+
+      {/* AI Chat Sidebar */}
+      <AIChatSidebar 
+        isOpen={isAISidebarOpen}
+        onClose={() => setIsAISidebarOpen(false)}
+      />
           {activeTab === 'patients' && <AdminPatients />}
           {activeTab === 'visits' && visitedTabs.has('visits') && <AdminVisits />}
         </motion.div>

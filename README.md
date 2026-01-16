@@ -29,6 +29,13 @@ A modern, secure digital patient records management system built for solo medica
 - **Date Pickers** - Advanced date selection with auto-close functionality
 - **Responsive Layout** - Optimized for desktop, tablet, and mobile devices
 
+### 🤖 AI-Powered Analytics
+- **Natural Language Queries** - Ask questions about your patient data in plain English
+- **Smart Data Analysis** - Get instant insights on patient visits, diagnoses, and trends
+- **Gemini AI Integration** - Powered by Google's Gemini 2.5 Flash model
+- **Context-Aware** - Maintains conversation history for follow-up questions
+- **Privacy-First** - AI only accesses your authenticated patient data
+
 ## 🛠 Tech Stack
 
 - **Framework**: Next.js 15.2.4 with TypeScript & React 19
@@ -41,6 +48,7 @@ A modern, secure digital patient records management system built for solo medica
 - **Icons**: Heroicons & Lucide React
 - **Date Handling**: date-fns & React Day Picker
 - **Notifications**: React Hot Toast
+- **AI**: Google Gemini 2.5 Flash via @google/genai SDK
 
 ## 🚀 Quick Start
 
@@ -72,6 +80,9 @@ SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
 # Optional: PostgreSQL Database (if using direct connection)
 DATABASE_URL=your_database_url
+
+# AI Assistant (Optional)
+GEMINI_API_KEY=your_gemini_api_key  # Get from https://aistudio.google.com/app/apikey
 ```
 
 ### Database Setup
@@ -85,6 +96,7 @@ DATABASE_URL=your_database_url
 ```
 src/
 ├── app/
+│   │   ├── ai-chat/           # AI assistant endpoint
 │   ├── api/                    # API routes
 │   │   ├── patients/          # Patient CRUD operations
 │   │   ├── visits/            # Visit CRUD operations  
@@ -103,6 +115,7 @@ src/
 │   ├── AddPatientModalNew.tsx # Patient creation modal
 │   ├── AddVisitModal.tsx      # Visit creation modal
 │   ├── PatientDetailsModal.tsx# Patient details view
+│   ├── AIChatSidebar.tsx      # AI assistant interface
 │   ├── VisitDetailsModal.tsx  # Visit details view
 │   ├── Patients.tsx           # Patient management interface
 │   └── Visits.tsx             # Visit management interface
@@ -142,18 +155,23 @@ src/
 
 ### Profile
 - `GET /api/profile` - Get doctor profile
+
+### AI Assistant
+- `POST /api/ai-chat` - Query patient data using natural language
 - `PUT /api/profile` - Update doctor profile
 
 ## 🏥 Usage
 
 ### For Solo Practitioners
-1. **Sign Up** - Create your doctor account with clinic details
+1. **AI Assistant** - Ask questions about your patient data in natural language
+6. **Sign Up** - Create your doctor account with clinic details
 2. **Add Patients** - Register new patients with comprehensive medical information
 3. **Record Visits** - Document consultations, diagnoses, and prescriptions
 4. **Search & Filter** - Quickly find patients and review medical history
 5. **Manage Profile** - Update your clinic information and preferences
 
 ### Key Workflows
+- **AI Queries** - Ask "How many patients visited last month?" or "Show patients with diabetes"
 - **Patient Registration** - Capture demographics, medical history, and emergency contacts
 - **Visit Documentation** - Record chief complaints, symptoms, diagnosis, and treatment plans
 - **Medical History Review** - Access complete patient timeline with all previous visits
