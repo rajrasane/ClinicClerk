@@ -85,11 +85,13 @@ export const Header = ({ activeTab, setActiveTab, onAIClick }: HeaderProps) => {
               {onAIClick && (
                 <button
                   onClick={onAIClick}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors group relative"
+                  className="relative flex items-center gap-1 px-[7px] py-[7px] rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 hover:border-blue-300 transition-colors group"
                   title="AI Assistant"
                 >
-                  <SparklesIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 group-hover:text-blue-700" />
-                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                  <SparklesIcon className="w-5 h-5 text-blue-600" />
+                  <span className="hidden sm:inline text-sm font-medium text-blue-700">
+                    AI
+                  </span>
                 </button>
               )}
               

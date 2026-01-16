@@ -34,6 +34,7 @@ A modern, secure digital patient records management system built for solo medica
 - **Smart Data Analysis** - Get instant insights on patient visits, diagnoses, and trends
 - **Gemini AI Integration** - Powered by Google's Gemini 2.5 Flash model
 - **Context-Aware** - Maintains conversation history for follow-up questions
+- **Intelligent Caching** - Fetches data once per session, then answers instantly from cache
 - **Privacy-First** - AI only accesses your authenticated patient data
 
 ## 🛠 Tech Stack
@@ -157,7 +158,8 @@ src/
 - `GET /api/profile` - Get doctor profile
 
 ### AI Assistant
-- `POST /api/ai-chat` - Query patient data using natural language
+- `GET /api/ai-chat/data` - Fetch patient/visit data for AI context (cached per session)
+- `POST /api/ai-chat` - Query patient data using natural language with cached context
 - `PUT /api/profile` - Update doctor profile
 
 ## 🏥 Usage
@@ -189,6 +191,7 @@ src/
 
 - **Database Schema** - Optimized data types for 90% storage reduction
 - **Smart Caching** - Intelligent cache invalidation strategies
+- **AI Data Caching** - Single data fetch per AI session for instant responses
 - **Optimistic Updates** - Immediate UI updates with background sync
 - **Connection Pooling** - Efficient database connection management
 - **Responsive Loading** - Progressive loading with skeleton states

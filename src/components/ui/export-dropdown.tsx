@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Download, FileImage, Loader2, FileSpreadsheet } from 'lucide-react'
+import { Download, Loader2, FileSpreadsheet } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -139,14 +139,14 @@ export function ExportDropdown({
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             Download as Excel
           </DropdownMenuItem>
-          <DropdownMenuItem 
+          {/* <DropdownMenuItem 
             onClick={() => handleExport('pdf')} 
             disabled={isExporting || !hasRecords}
             className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:bg-gray-50 cursor-pointer rounded-md mx-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FileImage className="mr-2 h-4 w-4" />
             Download as PDF
-          </DropdownMenuItem>
+          </DropdownMenuItem> */}
         </DropdownMenuContent>
       </DropdownMenu>
     )
@@ -179,14 +179,14 @@ export function ExportDropdown({
           <FileSpreadsheet className="mr-2 h-4 w-4" />
           Download as Excel
         </DropdownMenuItem>
-        <DropdownMenuItem 
+        {/* <DropdownMenuItem 
           onClick={() => handleExport('pdf')} 
           disabled={isExporting || !hasRecords}
           className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:bg-gray-50 cursor-pointer rounded-md mx-1 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <FileImage className="mr-2 h-4 w-4" />
           Download as PDF
-        </DropdownMenuItem>
+        </DropdownMenuItem> */}
       </DropdownMenuContent>
     </DropdownMenu>
   )

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { usePatients } from '@/hooks/usePatients';
 import { apiCache } from '@/lib/cache';
@@ -69,6 +69,11 @@ export default function AdminPatients() {
   const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
 
   const totalPages = pagination?.totalPages || 1;
+
+  // Reset to page 1 when search term changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const handleViewPatient = (patient: Patient) => {
     // Show modal immediately with existing patient data
