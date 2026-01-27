@@ -21,6 +21,23 @@ export default function SignupForm() {
     setLoading(true)
 
     try {
+      // Validate password strength
+      if (password.length < 8) {
+        toast.error('Password must be at least 8 characters long')
+        setLoading(false)
+        return
+      }
+      if (!/[A-Z]/.test(password)) {
+        toast.error('Password must contain at least one uppercase letter')
+        setLoading(false)
+        return
+      }
+      if (!/[0-9]/.test(password)) {
+        toast.error('Password must contain at least one number')
+        setLoading(false)
+        return
+      }
+
       // Create display name from first and last name
       const displayName = `Dr. ${firstName} ${lastName}`
       
@@ -179,10 +196,10 @@ export default function SignupForm() {
                   autoComplete="new-password"
                   required
                   className={`w-full px-4 py-2.5 ${password ? 'pr-12' : 'pr-4'} border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm`}
-                  placeholder="Minimum 6 characters"
+                  placeholder="Min 8 chars, 1 uppercase, 1 number"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  minLength={6}
+                  minLength={8}
                 />
                 {password && (
                   <button
