@@ -138,6 +138,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Input length validation (matches DB schema constraints)
+    const lengthLimits = [
+      { field: 'first_name', value: first_name, max: 30 },
+      { field: 'middle_name', value: middle_name, max: 30 },
+      { field: 'last_name', value: last_name, max: 30 },
+      { field: 'phone', value: phone, max: 10 },
+      { field: 'address', value: address, max: 200 },
+      { field: 'allergies', value: allergies, max: 500 },
+      { field: 'emergency_contact', value: emergency_contact, max: 50 },
+    ];
+    for (const { field, value, max } of lengthLimits) {
+      if (value && value.length > max) {
+        return NextResponse.json(
+          { success: false, error: `${field} exceeds maximum length of ${max} characters` },
+          { status: 400 }
+        );
+      }
+    }
+
     // Validate age
     if (age <= 0 || age > 120) {
       return NextResponse.json(

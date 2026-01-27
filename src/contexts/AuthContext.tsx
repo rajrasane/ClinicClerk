@@ -82,8 +82,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    // Get initial session with error handling for stale tokens
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      // Handle invalid refresh token error - clear stale tokens and reset
+      if (error?.message?.includes('Refresh Token') || error?.code === 'bad_jwt') {
+        console.warn('Stale auth tokens detected, clearing...')
+        if (typeof window !== 'undefined') {
+          localStorage.clear()
+          sessionStorage.clear()
+        }
+        setSession(null)
+        setUser(null)
+        setDoctor(null)
+        setLoading(false)
+        setDoctorLoading(false)
+        return
+      }
+      
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false) // Auth loading complete
@@ -94,12 +109,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setDoctor(null)
         setDoctorLoading(false)
       }
+    }).catch((err) => {
+      // Catch any unhandled auth errors (e.g., network issues, invalid tokens)
+      console.error('Auth session error:', err)
+      if (typeof window !== 'undefined') {
+        localStorage.clear()
+        sessionStorage.clear()
+      }
+      setSession(null)
+      setUser(null)
+      setDoctor(null)
+      setLoading(false)
+      setDoctorLoading(false)
     })
 
-    // Listen for auth changes
+    // Listen for auth changes (including token refresh errors)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Handle token refresh failure
+      if (event === 'TOKEN_REFRESHED' && !session) {
+        console.warn('Token refresh failed, clearing session...')
+        if (typeof window !== 'undefined') {
+          localStorage.clear()
+          sessionStorage.clear()
+        }
+        setSession(null)
+        setUser(null)
+        setDoctor(null)
+        setLoading(false)
+        setDoctorLoading(false)
+        return
+      }
+      
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false) // Auth loading complete

@@ -81,18 +81,18 @@ ALTER TABLE visits ENABLE ROW LEVEL SECURITY;
 -- OPTIMIZED RLS Policies (Single policy per table, performance optimized)
 CREATE POLICY "doctors_optimized_policy" ON doctors
     FOR ALL
-    TO authenticated, anon
+    TO authenticated
     USING (id = (SELECT auth.uid()))
     WITH CHECK (id = (SELECT auth.uid()));
 
 CREATE POLICY "patients_optimized_policy" ON patients
     FOR ALL
-    TO authenticated, anon
+    TO authenticated
     USING (doctor_id = (SELECT auth.uid()))
     WITH CHECK (doctor_id = (SELECT auth.uid()));
 
 CREATE POLICY "visits_optimized_policy" ON visits
     FOR ALL
-    TO authenticated, anon
+    TO authenticated
     USING (doctor_id = (SELECT auth.uid()))
     WITH CHECK (doctor_id = (SELECT auth.uid()));

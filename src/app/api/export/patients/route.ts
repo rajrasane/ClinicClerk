@@ -59,6 +59,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // HIPAA Audit Log: Record PHI export
+    console.log(JSON.stringify({
+      audit: 'PHI_EXPORT',
+      type: 'patients',
+      format,
+      doctor_id: user.id,
+      record_count: patients.length,
+      timestamp: new Date().toISOString(),
+      ip: request.headers.get('x-forwarded-for') || 'unknown'
+    }));
+
     // Process patients data - only fields needed for export
     const processedPatients = patients.map(patient => ({
       first_name: patient.first_name,

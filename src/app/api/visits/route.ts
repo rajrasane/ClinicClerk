@@ -167,6 +167,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Input length validation (matches DB schema constraints)
+    const lengthLimits = [
+      { field: 'chief_complaint', value: chief_complaint, max: 300 },
+      { field: 'symptoms', value: symptoms, max: 500 },
+      { field: 'diagnosis', value: diagnosis, max: 300 },
+      { field: 'prescription', value: prescription, max: 1000 },
+      { field: 'notes', value: notes, max: 500 },
+    ];
+    for (const { field, value, max } of lengthLimits) {
+      if (value && value.length > max) {
+        return NextResponse.json(
+          { success: false, error: `${field} exceeds maximum length of ${max} characters` },
+          { status: 400 }
+        );
+      }
+    }
+
     // Validate payment fields
     if (payment_status === 'D' && payment_method) {
       return NextResponse.json(
