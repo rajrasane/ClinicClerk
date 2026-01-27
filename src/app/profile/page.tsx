@@ -162,16 +162,7 @@ export default function ProfilePage() {
         {/* Header */}
         <div className="mb-8">
           <button
-            onClick={() => {
-              // Add a slight delay to allow for any exit animations
-              document.body.style.opacity = '0.95';
-              document.body.style.transform = 'translateY(-5px)';
-              document.body.style.transition = 'all 0.2s ease-out';
-              
-              setTimeout(() => {
-                router.back();
-              }, 100);
-            }}
+            onClick={() => router.back()}
             className="flex items-center text-gray-600 hover:text-gray-900 mb-4 transition-all duration-200 cursor-pointer"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -248,7 +239,7 @@ export default function ProfilePage() {
 
                 {/* Phone */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 items-center">
                     <Phone className="h-4 w-4 mr-1" />
                     Phone Number
                   </label>
@@ -288,7 +279,7 @@ export default function ProfilePage() {
 
                   {/* Clinic Address */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                    <label className="block text-sm font-medium text-gray-700 mb-2 items-center">
                       <MapPin className="h-4 w-4 mr-1" />
                       Clinic Address
                     </label>
