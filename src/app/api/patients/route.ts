@@ -126,7 +126,6 @@ export async function POST(request: NextRequest) {
       address,
       blood_group,
       allergies,
-      medical_history,
       emergency_contact
     } = body;
 
@@ -206,7 +205,6 @@ export async function POST(request: NextRequest) {
         address,
         blood_group,
         allergies,
-        medical_history,
         emergency_contact,
         doctor_id: user.id, // Associate with the authenticated doctor
       })
