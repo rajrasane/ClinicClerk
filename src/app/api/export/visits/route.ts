@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateVisitsExcelBuffer } from '@/lib/excel-generator-server';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { generateVisitsPDFBuffer } from '@/lib/pdf-generator-server';
+import { sanitizeSearchTerm } from '@/lib/sanitize';
 
 
 // GET /api/export/visits - Export visits data as CSV/PDF
@@ -48,7 +49,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      query = query.or(`chief_complaint.ilike.%${search}%,diagnosis.ilike.%${search}%`);
+      const sanitizedSearch = sanitizeSearchTerm(search);
+      if (sanitizedSearch) {
+        query = query.or(`chief_complaint.ilike.%${sanitizedSearch}%,diagnosis.ilike.%${sanitizedSearch}%`);
+      }
     }
 
     if (startDate) {

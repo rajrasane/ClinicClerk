@@ -120,12 +120,18 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
   }, []);
 
   useEffect(() => {
-    if (patientType === 'existing') {
-      fetchPatients();
+    // Only search when user types something
+    if (patientType === 'existing' && searchTerm.trim().length >= 1) {
+      const debounceTimer = setTimeout(() => {
+        fetchPatients(searchTerm.trim());
+      }, 350);
+      return () => clearTimeout(debounceTimer);
+    } else if (patientType === 'existing' && searchTerm.trim().length === 0) {
+      setPatients([]); // Clear results when search is empty
     }
-  }, [patientType]);
+  }, [searchTerm, patientType]);
 
-  const fetchPatients = async () => {
+  const fetchPatients = async (search: string) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
@@ -133,8 +139,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         return;
       }
 
-      // Only fetch first 20 patients with search capability
-      const response = await fetch('/api/patients?limit=20', {
+      const response = await fetch(`/api/patients?limit=20&search=${encodeURIComponent(search)}`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
@@ -590,6 +595,29 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
       return false;
     }
     
+    // For preselected patient flow (check this FIRST before existing patient flow)
+    if (preselectedPatientId) {
+      if (currentStep === 1) {
+        // Visit details step - check required fields
+        const hasVisitDate = formData.visit_date instanceof Date;
+        const hasChiefComplaint = formData.chief_complaint.trim() !== '';
+        const hasNoErrors = !errors.visit_date && !errors.chief_complaint;
+        return hasVisitDate && hasChiefComplaint && hasNoErrors;
+      }
+      if (currentStep === 2) {
+        // Vitals step - all optional
+        return true;
+      }
+      if (currentStep === 3) {
+        // Payment step - all payment fields required
+        const hasConsultationFee = parseInt(formData.consultation_fee) > 0;
+        const hasPaymentStatus = formData.payment_status !== '';
+        const hasValidPaymentMethod = formData.payment_status === 'D' || 
+          (formData.payment_status === 'P' && (formData.payment_method === 'C' || formData.payment_method === 'O'));
+        return hasConsultationFee && hasPaymentStatus && hasValidPaymentMethod;
+      }
+    }
+    
     // For new patient flow
     if (patientType === 'new') {
       if (currentStep === 2) {
@@ -627,7 +655,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
       }
     }
     
-    // For existing patient flow
+    // For existing patient flow (without preselected patient)
     if (patientType === 'existing') {
       if (currentStep === 2) {
         // Patient selection and visit details - only check patient and visit date
@@ -647,29 +675,6 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         return true;
       }
       if (currentStep === 5) {
-        // Payment step - all payment fields required
-        const hasConsultationFee = parseInt(formData.consultation_fee) > 0;
-        const hasPaymentStatus = formData.payment_status !== '';
-        const hasValidPaymentMethod = formData.payment_status === 'D' || 
-          (formData.payment_status === 'P' && (formData.payment_method === 'C' || formData.payment_method === 'O'));
-        return hasConsultationFee && hasPaymentStatus && hasValidPaymentMethod;
-      }
-    }
-    
-    // For preselected patient flow
-    if (preselectedPatientId) {
-      if (currentStep === 1) {
-        // Visit details step - check required fields
-        const hasVisitDate = formData.visit_date instanceof Date;
-        const hasChiefComplaint = formData.chief_complaint.trim() !== '';
-        const hasNoErrors = !errors.visit_date && !errors.chief_complaint;
-        return hasVisitDate && hasChiefComplaint && hasNoErrors;
-      }
-      if (currentStep === 2) {
-        // Vitals step - all optional
-        return true;
-      }
-      if (currentStep === 3) {
         // Payment step - all payment fields required
         const hasConsultationFee = parseInt(formData.consultation_fee) > 0;
         const hasPaymentStatus = formData.payment_status !== '';
@@ -720,7 +725,9 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     }
   };
 
+  // Client-side filtering for immediate feedback (server search handles the heavy lifting)
   const filteredPatients = patients.filter(patient =>
+    searchTerm.trim() === '' ||
     `${patient.first_name} ${patient.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     patient.phone.includes(searchTerm)
   );

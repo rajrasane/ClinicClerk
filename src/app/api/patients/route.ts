@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient, getAuthenticatedUser } from '@/lib/supabase-server';
+import { sanitizeSearchTerms } from '@/lib/sanitize';
 
 // GET /api/patients - List all patients with optional search
 export async function GET(request: NextRequest) {
@@ -41,9 +42,9 @@ export async function GET(request: NextRequest) {
       `)
       .order('created_at', { ascending: false });
 
-    // Add search filter if provided
+    // Add search filter if provided (sanitized to prevent injection)
     if (search) {
-      const searchTerms = search.trim().split(/\s+/);
+      const searchTerms = sanitizeSearchTerms(search);
       searchTerms.forEach(term => {
         query = query.or(`first_name.ilike.%${term}%,middle_name.ilike.%${term}%,last_name.ilike.%${term}%,phone.like.%${term}%`);
       });

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient, getAuthenticatedUser } from '@/lib/supabase-server';
+import { sanitizeSearchTerm } from '@/lib/sanitize';
 
 // GET /api/visits - List visits with optional patient filter
 export async function GET(request: NextRequest) {
@@ -42,22 +43,25 @@ export async function GET(request: NextRequest) {
       query = query.eq('patient_id', parseInt(patientId));
     }
 
-    // Add search filter - first find matching patients if search is present
+    // Add search filter - first find matching patients if search is present (sanitized)
     if (search) {
-      // Search for matching patients
-      const { data: matchingPatients } = await supabase
-        .from('patients')
-        .select('id')
-        .or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%`);
+      const sanitizedSearch = sanitizeSearchTerm(search);
+      if (sanitizedSearch) {
+        // Search for matching patients
+        const { data: matchingPatients } = await supabase
+          .from('patients')
+          .select('id')
+          .or(`first_name.ilike.%${sanitizedSearch}%,last_name.ilike.%${sanitizedSearch}%`);
 
-      const patientIds = matchingPatients?.map(p => p.id) || [];
+        const patientIds = matchingPatients?.map(p => p.id) || [];
 
-      // Build condition: search in visit fields OR patient IDs
-      if (patientIds.length > 0) {
-        query = query.or(`chief_complaint.ilike.%${search}%,diagnosis.ilike.%${search}%,patient_id.in.(${patientIds.join(',')})`);
-      } else {
-        // No matching patients, just search in visit fields
-        query = query.or(`chief_complaint.ilike.%${search}%,diagnosis.ilike.%${search}%`);
+        // Build condition: search in visit fields OR patient IDs
+        if (patientIds.length > 0) {
+          query = query.or(`chief_complaint.ilike.%${sanitizedSearch}%,diagnosis.ilike.%${sanitizedSearch}%,patient_id.in.(${patientIds.join(',')})`);
+        } else {
+          // No matching patients, just search in visit fields
+          query = query.or(`chief_complaint.ilike.%${sanitizedSearch}%,diagnosis.ilike.%${sanitizedSearch}%`);
+        }
       }
     }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { generatePatientsPDFBuffer } from '@/lib/pdf-generator-server';
 import { generatePatientsExcelBuffer } from '@/lib/excel-generator-server';
+import { sanitizeSearchTerms } from '@/lib/sanitize';
 
 // GET /api/export/patients - Export patients data as CSV/PDF
 export async function GET(request: NextRequest) {
@@ -37,9 +38,9 @@ export async function GET(request: NextRequest) {
       `)
       .order('created_at', { ascending: false });
 
-    // Add search filter if provided
+    // Add search filter if provided (sanitized to prevent injection)
     if (search) {
-      const searchTerms = search.trim().split(/\s+/);
+      const searchTerms = sanitizeSearchTerms(search);
       searchTerms.forEach(term => {
         query = query.or(`first_name.ilike.%${term}%,middle_name.ilike.%${term}%,last_name.ilike.%${term}%,phone.ilike.%${term}%`);
       });

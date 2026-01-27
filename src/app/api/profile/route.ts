@@ -60,12 +60,7 @@ export async function PUT(request: NextRequest) {
     if (!existingDoctor) {
       console.error('No doctor record found for user:', user.id);
       return NextResponse.json({ 
-        error: 'Doctor profile not found. Please contact support.',
-        debug: { 
-          userId: user.id, 
-          userEmail: user.email,
-          checkError: checkError
-        }
+        error: 'Doctor profile not found. Please contact support.'
       }, { status: 404 });
     }
 
