@@ -4,13 +4,15 @@ import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useVisits } from '@/hooks/useVisits';
 import { apiCache } from '@/lib/cache';
-import AddVisitModal from './AddVisitModal';
-import VisitDetailsModal from './VisitDetailsModal';
-import EditVisitModal from './EditVisitModal';
 import { DatePicker } from '@/components/ui/date-picker';
 import { supabase } from '@/lib/supabase';
 import { ExportDropdown } from '@/components/ui/export-dropdown';
 import type { Visit } from '@/types';
+import dynamic from 'next/dynamic';
+
+const AddVisitModal = dynamic(() => import('./AddVisitModal'), { ssr: false });
+const VisitDetailsModal = dynamic(() => import('./VisitDetailsModal'), { ssr: false });
+const EditVisitModal = dynamic(() => import('./EditVisitModal'), { ssr: false });
 
 
 export default function AdminVisits() {
@@ -254,7 +256,7 @@ export default function AdminVisits() {
       </div>
 
       {/* Visits Table */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+      <div className="glass-panel rounded-xl shadow-lg border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto md:overflow-x-visible">
           <table className="min-w-full md:w-full md:table-fixed">
             <thead className="bg-linear-to-r from-gray-50 to-gray-100 border-b border-gray-200">

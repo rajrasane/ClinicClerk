@@ -4,15 +4,17 @@ import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { usePatients } from '@/hooks/usePatients';
 import { apiCache } from '@/lib/cache';
-import AddPatientModalNew from './AddPatientModalNew';
-import PatientDetailsModal from './PatientDetailsModal';
-import EditPatientModal from './EditPatientModal';
-import AddVisitModal from './AddVisitModal';
-import VisitDetailsModal from './VisitDetailsModal';
-import EditVisitModal from './EditVisitModal';
+import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabase';
 import { ExportDropdown } from '@/components/ui/export-dropdown';
 import type { Patient, Visit } from '@/types';
+
+const AddPatientModalNew = dynamic(() => import('./AddPatientModalNew'), { ssr: false });
+const PatientDetailsModal = dynamic(() => import('./PatientDetailsModal'), { ssr: false });
+const EditPatientModal = dynamic(() => import('./EditPatientModal'), { ssr: false });
+const AddVisitModal = dynamic(() => import('./AddVisitModal'), { ssr: false });
+const VisitDetailsModal = dynamic(() => import('./VisitDetailsModal'), { ssr: false });
+const EditVisitModal = dynamic(() => import('./EditVisitModal'), { ssr: false });
 
 
 export default function AdminPatients() {
@@ -174,7 +176,7 @@ export default function AdminPatients() {
       </div>
 
       {/* Patients Table */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+      <div className="glass-panel rounded-xl shadow-lg border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead className="bg-linear-to-r from-gray-50 to-gray-100 border-b border-gray-200">

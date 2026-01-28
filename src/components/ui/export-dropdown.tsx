@@ -27,10 +27,10 @@ interface ExportDropdownProps {
   hasRecords?: boolean
 }
 
-export function ExportDropdown({ 
-  type, 
-  filters = {}, 
-  className = '', 
+export function ExportDropdown({
+  type,
+  filters = {},
+  className = '',
   buttonText = 'Export',
   variant = 'button',
   hasRecords = true
@@ -39,7 +39,7 @@ export function ExportDropdown({
 
   const handleExport = async (format: 'csv' | 'json' | 'pdf' | 'excel') => {
     setIsExporting(true)
-    
+
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.access_token) {
@@ -50,7 +50,7 @@ export function ExportDropdown({
       // Build query parameters
       const params = new URLSearchParams()
       params.append('format', format)
-      
+
       if (filters.search) params.append('search', filters.search)
       if (filters.patientId) params.append('patient_id', filters.patientId.toString())
       if (filters.startDate) params.append('startDate', filters.startDate)
@@ -73,19 +73,19 @@ export function ExportDropdown({
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        
+
         // Extract filename from Content-Disposition header
         const contentDisposition = response.headers.get('Content-Disposition')
         const defaultExt = format === 'excel' ? 'xlsx' : format === 'pdf' ? 'pdf' : 'csv'
-        const filename = contentDisposition?.match(/filename="(.+)"/)?.[1] || 
+        const filename = contentDisposition?.match(/filename="(.+)"/)?.[1] ||
           `${type}_export_${new Date().toISOString().split('T')[0]}.${defaultExt}`
-        
+
         a.download = filename
         document.body.appendChild(a)
         a.click()
         window.URL.revokeObjectURL(url)
         document.body.removeChild(a)
-        
+
         const formatName = format === 'excel' ? 'Excel' : format === 'pdf' ? 'PDF' : 'CSV'
         toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} exported as ${formatName} successfully!`)
       } else {
@@ -100,7 +100,7 @@ export function ExportDropdown({
         a.click()
         window.URL.revokeObjectURL(url)
         document.body.removeChild(a)
-        
+
         toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} exported successfully!`)
       }
     } catch (error) {
@@ -128,19 +128,19 @@ export function ExportDropdown({
             )}
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56 bg-white border border-gray-200 shadow-lg rounded-lg p-1">
+        <DropdownMenuContent align="end" className="w-56 glass-panel border border-gray-200 shadow-lg rounded-lg p-1">
           <DropdownMenuLabel className="px-3 py-2 text-sm font-semibold text-gray-900">Export all records</DropdownMenuLabel>
           <DropdownMenuSeparator className="bg-gray-200 my-1" />
-          <DropdownMenuItem 
-            onClick={() => handleExport('excel')} 
+          <DropdownMenuItem
+            onClick={() => handleExport('excel')}
             disabled={isExporting || !hasRecords}
             className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:bg-gray-50 cursor-pointer rounded-md mx-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             Download as Excel
           </DropdownMenuItem>
-          <DropdownMenuItem 
-            onClick={() => handleExport('pdf')} 
+          <DropdownMenuItem
+            onClick={() => handleExport('pdf')}
             disabled={isExporting || !hasRecords}
             className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:bg-gray-50 cursor-pointer rounded-md mx-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -168,19 +168,19 @@ export function ExportDropdown({
           {buttonText}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 bg-white border border-gray-200 shadow-lg rounded-lg p-1">
+      <DropdownMenuContent align="end" className="w-56 glass-panel border border-gray-200 shadow-lg rounded-lg p-1">
         <DropdownMenuLabel className="px-3 py-2 text-sm font-semibold text-gray-900">Export all records</DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-gray-200 my-1" />
-        <DropdownMenuItem 
-          onClick={() => handleExport('excel')} 
+        <DropdownMenuItem
+          onClick={() => handleExport('excel')}
           disabled={isExporting || !hasRecords}
           className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:bg-gray-50 cursor-pointer rounded-md mx-1 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <FileSpreadsheet className="mr-2 h-4 w-4" />
           Download as Excel
         </DropdownMenuItem>
-        <DropdownMenuItem 
-          onClick={() => handleExport('pdf')} 
+        <DropdownMenuItem
+          onClick={() => handleExport('pdf')}
           disabled={isExporting || !hasRecords}
           className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:bg-gray-50 cursor-pointer rounded-md mx-1 disabled:opacity-50 disabled:cursor-not-allowed"
         >
