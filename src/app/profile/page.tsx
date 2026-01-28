@@ -23,7 +23,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  
+
   const [profile, setProfile] = useState<DoctorProfile>({
     first_name: '',
     middle_name: '',
@@ -84,7 +84,7 @@ export default function ProfilePage() {
     try {
       // Get the session token from Supabase client
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session?.access_token) {
         toast.error('Please log in again');
         router.push('/login');
@@ -93,7 +93,7 @@ export default function ProfilePage() {
 
       const response = await fetch('/api/profile', {
         method: 'PUT',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         },
@@ -125,7 +125,7 @@ export default function ProfilePage() {
     try {
       // Get the session token from Supabase client
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session?.access_token) {
         toast.error('Please log in again');
         router.push('/login');
@@ -163,7 +163,7 @@ export default function ProfilePage() {
         <div className="mb-8">
           <button
             onClick={() => router.back()}
-            className="flex items-center text-gray-600 hover:text-gray-900 mb-4 transition-all duration-200 cursor-pointer"
+            className="flex items-center text-gray-600 hover:text-gray-900 mb-4 transition-colors duration-200 cursor-pointer"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
@@ -181,7 +181,7 @@ export default function ProfilePage() {
                 <User className="h-5 w-5 mr-2 text-blue-600" />
                 Personal Information
               </h2>
-              
+
               <div className="space-y-3 lg:space-y-4">
                 {/* Name Fields */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -260,7 +260,7 @@ export default function ProfilePage() {
                 <Building className="h-5 w-5 mr-2 text-blue-600" />
                 Clinic Information
               </h2>
-              
+
               <div className="space-y-3 lg:space-y-4">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Clinic Name */}
@@ -309,7 +309,7 @@ export default function ProfilePage() {
                 ) : (
                   <Save className="h-4 w-4 mr-2" />
                 )}
-                {loading ? 'Saving...' : 'Save Changes'}
+                {loading ? 'Saving…' : 'Save Changes'}
               </button>
             </div>
             {/* Gray divider for small screens only */}
@@ -327,7 +327,7 @@ export default function ProfilePage() {
                 <p className="text-xs text-gray-600 mb-2 lg:mb-3">
                   Permanently delete your account and all associated data. This action cannot be undone.
                 </p>
-                
+
                 {!showDeleteConfirm ? (
                   <button
                     onClick={() => setShowDeleteConfirm(true)}
@@ -347,7 +347,7 @@ export default function ProfilePage() {
                         disabled={deleteLoading}
                         className="flex-1 bg-red-600 text-white py-2 px-3 rounded-lg text-sm hover:bg-red-700 disabled:opacity-50 transition-colors"
                       >
-                        {deleteLoading ? 'Deleting...' : 'Yes, Delete'}
+                        {deleteLoading ? 'Deleting…' : 'Yes, Delete'}
                       </button>
                       <button
                         onClick={() => setShowDeleteConfirm(false)}
@@ -373,7 +373,7 @@ export default function ProfilePage() {
                 ) : (
                   <Save className="h-4 w-4 mr-2" />
                 )}
-                {loading ? 'Saving...' : 'Save Changes'}
+                {loading ? 'Saving…' : 'Save Changes'}
               </button>
             </div>
           </div>
@@ -392,7 +392,7 @@ export default function ProfilePage() {
               ) : (
                 <Save className="h-4 w-4 mr-2" />
               )}
-              {loading ? 'Saving...' : 'Save Changes'}
+              {loading ? 'Saving…' : 'Save Changes'}
             </button>
           </div>
         </div>

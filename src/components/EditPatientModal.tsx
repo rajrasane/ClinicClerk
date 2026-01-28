@@ -14,54 +14,25 @@ interface EditPatientModalProps {
 
 
 export default function EditPatientModal({ patient, onClose, onSuccess }: EditPatientModalProps) {
-  const [formData, setFormData] = useState({
-    first_name: '',
-    middle_name: '',
-    last_name: '',
-    age: '',
-    gender: '',
-    phone: '',
-    address: '',
-    blood_group: '',
-    allergies: '',
-    emergency_contact: ''
+  // Initialize form data directly from patient prop to prevent flicker
+  const getInitialData = () => ({
+    first_name: patient.first_name || '',
+    middle_name: patient.middle_name || '',
+    last_name: patient.last_name || '',
+    age: patient.age?.toString() || '',
+    gender: GENDER_DB_TO_DISPLAY[patient.gender] || patient.gender || '',
+    phone: patient.phone || '',
+    address: patient.address || '',
+    blood_group: patient.blood_group || '',
+    allergies: patient.allergies || '',
+    emergency_contact: patient.emergency_contact || ''
   });
 
-  const [originalData, setOriginalData] = useState({
-    first_name: '',
-    middle_name: '',
-    last_name: '',
-    age: '',
-    gender: '',
-    phone: '',
-    address: '',
-    blood_group: '',
-    allergies: '',
-    emergency_contact: ''
-  });
+  const [formData, setFormData] = useState(getInitialData);
+  const [originalData] = useState(getInitialData);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-
-  // Pre-populate form with patient data
-  useEffect(() => {
-    if (patient) {
-      const initialData = {
-        first_name: patient.first_name || '',
-        middle_name: patient.middle_name || '',
-        last_name: patient.last_name || '',
-        age: patient.age?.toString() || '',
-        gender: GENDER_DB_TO_DISPLAY[patient.gender] || patient.gender || '',
-        phone: patient.phone || '',
-        address: patient.address || '',
-        blood_group: patient.blood_group || '',
-        allergies: patient.allergies || '',
-        emergency_contact: patient.emergency_contact || ''
-      };
-      setFormData(initialData);
-      setOriginalData(initialData);
-    }
-  }, [patient]);
 
   // Check if form data has changed
   const hasChanges = () => {
@@ -413,7 +384,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
             className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors"
             onClick={handleSubmit}
           >
-            {loading ? 'Updating...' : 'Update Patient'}
+            {loading ? 'Updating…' : 'Update Patient'}
           </button>
         </div>
       </div>

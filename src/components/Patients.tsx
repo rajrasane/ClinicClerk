@@ -9,6 +9,7 @@ import PatientDetailsModal from './PatientDetailsModal';
 import EditPatientModal from './EditPatientModal';
 import AddVisitModal from './AddVisitModal';
 import VisitDetailsModal from './VisitDetailsModal';
+import EditVisitModal from './EditVisitModal';
 import { supabase } from '@/lib/supabase';
 import { ExportDropdown } from '@/components/ui/export-dropdown';
 import type { Patient, Visit } from '@/types';
@@ -30,6 +31,8 @@ export default function AdminPatients() {
   const [preselectedPatientId, setPreselectedPatientId] = useState<number | null>(null);
   const [showVisitDetailsModal, setShowVisitDetailsModal] = useState(false);
   const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
+  const [showEditVisitModal, setShowEditVisitModal] = useState(false);
+  const [editingVisit, setEditingVisit] = useState<Visit | null>(null);
 
   const totalPages = pagination?.totalPages || 1;
 
@@ -90,6 +93,11 @@ export default function AdminPatients() {
     setShowVisitDetailsModal(true);
   };
 
+  const handleEditVisit = (visit: Visit) => {
+    setEditingVisit(visit);
+    setShowEditVisitModal(true);
+  };
+
   // Removed unused formatDate function
 
 
@@ -134,7 +142,7 @@ export default function AdminPatients() {
       <div className="relative w-full">
         <input
           type="text"
-          placeholder="Search patients by name or phone..."
+          placeholder="Search patients by name or phone…"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base bg-white"
@@ -362,6 +370,25 @@ export default function AdminPatients() {
           onUpdate={() => {
             // Refresh data if needed
             refetch();
+          }}
+          onEdit={handleEditVisit}
+        />
+      )}
+
+      {/* Edit Visit Modal */}
+      {showEditVisitModal && editingVisit && (
+        <EditVisitModal
+          visit={editingVisit}
+          onClose={() => {
+            setShowEditVisitModal(false);
+            setEditingVisit(null);
+          }}
+          onSuccess={() => {
+            apiCache.invalidate('/api/patients');
+            apiCache.invalidate('/api/visits');
+            refetch();
+            setShowEditVisitModal(false);
+            setEditingVisit(null);
           }}
         />
       )}

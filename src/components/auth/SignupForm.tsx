@@ -40,7 +40,7 @@ export default function SignupForm() {
 
       // Create display name from first and last name
       const displayName = `Dr. ${firstName} ${lastName}`
-      
+
       // Sign up the user
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -51,7 +51,7 @@ export default function SignupForm() {
           }
         }
       })
-      
+
       if (error) {
         toast.error(error.message)
         return
@@ -87,14 +87,14 @@ export default function SignupForm() {
     <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4 sm:py-12 sm:px-6 lg:px-8 animate-fade-in">
       <div className="max-w-md w-full space-y-5 sm:space-y-6 animate-slide-up">
         <div className="text-center">
-          <Link 
+          <Link
             href="/"
             className="group inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors mb-4 text-sm font-medium"
           >
-            <svg 
-              className="w-4 h-4 mr-1.5 transition-transform group-hover:-translate-x-0.5" 
-              fill="none" 
-              viewBox="0 0 24 24" 
+            <svg
+              className="w-4 h-4 mr-1.5 transition-transform group-hover:-translate-x-0.5"
+              fill="none"
+              viewBox="0 0 24 24"
               stroke="currentColor"
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -129,13 +129,13 @@ export default function SignupForm() {
                 name="firstName"
                 type="text"
                 required
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 text-sm"
                 placeholder="e.g Rahul"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
               />
             </div>
-            
+
             <div>
               <label htmlFor="middleName" className="block text-sm font-medium text-gray-700 mb-1">
                 Middle Name (Optional)
@@ -144,13 +144,13 @@ export default function SignupForm() {
                 id="middleName"
                 name="middleName"
                 type="text"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 text-sm"
                 placeholder="e.g Manoj"
                 value={middleName}
                 onChange={(e) => setMiddleName(e.target.value)}
               />
             </div>
-            
+
             <div>
               <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
                 Last Name *
@@ -160,13 +160,13 @@ export default function SignupForm() {
                 name="lastName"
                 type="text"
                 required
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 text-sm"
                 placeholder="e.g Sharma"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
               />
             </div>
-            
+
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email Address *
@@ -177,13 +177,13 @@ export default function SignupForm() {
                 type="email"
                 autoComplete="email"
                 required
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 text-sm"
                 placeholder="e.g doctor123@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
-            
+
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 Password *
@@ -195,7 +195,7 @@ export default function SignupForm() {
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   required
-                  className={`w-full px-4 py-2.5 ${password ? 'pr-12' : 'pr-4'} border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm`}
+                  className={`w-full px-4 py-2.5 ${password ? 'pr-12' : 'pr-4'} border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 text-sm`}
                   placeholder="Min 8 chars, 1 uppercase, 1 number"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -220,19 +220,19 @@ export default function SignupForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2.5 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm"
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2.5 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 text-sm"
             >
               {loading ? (
                 <div className="flex items-center justify-center">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Creating account...
+                  Creating account…
                 </div>
               ) : (
                 'Create Account'
               )}
             </button>
           </form>
-          
+
           <div className="text-center pt-4 border-t border-gray-200">
             <span className="text-sm text-gray-600">
               Already have an account?{' '}

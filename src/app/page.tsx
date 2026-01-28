@@ -22,7 +22,7 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f3f3f7' }}>
-        <div className="text-lg">Loading...</div>
+        <div className="text-lg">Loading…</div>
       </div>
     );
   }

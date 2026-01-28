@@ -6,12 +6,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { 
-  ArrowDownTrayIcon, 
+import {
+  ArrowDownTrayIcon,
   CheckIcon,
   CheckCircleIcon,
-  ShieldCheckIcon, 
-  ClockIcon, 
+  ShieldCheckIcon,
+  ClockIcon,
   PhotoIcon,
   ChartBarIcon,
   UserGroupIcon,
@@ -39,7 +39,7 @@ export default function LandingPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="text-lg">Loading...</div>
+        <div className="text-lg">Loading…</div>
       </div>
     );
   }
@@ -139,9 +139,9 @@ export default function LandingPage() {
           <div className="flex justify-between items-center py-3 sm:py-4 relative">
             {/* Logo - Left */}
             <Link href="/" className="flex items-center gap-2 sm:gap-3">
-              <Image 
-                src="/logo.png" 
-                alt="ClinicClerk Logo" 
+              <Image
+                src="/logo.png"
+                alt="ClinicClerk Logo"
                 width={80}
                 height={80}
                 className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg"
@@ -153,10 +153,10 @@ export default function LandingPage() {
                 <span className="text-blue-800">Clerk</span>
               </h1>
             </Link>
-            
+
             {/* Pricing - Center on md/lg only */}
             <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2">
-              <Link 
+              <Link
                 href="#pricing"
                 onClick={(e) => {
                   e.preventDefault();
@@ -172,11 +172,11 @@ export default function LandingPage() {
                 Pricing
               </Link>
             </div>
-            
+
             {/* Navigation - Right */}
             <div className="flex items-center gap-4 sm:gap-4">
               {/* Pricing for small screens - next to Sign In */}
-              <Link 
+              <Link
                 href="#pricing"
                 onClick={(e) => {
                   e.preventDefault();
@@ -191,15 +191,15 @@ export default function LandingPage() {
               >
                 Pricing
               </Link>
-              <Link 
+              <Link
                 href="/login"
                 className="text-gray-700 hover:text-gray-900 font-medium transition-colors text-sm sm:text-base px-2 sm:px-0 border border-gray-300 sm:border-0 rounded-lg sm:rounded-none py-1.5 sm:py-0"
               >
                 Sign In
               </Link>
-              <Link 
+              <Link
                 href="/signup"
-                className="hidden sm:inline-flex bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 text-sm sm:text-base whitespace-nowrap"
+                className="hidden sm:inline-flex bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 transition-colors duration-200 text-sm sm:text-base whitespace-nowrap"
               >
                 Get Started
               </Link>
@@ -228,59 +228,59 @@ export default function LandingPage() {
                 <span className="sm:hidden">Digital patient records made easy. Store patient details, track visits, and manage your clinic efficiently.</span>
                 <span className="hidden sm:block">Digital patient records made easy. Store patient details, track visits, and manage your clinic efficiently - all in one secure platform designed for Indian medical practices.</span>
               </p>
-              
-            {/* Doctor Image for mobile screens - above buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="flex md:hidden justify-center items-center mb-6"
-            >
-              <div className="relative">
-                <div className="w-56 h-56 bg-gradient-to-br from-blue-100 to-indigo-200 rounded-full flex items-center justify-center">
-                  <div className="w-48 h-48 rounded-full overflow-hidden shadow-lg">
-                    <Image
-                      src="/smiling-doctor.jpg"
-                      alt="Smiling Indian Doctor using ClinicClerk"
-                      width={160}
-                      height={160}
-                      className="w-full h-full object-cover"
-                      priority
-                    />
+
+              {/* Doctor Image for mobile screens - above buttons */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                className="flex md:hidden justify-center items-center mb-6"
+              >
+                <div className="relative">
+                  <div className="w-56 h-56 bg-gradient-to-br from-blue-100 to-indigo-200 rounded-full flex items-center justify-center">
+                    <div className="w-48 h-48 rounded-full overflow-hidden shadow-lg">
+                      <Image
+                        src="/smiling-doctor.jpg"
+                        alt="Smiling Indian Doctor using ClinicClerk"
+                        width={160}
+                        height={160}
+                        className="w-full h-full object-cover"
+                        priority
+                      />
+                    </div>
+                  </div>
+                  {/* Floating elements - smaller for sm */}
+                  <div className="absolute -top-1 -right-1 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div className="absolute -bottom-1 -left-1 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                    <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                    </svg>
                   </div>
                 </div>
-                {/* Floating elements - smaller for sm */}
-                <div className="absolute -top-1 -right-1 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <div className="absolute -bottom-1 -left-1 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                  <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                  </svg>
-                </div>
+              </motion.div>
+
+              {/* Buttons section - below doctor image on mobile */}
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start items-center">
+                <Link
+                  href="/signup"
+                  className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-colors duration-200 flex items-center justify-center gap-2 text-sm sm:text-base"
+                >
+                  Start For Free
+                  <ArrowRightIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                </Link>
+                <Link
+                  href="/login"
+                  className="w-full sm:w-auto bg-white/90 backdrop-blur-md text-gray-700 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold hover:bg-white transition-colors duration-200 border border-white/20 text-sm sm:text-base"
+                >
+                  Sign In
+                </Link>
               </div>
             </motion.div>
-            
-            {/* Buttons section - below doctor image on mobile */}
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start items-center">
-              <Link 
-                href="/signup"
-                className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base"
-              >
-                Start For Free
-                <ArrowRightIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-              </Link>
-              <Link 
-                href="/login"
-                className="w-full sm:w-auto bg-white/90 backdrop-blur-md text-gray-700 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold hover:bg-white transition-all duration-200 border border-white/20 text-sm sm:text-base"
-              >
-                Sign In
-              </Link>
-            </div>
-            </motion.div>
-            
+
             {/* Doctor Image for MD+ screens - side by side */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
@@ -373,7 +373,7 @@ export default function LandingPage() {
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="bg-white/90 rounded-2xl p-4 sm:p-6 border border-white/20 hover:shadow-xl transition-all duration-300"
+                className="bg-white/90 rounded-2xl p-4 sm:p-6 border border-white/20 hover:shadow-xl transition-colors duration-300"
                 style={{ willChange: 'transform' }}
               >
                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mb-3 sm:mb-4">
@@ -412,92 +412,85 @@ export default function LandingPage() {
                     <div className="w-36 h-px bg-gray-300"></div>
                   </div>
                 )}
-                
+
                 <div className="relative">
-                <div
-                  className={`mt-2 md:mt-0 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8 border transition-all duration-300 hover:shadow-xl relative ${
-                    plan.popular 
-                      ? 'bg-white/95 border-blue-300 ring-2 ring-blue-500 md:transform md:scale-105' 
-                      : plan.premium
-                      ? 'bg-white/95 border-gray-800 ring-2 ring-gray-800 md:transform md:scale-105'
-                      : 'bg-white/90 border-white/20'
-                  }`}
-                  style={{ willChange: 'transform' }}
-                >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-1.5 rounded-full text-xs font-semibold shadow-lg">Most Popular</span>
-                  </div>
-                )}
-                {plan.premium && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-gradient-to-r from-gray-900 to-black text-white px-4 py-1.5 rounded-full text-xs font-semibold shadow-lg">Most Valued</span>
-                  </div>
-                )}
-                
-                <div className="text-center p-3 sm:p-4 md:p-6 lg:p-8">
-                  <h3 className={`text-lg sm:text-xl md:text-xl lg:text-2xl font-bold mb-2 ${
-                    plan.popular ? 'text-blue-900' : plan.premium ? 'text-gray-900' : 'text-gray-900'
-                  }`}>{plan.name}</h3>
-                  <div className="mb-4">
-                    <span className={`text-2xl sm:text-3xl md:text-3xl lg:text-4xl font-bold ${
-                      plan.popular ? 'text-blue-900' : plan.premium ? 'text-gray-900' : 'text-gray-900'
-                    }`}>{plan.price}</span>
-                    {plan.price !== "Free" && <span className="text-gray-600 ml-1 text-sm sm:text-base">/{plan.period}</span>}
-                  </div>
-                  <p className="text-gray-600 mb-4 sm:mb-5 md:mb-6 lg:mb-8 text-sm sm:text-base">{plan.description}</p>
-                  
-                  <ul className="space-y-2 sm:space-y-2.5 md:space-y-3 lg:space-y-4 mb-4 sm:mb-5 md:mb-6 lg:mb-8 text-left">
-                    {plan.features.map((feature, featureIndex) => {
-                      if (plan.name === 'Enterprise' && featureIndex === 0) {
-                        return (
-                          <div key={featureIndex} className="mb-2">
-                            <li className="flex items-start gap-2 sm:gap-3">
-                              <div className={`h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 lg:h-5 lg:w-5 mt-0 sm:mt-0.5 lg:mt-1 flex-shrink-0 rounded-full flex items-center justify-center ${
-                                plan.premium && featureIndex === 0 ? 'bg-blue-100' : ''
-                              }`}>
-                                <CheckIcon className={`h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 lg:h-4 lg:w-4 ${
-                                  plan.popular ? 'text-blue-600' : plan.premium && featureIndex === 0 ? 'text-blue-600' : plan.premium ? 'text-gray-700' : 'text-green-500'
-                                }`} />
+                  <div
+                    className={`mt-2 md:mt-0 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8 border transition-colors duration-300 hover:shadow-xl relative ${plan.popular
+                        ? 'bg-white/95 border-blue-300 ring-2 ring-blue-500 md:transform md:scale-105'
+                        : plan.premium
+                          ? 'bg-white/95 border-gray-800 ring-2 ring-gray-800 md:transform md:scale-105'
+                          : 'bg-white/90 border-white/20'
+                      }`}
+                    style={{ willChange: 'transform' }}
+                  >
+                    {plan.popular && (
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                        <span className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-1.5 rounded-full text-xs font-semibold shadow-lg">Most Popular</span>
+                      </div>
+                    )}
+                    {plan.premium && (
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                        <span className="bg-gradient-to-r from-gray-900 to-black text-white px-4 py-1.5 rounded-full text-xs font-semibold shadow-lg">Most Valued</span>
+                      </div>
+                    )}
+
+                    <div className="text-center p-3 sm:p-4 md:p-6 lg:p-8">
+                      <h3 className={`text-lg sm:text-xl md:text-xl lg:text-2xl font-bold mb-2 ${plan.popular ? 'text-blue-900' : plan.premium ? 'text-gray-900' : 'text-gray-900'
+                        }`}>{plan.name}</h3>
+                      <div className="mb-4">
+                        <span className={`text-2xl sm:text-3xl md:text-3xl lg:text-4xl font-bold ${plan.popular ? 'text-blue-900' : plan.premium ? 'text-gray-900' : 'text-gray-900'
+                          }`}>{plan.price}</span>
+                        {plan.price !== "Free" && <span className="text-gray-600 ml-1 text-sm sm:text-base">/{plan.period}</span>}
+                      </div>
+                      <p className="text-gray-600 mb-4 sm:mb-5 md:mb-6 lg:mb-8 text-sm sm:text-base">{plan.description}</p>
+
+                      <ul className="space-y-2 sm:space-y-2.5 md:space-y-3 lg:space-y-4 mb-4 sm:mb-5 md:mb-6 lg:mb-8 text-left">
+                        {plan.features.map((feature, featureIndex) => {
+                          if (plan.name === 'Enterprise' && featureIndex === 0) {
+                            return (
+                              <div key={featureIndex} className="mb-2">
+                                <li className="flex items-start gap-2 sm:gap-3">
+                                  <div className={`h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 lg:h-5 lg:w-5 mt-0 sm:mt-0.5 lg:mt-1 flex-shrink-0 rounded-full flex items-center justify-center ${plan.premium && featureIndex === 0 ? 'bg-blue-100' : ''
+                                    }`}>
+                                    <CheckIcon className={`h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 lg:h-4 lg:w-4 ${plan.popular ? 'text-blue-600' : plan.premium && featureIndex === 0 ? 'text-blue-600' : plan.premium ? 'text-gray-700' : 'text-green-500'
+                                      }`} />
+                                  </div>
+                                  <span className="text-gray-700 text-xs sm:text-sm md:text-sm lg:text-base leading-tight sm:leading-normal">{feature}</span>
+                                </li>
+                                <div className="flex justify-center my-1">
+                                  <div className="h-5 w-5 rounded-full bg-gray-100 flex items-center justify-center mx-auto">
+                                    <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                    </svg>
+                                  </div>
+                                </div>
                               </div>
+                            );
+                          }
+                          return (
+                            <li key={featureIndex} className="flex items-start gap-2 sm:gap-3">
+                              <CheckIcon className={`h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 mt-0 sm:mt-0.5 flex-shrink-0 ${plan.popular ? 'text-blue-600' : plan.premium ? 'text-gray-700' : 'text-green-500'
+                                }`} />
                               <span className="text-gray-700 text-xs sm:text-sm md:text-sm lg:text-base leading-tight sm:leading-normal">{feature}</span>
                             </li>
-                            <div className="flex justify-center my-1">
-                              <div className="h-5 w-5 rounded-full bg-gray-100 flex items-center justify-center mx-auto">
-                                <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                </svg>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      }
-                      return (
-                        <li key={featureIndex} className="flex items-start gap-2 sm:gap-3">
-                          <CheckIcon className={`h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 mt-0 sm:mt-0.5 flex-shrink-0 ${
-                            plan.popular ? 'text-blue-600' : plan.premium ? 'text-gray-700' : 'text-green-500'
-                          }`} />
-                          <span className="text-gray-700 text-xs sm:text-sm md:text-sm lg:text-base leading-tight sm:leading-normal">{feature}</span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                  
-                  <button className={`w-full py-2.5 sm:py-3 md:py-3 lg:py-4 px-4 sm:px-5 md:px-6 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 text-sm sm:text-base md:text-base lg:text-lg ${
-                    plan.popular 
-                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl' 
-                      : plan.premium
-                      ? 'bg-gradient-to-r from-gray-900 to-black text-white hover:from-gray-800 hover:to-gray-900 shadow-lg hover:shadow-xl'
-                      : plan.name === 'Basic'
-                      ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl'
-                      : plan.name === 'Enterprise'
-                      ? 'border-2 bg-gray-800 text-white hover:shadow-lg'
-                      : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-                  }`}>
-                    {plan.cta}
-                  </button>
-                </div>
-                </div>
+                          );
+                        })}
+                      </ul>
+
+                      <button className={`w-full py-2.5 sm:py-3 md:py-3 lg:py-4 px-4 sm:px-5 md:px-6 rounded-lg sm:rounded-xl font-semibold transition-colors duration-200 text-sm sm:text-base md:text-base lg:text-lg ${plan.popular
+                          ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl'
+                          : plan.premium
+                            ? 'bg-gradient-to-r from-gray-900 to-black text-white hover:from-gray-800 hover:to-gray-900 shadow-lg hover:shadow-xl'
+                            : plan.name === 'Basic'
+                              ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl'
+                              : plan.name === 'Enterprise'
+                                ? 'border-2 bg-gray-800 text-white hover:shadow-lg'
+                                : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                        }`}>
+                        {plan.cta}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </React.Fragment>
             ))}
@@ -530,7 +523,7 @@ export default function LandingPage() {
               {
                 name: "Dr. Rajesh Kumar",
                 title: "Pediatrician, Delhi",
-                image: "/testimonial-2.jpg", 
+                image: "/testimonial-2.jpg",
                 rating: 5,
                 quote: "The image upload feature is fantastic for tracking children's growth charts and vaccination records. My patients' parents love how organized everything is now."
               },
@@ -544,7 +537,7 @@ export default function LandingPage() {
             ].map((testimonial, index) => (
               <div
                 key={index}
-                className="bg-white/90 rounded-2xl p-6 border border-white/20 hover:shadow-xl transition-all duration-300"
+                className="bg-white/90 rounded-2xl p-6 border border-white/20 hover:shadow-xl transition-colors duration-300"
                 style={{ willChange: 'transform' }}
               >
                 <div className="flex items-center gap-1 mb-4">
@@ -646,7 +639,7 @@ export default function LandingPage() {
             <div className="text-center mt-8">
               <button
                 onClick={() => setShowAllFAQs(true)}
-                className="bg-white border-2 border-blue-600 text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-all duration-200"
+                className="bg-white border-2 border-blue-600 text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-colors duration-200"
               >
                 Load More FAQs
               </button>
@@ -657,9 +650,9 @@ export default function LandingPage() {
             <p className="text-base sm:text-lg text-gray-600 mb-4">
               Still have questions?
             </p>
-            <Link 
+            <Link
               href="mailto:support@clinicclerk.com"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-colors duration-200"
             >
               Contact Support
               <ArrowRightIcon className="w-4 h-4" />
@@ -680,7 +673,7 @@ export default function LandingPage() {
               <p className="text-lg sm:text-xl text-gray-600 mb-6 sm:mb-8">
                 Experience the power of digital patient management with our interactive demo or start your free trial today.
               </p>
-              
+
               <div className="space-y-4 mb-6 sm:mb-8">
                 <div className="flex items-start gap-3">
                   <CheckCircleIcon className="w-6 h-6 text-green-500 mt-0.5 flex-shrink-0" />
@@ -706,15 +699,15 @@ export default function LandingPage() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                <Link 
+                <Link
                   href="/demo"
-                  className="flex-1 sm:flex-none bg-white border-2 border-blue-600 text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-all duration-200 text-center"
+                  className="flex-1 sm:flex-none bg-white border-2 border-blue-600 text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-colors duration-200 text-center"
                 >
                   View Live Demo
                 </Link>
-                <Link 
+                <Link
                   href="/signup"
-                  className="flex-1 sm:flex-none bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 text-center"
+                  className="flex-1 sm:flex-none bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-colors duration-200 text-center"
                 >
                   Start For Free
                 </Link>
@@ -732,7 +725,7 @@ export default function LandingPage() {
                     clinicclerk.com
                   </div>
                 </div>
-                
+
                 {/* Actual ClinicClerk Screenshot */}
                 <div className="rounded-lg overflow-hidden">
                   <Image
@@ -745,7 +738,7 @@ export default function LandingPage() {
                   />
                 </div>
               </div>
-              
+
               {/* Floating elements */}
               <div className="absolute -top-2 -right-2 sm:-top-4 sm:-right-4 w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center shadow-lg">
                 <CheckCircleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
@@ -766,16 +759,16 @@ export default function LandingPage() {
               Join the beta and help shape the future of digital medical records.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-              <Link 
+              <Link
                 href="/signup"
-                className="w-full sm:w-auto bg-white text-blue-600 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200 flex items-center justify-center gap-2 text-base sm:text-lg"
+                className="w-full sm:w-auto bg-white text-blue-600 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center gap-2 text-base sm:text-lg"
               >
                 Start For Free
                 <ArrowRightIcon className="w-4 h-4 sm:w-5 sm:h-5" />
               </Link>
-              <Link 
+              <Link
                 href="/login"
-                className="w-full sm:w-auto border-2 border-white text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold hover:bg-white/10 transition-all duration-200 text-base sm:text-lg"
+                className="w-full sm:w-auto border-2 border-white text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold hover:bg-white/10 transition-colors duration-200 text-base sm:text-lg"
               >
                 Sign In
               </Link>
@@ -800,9 +793,9 @@ export default function LandingPage() {
             {/* Company Info */}
             <div className="lg:col-span-2">
               <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                <Image 
-                  src="/logo.png" 
-                  alt="ClinicClerk Logo" 
+                <Image
+                  src="/logo.png"
+                  alt="ClinicClerk Logo"
                   width={56}
                   height={56}
                   className="w-7 h-7 rounded-lg"
@@ -843,17 +836,17 @@ export default function LandingPage() {
                 <h4 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-white">Product</h4>
                 <ul className="space-y-2 sm:space-y-3">
                   <li><Link href="/features" className="text-gray-400 hover:text-white transition-colors text-sm sm:text-base block py-1">Features</Link></li>
-                  <li><Link 
+                  <li><Link
                     href="#pricing"
                     onClick={(e) => {
                       e.preventDefault();
                       const element = document.getElementById('pricing');
                       if (element) {
-                        const yOffset = -24; 
+                        const yOffset = -24;
                         const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
                         window.scrollTo({ top: y, behavior: 'smooth' });
                       }
-                    }} 
+                    }}
                     className="text-gray-400 hover:text-white transition-colors text-sm sm:text-base block py-1">Pricing</Link></li>
                   <li><Link href="/security" className="text-gray-400 hover:text-white transition-colors text-sm sm:text-base block py-1">Security</Link></li>
                   <li><Link href="/demo" className="text-gray-400 hover:text-white transition-colors text-sm sm:text-base block py-1">Live Demo</Link></li>

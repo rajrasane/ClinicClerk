@@ -109,10 +109,10 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
   const modalRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     modalRef.current?.focus();
-    
+
     // Prevent background scrolling when modal is open
     document.body.style.overflow = 'hidden';
-    
+
     return () => {
       // Restore background scrolling when modal closes
       document.body.style.overflow = 'unset';
@@ -172,7 +172,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
       if (stringValue.trim() === '') {
         return ''; // Vitals are optional, so empty is okay
       }
-      
+
       switch (vitalType) {
         case 'temperature':
           const temp = parseFloat(stringValue);
@@ -183,7 +183,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
             return 'Temperature should be between 90°F and 110°F';
           }
           break;
-          
+
         case 'blood_pressure':
           const bpPattern = /^\d{2,3}\/\d{2,3}$/;
           if (!bpPattern.test(stringValue.trim())) {
@@ -194,7 +194,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
             return 'Blood pressure values seem unusual (systolic: 70-250, diastolic: 40-150)';
           }
           break;
-          
+
         case 'pulse':
           const pulse = parseInt(stringValue);
           if (isNaN(pulse)) {
@@ -204,7 +204,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
             return 'Pulse should be between 30 and 200 bpm';
           }
           break;
-          
+
         case 'weight':
           const weight = parseFloat(stringValue);
           if (isNaN(weight)) {
@@ -214,7 +214,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
             return 'Weight should be between 1 and 300 kg';
           }
           break;
-          
+
         case 'height':
           const height = parseFloat(stringValue);
           if (isNaN(height)) {
@@ -224,7 +224,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
             return 'Height should be between 30 and 250 cm';
           }
           break;
-          
+
         case 'o2':
           const o2 = parseFloat(stringValue);
           if (isNaN(o2)) {
@@ -281,10 +281,10 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
+
     if (name.startsWith('vitals.')) {
       const vitalName = name.split('.')[1];
-      
+
       // Handle different vitals input restrictions
       let filteredValue = value;
       if (vitalName === 'blood_pressure') {
@@ -294,7 +294,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         // For all other vitals, allow only digits and decimal point
         filteredValue = value.replace(/[^0-9.]/g, '');
       }
-      
+
       setFormData({
         ...formData,
         vitals: {
@@ -361,7 +361,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
+
     if (value.trim() !== '') {
       setTouchedFields(prev => new Set(prev).add(name));
       const error = validateField(name, value);
@@ -373,7 +373,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    
+
     // Only submit on final step
     if (currentStep < totalSteps) {
       return;
@@ -381,23 +381,23 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
 
     // Validate required fields
     const newErrors: FormErrors = {};
-    const requiredFields = patientType === 'new' 
+    const requiredFields = patientType === 'new'
       ? ['first_name', 'last_name', 'age', 'phone', 'gender', 'address', 'visit_date', 'chief_complaint', 'consultation_fee']
       : ['patient_id', 'visit_date', 'chief_complaint', 'consultation_fee'];
-    
+
     // Payment validation
     if (parseInt(formData.consultation_fee) <= 0) {
       newErrors.consultation_fee = 'Consultation fee must be a positive number';
     }
-    
+
     if (!formData.payment_status) {
       newErrors.payment_status = 'Payment status is required';
     }
-    
+
     if (formData.payment_status === 'P' && !formData.payment_method) {
       newErrors.payment_method = 'Payment method is required when payment is marked as paid';
     }
-    
+
     requiredFields.forEach(key => {
       const value = formData[key as keyof typeof formData];
       // Skip vitals object validation in this context
@@ -418,7 +418,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     setLoading(true);
     try {
       let patientId = parseInt(formData.patient_id);
-      
+
       // If new patient, create patient first
       if (patientType === 'new') {
         const patientData = {
@@ -523,7 +523,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
 
   const nextStep = () => {
     const currentStepFields = getCurrentStepFields();
-    
+
     // Mark all fields in current step as touched
     setTouchedFields(prev => {
       const newTouched = new Set(prev);
@@ -544,7 +544,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         const formValue = formData[field as keyof typeof formData];
         value = formValue !== undefined && formValue !== null ? formValue.toString() : '';
       }
-      
+
       if (value !== undefined) {
         const error = validateField(field, value);
         if (error) {
@@ -568,12 +568,12 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
   const handleFormKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
     if (e.key === 'Enter') {
       const target = e.target as HTMLElement;
-      
+
       // Allow Enter in textarea fields for new lines
       if (target.tagName === 'TEXTAREA') {
         return; // Don't prevent default, allow new line
       }
-      
+
       // For INPUT fields, prevent default and move to next step
       if (target.tagName === 'INPUT' && currentStep < totalSteps) {
         e.preventDefault();
@@ -594,7 +594,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     if (currentStep === 1 && patientType === null) {
       return false;
     }
-    
+
     // For preselected patient flow (check this FIRST before existing patient flow)
     if (preselectedPatientId) {
       if (currentStep === 1) {
@@ -612,12 +612,12 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         // Payment step - all payment fields required
         const hasConsultationFee = parseInt(formData.consultation_fee) > 0;
         const hasPaymentStatus = formData.payment_status !== '';
-        const hasValidPaymentMethod = formData.payment_status === 'D' || 
+        const hasValidPaymentMethod = formData.payment_status === 'D' ||
           (formData.payment_status === 'P' && (formData.payment_method === 'C' || formData.payment_method === 'O'));
         return hasConsultationFee && hasPaymentStatus && hasValidPaymentMethod;
       }
     }
-    
+
     // For new patient flow
     if (patientType === 'new') {
       if (currentStep === 2) {
@@ -649,12 +649,12 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         // Payment step - all payment fields required
         const hasConsultationFee = parseInt(formData.consultation_fee) > 0;
         const hasPaymentStatus = formData.payment_status !== '';
-        const hasValidPaymentMethod = formData.payment_status === 'D' || 
+        const hasValidPaymentMethod = formData.payment_status === 'D' ||
           (formData.payment_status === 'P' && (formData.payment_method === 'C' || formData.payment_method === 'O'));
         return hasConsultationFee && hasPaymentStatus && hasValidPaymentMethod;
       }
     }
-    
+
     // For existing patient flow (without preselected patient)
     if (patientType === 'existing') {
       if (currentStep === 2) {
@@ -678,12 +678,12 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         // Payment step - all payment fields required
         const hasConsultationFee = parseInt(formData.consultation_fee) > 0;
         const hasPaymentStatus = formData.payment_status !== '';
-        const hasValidPaymentMethod = formData.payment_status === 'D' || 
+        const hasValidPaymentMethod = formData.payment_status === 'D' ||
           (formData.payment_status === 'P' && (formData.payment_method === 'C' || formData.payment_method === 'O'));
         return hasConsultationFee && hasPaymentStatus && hasValidPaymentMethod;
       }
     }
-    
+
     return true;
   };
 
@@ -738,10 +738,10 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
   };
 
   const renderInput = (label: string, name: string, type = 'text', required = false, placeholder = '') => {
-    const value = name.startsWith('vitals.') 
+    const value = name.startsWith('vitals.')
       ? formData.vitals[name.split('.')[1] as keyof typeof formData.vitals] as string
       : formData[name as keyof Omit<typeof formData, 'vitals'>] as string;
-    
+
     // Determine inputMode for vitals fields
     let inputMode: "text" | "decimal" | "numeric" | "search" | "email" | "tel" | "url" | "none" | undefined;
     if (name.startsWith('vitals.')) {
@@ -754,7 +754,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         inputMode = 'numeric'; // Only numbers for pulse, o2, etc.
       }
     }
-      
+
     return (
       <div>
         <label htmlFor={name} className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
@@ -770,11 +770,10 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           onBlur={handleBlur}
           maxLength={type === 'tel' ? 10 : undefined}
           placeholder={placeholder}
-          className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-            errors[name] 
-              ? 'border-red-500 focus:ring-red-500' 
+          className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${errors[name]
+              ? 'border-red-500 focus:ring-red-500'
               : 'border-gray-300 focus:ring-gray-900'
-          }`}
+            }`}
         />
         {errors[name] && (
           <p className="mt-1 text-sm text-red-600">{errors[name]}</p>
@@ -832,11 +831,10 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     required
                     rows={2}
                     placeholder="Main reason for visit"
-                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-                      errors.chief_complaint 
-                        ? 'border-red-500 focus:ring-red-500' 
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${errors.chief_complaint
+                        ? 'border-red-500 focus:ring-red-500'
                         : 'border-gray-300 focus:ring-gray-900'
-                    }`}
+                      }`}
                   />
                   {errors.chief_complaint && (
                     <p className="mt-1 text-sm text-red-600">{errors.chief_complaint}</p>
@@ -852,7 +850,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     onChange={handleChange}
                     rows={3}
                     placeholder="Detailed symptoms observed"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors border-gray-300 focus:ring-gray-900"
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -865,7 +863,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     onChange={handleChange}
                     rows={3}
                     placeholder="Medical diagnosis"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors border-gray-300 focus:ring-gray-900"
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -879,7 +877,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     onBlur={handleBlur}
                     rows={3}
                     placeholder="Enter prescription details (e.g., Paracetamol 500mg, Amoxicillin 250mg)"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors border-gray-300 focus:ring-gray-900"
                   />
                 </div>
               </div>
@@ -908,7 +906,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     onChange={handleChange}
                     rows={3}
                     placeholder="Any additional observations or instructions"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors border-gray-300 focus:ring-gray-900"
                   />
                 </div>
               </div>
@@ -934,11 +932,10 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     onBlur={handleBlur}
                     min="0"
                     step="1"
-                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-                      errors.consultation_fee 
-                        ? 'border-red-500 focus:ring-red-500' 
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${errors.consultation_fee
+                        ? 'border-red-500 focus:ring-red-500'
                         : 'border-gray-300 focus:ring-gray-900'
-                    }`}
+                      }`}
                     placeholder="Enter consultation fee"
                   />
                   {errors.consultation_fee && (
@@ -954,7 +951,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     name="payment_status"
                     value={formData.payment_status}
                     onChange={handleChange}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors border-gray-300 focus:ring-gray-900"
                   >
                     <option value="">Select Status</option>
                     <option value="D">Due</option>
@@ -971,11 +968,9 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     value={formData.payment_method}
                     onChange={handleChange}
                     disabled={formData.payment_status === 'D'}
-                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-                      formData.payment_status === 'D' ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:ring-gray-900'
-                    } ${
-                      errors.payment_method ? 'border-red-500' : ''
-                    }`}
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${formData.payment_status === 'D' ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:ring-gray-900'
+                      } ${errors.payment_method ? 'border-red-500' : ''
+                      }`}
                   >
                     <option value="">Select Method</option>
                     <option value="C">Cash</option>
@@ -1010,22 +1005,20 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                 <button
                   type="button"
                   onClick={() => setPatientType('existing')}
-                  className={`px-4 py-2 text-sm font-medium rounded-md ${
-                    patientType === 'existing'
+                  className={`px-4 py-2 text-sm font-medium rounded-md ${patientType === 'existing'
                       ? 'bg-gray-900 text-white'
                       : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   Existing Patient
                 </button>
                 <button
                   type="button"
                   onClick={() => setPatientType('new')}
-                  className={`px-4 py-2 text-sm font-medium rounded-md ${
-                    patientType === 'new'
+                  className={`px-4 py-2 text-sm font-medium rounded-md ${patientType === 'new'
                       ? 'bg-gray-900 text-white'
                       : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   New Patient
                 </button>
@@ -1057,11 +1050,10 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     value={formData.gender}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-                      errors.gender 
-                        ? 'border-red-500 focus:ring-red-500' 
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${errors.gender
+                        ? 'border-red-500 focus:ring-red-500'
                         : 'border-gray-300 focus:ring-gray-900'
-                    }`}
+                      }`}
                   >
                     <option value="">Select</option>
                     <option value="Male">Male</option>
@@ -1093,14 +1085,13 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                   </label>
                   <input
                     type="text"
-                    placeholder="Search by name or phone..."
+                    placeholder="Search by name or phone…"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all bg-white ${
-                      errors.patient_id 
-                        ? 'border-red-300 focus:ring-red-500' 
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors bg-white ${errors.patient_id
+                        ? 'border-red-300 focus:ring-red-500'
                         : 'border-gray-300 focus:ring-blue-500'
-                    }`}
+                      }`}
                   />
                   {errors.patient_id && (
                     <p className="mt-1 text-sm text-red-600">{errors.patient_id}</p>
@@ -1113,9 +1104,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                         <div
                           key={patient.id}
                           onClick={() => selectPatient(patient)}
-                          className={`px-4 py-2 cursor-pointer hover:bg-gray-100 ${
-                            formData.patient_id === patient.id.toString() ? 'bg-gray-100' : ''
-                          }`}
+                          className={`px-4 py-2 cursor-pointer hover:bg-gray-100 ${formData.patient_id === patient.id.toString() ? 'bg-gray-100' : ''
+                            }`}
                         >
                           {patient.first_name} {patient.last_name} - {patient.phone}
                         </div>
@@ -1174,7 +1164,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     value={formData.blood_group}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors border-gray-300 focus:ring-gray-900"
                   >
                     <option value="">Select Blood Group</option>
                     <option value="A+">A+</option>
@@ -1198,7 +1188,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     onChange={handleChange}
                     rows={3}
                     placeholder="List any known allergies (Leave empty if none)"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors border-gray-300 focus:ring-gray-900"
                   />
                 </div>
                 {renderInput("Emergency Contact", "emergency_contact", "tel", false, "e.g., 8765432109")}
@@ -1225,11 +1215,10 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     required
                     rows={2}
                     placeholder="Main reason for visit"
-                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-                      errors.chief_complaint 
-                        ? 'border-red-500 focus:ring-red-500' 
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${errors.chief_complaint
+                        ? 'border-red-500 focus:ring-red-500'
                         : 'border-gray-300 focus:ring-gray-900'
-                    }`}
+                      }`}
                   />
                   {errors.chief_complaint && (
                     <p className="mt-1 text-sm text-red-600">{errors.chief_complaint}</p>
@@ -1245,7 +1234,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     onChange={handleChange}
                     rows={3}
                     placeholder="Detailed symptoms observed"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors border-gray-300 focus:ring-gray-900"
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -1258,7 +1247,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     onChange={handleChange}
                     rows={3}
                     placeholder="Medical diagnosis"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors border-gray-300 focus:ring-gray-900"
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -1272,7 +1261,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     onBlur={handleBlur}
                     rows={3}
                     placeholder="Enter prescription details (e.g., Paracetamol 500mg, Amoxicillin 250mg)"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors border-gray-300 focus:ring-gray-900"
                   />
                 </div>
               </div>
@@ -1326,11 +1315,10 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     required
                     rows={2}
                     placeholder="Main reason for visit"
-                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-                      errors.chief_complaint 
-                        ? 'border-red-500 focus:ring-red-500' 
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${errors.chief_complaint
+                        ? 'border-red-500 focus:ring-red-500'
                         : 'border-gray-300 focus:ring-gray-900'
-                    }`}
+                      }`}
                   />
                   {errors.chief_complaint && (
                     <p className="mt-1 text-sm text-red-600">{errors.chief_complaint}</p>
@@ -1346,7 +1334,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     onChange={handleChange}
                     rows={3}
                     placeholder="Detailed symptoms observed"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors border-gray-300 focus:ring-gray-900"
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -1359,7 +1347,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     onChange={handleChange}
                     rows={3}
                     placeholder="Medical diagnosis"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors border-gray-300 focus:ring-gray-900"
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -1373,7 +1361,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     onBlur={handleBlur}
                     rows={3}
                     placeholder="Enter prescription details (e.g., Paracetamol 500mg, Amoxicillin 250mg)"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors border-gray-300 focus:ring-gray-900"
                   />
                 </div>
               </div>
@@ -1402,7 +1390,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     onChange={handleChange}
                     rows={3}
                     placeholder="Any additional observations or instructions"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors border-gray-300 focus:ring-gray-900"
                   />
                 </div>
               </div>
@@ -1434,7 +1422,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     onChange={handleChange}
                     rows={3}
                     placeholder="Any additional observations or instructions"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors border-gray-300 focus:ring-gray-900"
                   />
                 </div>
               </div>
@@ -1460,11 +1448,10 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     onBlur={handleBlur}
                     min="0"
                     step="1"
-                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-                      errors.consultation_fee 
-                        ? 'border-red-500 focus:ring-red-500' 
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${errors.consultation_fee
+                        ? 'border-red-500 focus:ring-red-500'
                         : 'border-gray-300 focus:ring-gray-900'
-                    }`}
+                      }`}
                     placeholder="Enter consultation fee"
                   />
                   {errors.consultation_fee && (
@@ -1480,7 +1467,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     name="payment_status"
                     value={formData.payment_status}
                     onChange={handleChange}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors border-gray-300 focus:ring-gray-900"
                   >
                     <option value="">Select Status</option>
                     <option value="D">Due</option>
@@ -1497,11 +1484,9 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     value={formData.payment_method}
                     onChange={handleChange}
                     disabled={formData.payment_status === 'D'}
-                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-                      formData.payment_status === 'D' ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:ring-gray-900'
-                    } ${
-                      errors.payment_method ? 'border-red-500' : ''
-                    }`}
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${formData.payment_status === 'D' ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:ring-gray-900'
+                      } ${errors.payment_method ? 'border-red-500' : ''
+                      }`}
                   >
                     <option value="">Select Method</option>
                     <option value="C">Cash</option>
@@ -1540,11 +1525,10 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     onBlur={handleBlur}
                     min="0"
                     step="1"
-                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-                      errors.consultation_fee 
-                        ? 'border-red-500 focus:ring-red-500' 
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${errors.consultation_fee
+                        ? 'border-red-500 focus:ring-red-500'
                         : 'border-gray-300 focus:ring-gray-900'
-                    }`}
+                      }`}
                     placeholder="Enter consultation fee"
                   />
                   {errors.consultation_fee && (
@@ -1560,7 +1544,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     name="payment_status"
                     value={formData.payment_status}
                     onChange={handleChange}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all border-gray-300 focus:ring-gray-900"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors border-gray-300 focus:ring-gray-900"
                   >
                     <option value="">Select Status</option>
                     <option value="D">Due</option>
@@ -1577,11 +1561,9 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     value={formData.payment_method}
                     onChange={handleChange}
                     disabled={formData.payment_status === 'D'}
-                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
-                      formData.payment_status === 'D' ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:ring-gray-900'
-                    } ${
-                      errors.payment_method ? 'border-red-500' : ''
-                    }`}
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${formData.payment_status === 'D' ? 'bg-gray-100 cursor-not-allowed' : 'border-gray-300 focus:ring-gray-900'
+                      } ${errors.payment_method ? 'border-red-500' : ''
+                      }`}
                   >
                     <option value="">Select Method</option>
                     <option value="C">Cash</option>
@@ -1671,15 +1653,15 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                 )}
               </div>
               <div className="sm:hidden text-center text-xs text-gray-500 mb-2">
-                Step {currentStep} of {totalSteps}: {patientType === 'new' 
+                Step {currentStep} of {totalSteps}: {patientType === 'new'
                   ? ['Patient Type', 'Basic Information', 'Medical Information', 'Visit Details', 'Vital Signs & Notes', 'Payment'][currentStep - 1]
-                  : preselectedPatientId 
+                  : preselectedPatientId
                     ? ['Visit Details', 'Vital Signs & Notes', 'Payment'][currentStep - 1]
                     : ['Patient Type', 'Patient Selection', 'Visit Details', 'Vital Signs & Notes', 'Payment'][currentStep - 1]}
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-gray-900 rounded-full h-2 transition-all duration-300"
+                <div
+                  className="bg-gray-900 rounded-full h-2 transition-colors duration-300"
                   style={{ width: `${(currentStep / totalSteps) * 100}%` }}
                 ></div>
               </div>

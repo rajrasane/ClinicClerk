@@ -160,7 +160,7 @@ export default function AdminVisits() {
             <div className="relative grow mr-1 sm:mr-2">
               <input
                 type="text"
-                placeholder="Search by patient name or complaint..."
+                placeholder="Search by patient name or complaint…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base bg-white"
@@ -201,12 +201,12 @@ export default function AdminVisits() {
               }}
               disabled={!!(dateRange.startDate && dateRange.endDate)}
               className={`ml-1 sm:ml-2 p-2.75 rounded-lg transition-colors flex items-center gap-2 ${dateRange.startDate && dateRange.endDate
-                  ? 'bg-red-100 text-red-700 cursor-not-allowed opacity-75'
-                  : showDateFilter
-                    ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                    : (dateRange.startDate || dateRange.endDate)
-                      ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-red-100 text-red-700 cursor-not-allowed opacity-75'
+                : showDateFilter
+                  ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                  : (dateRange.startDate || dateRange.endDate)
+                    ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -406,6 +406,7 @@ export default function AdminVisits() {
             setSelectedVisit(null);
           }}
           onUpdate={fetchVisitsData}
+          onEdit={handleEditVisit}
         />
       )}
 

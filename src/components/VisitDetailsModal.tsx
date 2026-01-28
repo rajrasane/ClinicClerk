@@ -3,16 +3,18 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
+import { PencilSquareIcon } from '@heroicons/react/24/outline';
 import type { Visit } from '@/types';
 
 interface VisitDetailsModalProps {
   visit: Visit | null;
   onClose: () => void;
   onUpdate: () => void;
+  onEdit?: (visit: Visit) => void;
 }
 
 
-export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalProps) {
+export default function VisitDetailsModal({ visit, onClose, onEdit }: VisitDetailsModalProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -190,19 +192,34 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
                   {formatDate(visit.visit_date)}
                 </p>
                 <span className={`inline-flex items-center px-2 py-1 rounded-full text-[0.7rem] font-medium ${visit.payment_status === 'P'
-                    ? 'bg-emerald-100 text-emerald-800'
-                    : visit.payment_status === 'D' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+                  ? 'bg-emerald-100 text-emerald-800'
+                  : visit.payment_status === 'D' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
                   }`}>
                   {visit.consultation_fee !== null ? `₹${visit.consultation_fee}` : '—'} • {visit.payment_status === 'P' ? 'Paid' : visit.payment_status === 'D' ? 'Due' : '—'}{visit.payment_status === 'P' ? ` ${visit.payment_method === 'C' ? '(C)' : '(O)'}` : ''}
                 </span>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl"
-            >
-              ×
-            </button>
+            <div className="flex items-center gap-2">
+              {onEdit && visit && (
+                <button
+                  onClick={() => {
+                    onClose();
+                    onEdit(visit);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  title="Edit visit"
+                >
+                  <PencilSquareIcon className="w-4 h-4" />
+                  <span>Edit</span>
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-gray-600 text-2xl"
+              >
+                ×
+              </button>
+            </div>
           </div>
 
           {/* Main Content */}

@@ -514,7 +514,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
             className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors"
             onClick={handleSubmit}
           >
-            {loading ? 'Updating...' : 'Update Visit'}
+            {loading ? 'Updating…' : 'Update Visit'}
           </button>
         </div>
       </div>

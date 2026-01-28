@@ -311,7 +311,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
         onBlur={handleBlur}
         maxLength={type === 'tel' ? 10 : undefined}
         placeholder={placeholder}
-        className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+        className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${
           errors[name] 
             ? 'border-red-500 focus:ring-red-500' 
             : 'border-gray-300 focus:ring-gray-900'
@@ -347,7 +347,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
                   name="gender"
                   value={formData.gender}
                   onChange={handleChange}
-                  className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all ${
+                  className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${
                     errors.gender 
                       ? 'border-red-500 focus:ring-red-500' 
                       : 'border-gray-300 focus:ring-gray-900'
@@ -388,7 +388,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
                   name="blood_group"
                   value={formData.blood_group}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all text-sm"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-colors text-sm"
                 >
                   <option value="">Select Blood Group</option>
                   <option value="A+">A+</option>
@@ -411,7 +411,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
                   value={formData.allergies}
                   onChange={handleChange}
                   rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-colors"
                   placeholder="List any known allergies (Leave empty if none)"
                 />
               </div>
@@ -475,7 +475,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
-                  className="bg-gray-900 rounded-full h-2 transition-all duration-300"
+                  className="bg-gray-900 rounded-full h-2 transition-colors duration-300"
                   style={{ width: `${(currentStep / totalSteps) * 100}%` }}
                 ></div>
               </div>
