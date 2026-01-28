@@ -297,6 +297,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                     name="chief_complaint"
                     value={formData.chief_complaint}
                     onChange={handleInputChange}
+                    autoComplete="off"
                     rows={3}
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="e.g., Fever and headache for 2 days"
@@ -312,6 +313,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                     name="symptoms"
                     value={formData.symptoms}
                     onChange={handleInputChange}
+                    autoComplete="off"
                     rows={3}
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Detailed symptoms description"
@@ -339,6 +341,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                     name="diagnosis"
                     value={formData.diagnosis}
                     onChange={handleInputChange}
+                    autoComplete="off"
                     rows={3}
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Clinical diagnosis"
@@ -351,6 +354,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                     name="prescription"
                     value={formData.prescription}
                     onChange={handleInputChange}
+                    autoComplete="off"
                     rows={3}
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter prescription details (e.g., Paracetamol 500mg, Amoxicillin 250mg)"

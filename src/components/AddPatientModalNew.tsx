@@ -67,10 +67,10 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
   const modalRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     modalRef.current?.focus();
-    
+
     // Prevent background scrolling when modal is open
     document.body.style.overflow = 'hidden';
-    
+
     return () => {
       // Restore background scrolling when modal closes
       document.body.style.overflow = 'unset';
@@ -82,7 +82,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
     if (!value.trim() && ['first_name', 'last_name', 'age', 'phone', 'gender', 'address'].includes(name)) {
       return 'This field is required';
     }
-    
+
     // Validate age is a positive number
     if (name === 'age' && value.trim()) {
       const age = parseInt(value);
@@ -90,7 +90,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
         return 'Please enter a valid age (1-120)';
       }
     }
-    
+
     // Skip further validation for empty optional fields
     if (!value.trim() && ['blood_group', 'middle_name', 'emergency_contact'].includes(name)) {
       return '';
@@ -106,7 +106,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
+
     // Special handling for phone number inputs - only allow digits
     if (name === 'phone' || name === 'emergency_contact') {
       const numericValue = value.replace(/\D/g, ''); // Remove all non-digits
@@ -127,12 +127,12 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
-    
+
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
-    
+
     // If field has been touched and has a previous error, validate on change
     if (touchedFields.has(name)) {
       const error = validateField(name, value);
@@ -142,7 +142,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
+
     // Only validate if user has entered something and then removed it
     if (value.trim() !== '') {
       setTouchedFields(prev => new Set(prev).add(name));
@@ -155,16 +155,16 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    
+
     // Only submit if we're on the final step
     if (currentStep < totalSteps) {
       return;
     }
-    
+
     // Validate required fields only
     const newErrors: FormErrors = {};
     const requiredFields = ['first_name', 'last_name', 'age', 'gender', 'phone', 'address'];
-    
+
     requiredFields.forEach(key => {
       const error = validateField(key, formData[key as keyof typeof formData]);
       if (error) {
@@ -206,7 +206,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
       });
 
       const data = await response.json();
-      
+
       if (response.ok) {
         toast.success('Patient added successfully!');
         onSuccess();
@@ -224,7 +224,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
 
   const nextStep = () => {
     const currentStepFields = getCurrentStepFields();
-    
+
     // Mark all fields in current step as touched
     setTouchedFields(prev => {
       const newTouched = new Set(prev);
@@ -265,14 +265,14 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
   const canProceed = () => {
     const currentStepFields = getCurrentStepFields();
     const requiredFields = ['first_name', 'last_name', 'age', 'gender', 'phone', 'address'];
-    
+
     return currentStepFields.every(field => {
       // For second step (medical information), all fields are optional
       if (currentStep === 2) {
         // Just check if there are no validation errors for filled fields
         return !errors[field];
       }
-      
+
       // For first step, check required fields
       if (requiredFields.includes(field)) {
         const value = formData[field as keyof typeof formData];
@@ -280,7 +280,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
         const hasNoError = !errors[field];
         return hasValue && hasNoError;
       }
-      
+
       // Optional fields in first step
       return true;
     });
@@ -297,7 +297,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
     }
   };
 
-  const renderInput = (label: string, name: string, type = 'text', required = false, placeholder = '') => (
+  const renderInput = (label: string, name: string, type = 'text', required = false, placeholder = '', autoComplete = 'off') => (
     <div>
       <label htmlFor={name} className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
         {label} {required && <span className="text-red-500">*</span>}
@@ -309,13 +309,13 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
         value={formData[name as keyof typeof formData] || ''}
         onChange={handleChange}
         onBlur={handleBlur}
+        autoComplete={autoComplete}
         maxLength={type === 'tel' ? 10 : undefined}
         placeholder={placeholder}
-        className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${
-          errors[name] 
-            ? 'border-red-500 focus:ring-red-500' 
-            : 'border-gray-300 focus:ring-gray-900'
-        }`}
+        className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${errors[name]
+          ? 'border-red-500 focus:ring-red-500'
+          : 'border-gray-300 focus:ring-gray-900'
+          }`}
       />
       {errors[name] && (
         <p className="mt-1 text-sm text-red-600">{errors[name]}</p>
@@ -332,12 +332,12 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
               <h3 className="text-base sm:text-lg font-semibold text-gray-900">Basic Information</h3>
               <p className="text-xs sm:text-sm text-gray-600">Patient&apos;s personal details</p>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {renderInput("First Name", "first_name", "text", true, "e.g., Rahul")}
-              {renderInput("Middle Name", "middle_name", "text", false, "e.g., Kumar (optional)")}
-              {renderInput("Last Name", "last_name", "text", true, "e.g., Sharma")}
-              {renderInput("Age", "age", "number", true, "e.g., 35")}
+              {renderInput("First Name", "first_name", "text", true, "e.g., Rahul", "given-name")}
+              {renderInput("Middle Name", "middle_name", "text", false, "e.g., Kumar (optional)", "additional-name")}
+              {renderInput("Last Name", "last_name", "text", true, "e.g., Sharma", "family-name")}
+              {renderInput("Age", "age", "number", true, "e.g., 35", "off")}
               <div>
                 <label htmlFor="gender" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   Gender <span className="text-red-500">*</span>
@@ -347,11 +347,11 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
                   name="gender"
                   value={formData.gender}
                   onChange={handleChange}
-                  className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${
-                    errors.gender 
-                      ? 'border-red-500 focus:ring-red-500' 
-                      : 'border-gray-300 focus:ring-gray-900'
-                  }`}
+                  autoComplete="sex"
+                  className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${errors.gender
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-gray-900'
+                    }`}
                 >
                   <option value="">Select</option>
                   <option value="Male">Male</option>
@@ -362,9 +362,9 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
                   <p className="mt-1 text-sm text-red-600">{errors.gender}</p>
                 )}
               </div>
-              {renderInput("Phone", "phone", "tel", true, "e.g., 9876543210")}
+              {renderInput("Phone", "phone", "tel", true, "e.g., 9876543210", "tel")}
               <div className="md:col-span-2">
-                {renderInput("Address", "address", "text", true, "e.g., Flat 203, Krishna Heights, Sector 12, Vashi, Navi Mumbai - 400703")}
+                {renderInput("Address", "address", "text", true, "e.g., Flat 203, Krishna Heights, Sector 12, Vashi, Navi Mumbai - 400703", "street-address")}
               </div>
             </div>
           </div>
@@ -388,6 +388,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
                   name="blood_group"
                   value={formData.blood_group}
                   onChange={handleChange}
+                  autoComplete="off"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-colors text-sm"
                 >
                   <option value="">Select Blood Group</option>
@@ -410,12 +411,13 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
                   name="allergies"
                   value={formData.allergies}
                   onChange={handleChange}
+                  autoComplete="off"
                   rows={3}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-colors"
                   placeholder="List any known allergies (Leave empty if none)"
                 />
               </div>
-              {renderInput("Emergency Contact", "emergency_contact", "tel", false, "e.g., 8765432109")}
+              {renderInput("Emergency Contact", "emergency_contact", "tel", false, "e.g., 8765432109", "tel")}
             </div>
           </div>
         );
@@ -463,7 +465,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
                 <XMarkIcon className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             </div>
-            
+
             {/* Progress Bar */}
             <div className="mt-2">
               <div className="hidden sm:flex justify-between text-xs text-gray-500 mb-2">
@@ -474,7 +476,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
                 Step {currentStep} of {totalSteps}: {currentStep === 1 ? 'Basic Information' : 'Medical Details'}
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
+                <div
                   className="bg-gray-900 rounded-full h-2 transition-colors duration-300"
                   style={{ width: `${(currentStep / totalSteps) * 100}%` }}
                 ></div>
@@ -510,7 +512,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
                 >
                   Cancel
                 </button>
-                
+
                 {currentStep < totalSteps ? (
                   <button
                     type="button"
@@ -534,7 +536,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Adding...
+                        Adding…
                       </span>
                     ) : (
                       'Add Patient'

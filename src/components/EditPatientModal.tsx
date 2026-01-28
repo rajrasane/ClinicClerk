@@ -203,6 +203,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                     name="first_name"
                     value={formData.first_name}
                     onChange={handleChange}
+                    autoComplete="given-name"
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="e.g., Rahul"
                   />
@@ -218,6 +219,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                     name="middle_name"
                     value={formData.middle_name}
                     onChange={handleChange}
+                    autoComplete="additional-name"
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="e.g., Kumar (optional)"
                   />
@@ -230,6 +232,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                     name="last_name"
                     value={formData.last_name}
                     onChange={handleChange}
+                    autoComplete="family-name"
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="e.g., Sharma"
                   />
@@ -245,6 +248,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                     name="age"
                     value={formData.age}
                     onChange={handleChange}
+                    autoComplete="off"
                     min="1"
                     max="120"
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -264,6 +268,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                     name="gender"
                     value={formData.gender}
                     onChange={handleChange}
+                    autoComplete="sex"
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">Select</option>
@@ -289,6 +294,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
+                    autoComplete="tel"
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="e.g., 9876543210"
                   />
@@ -303,6 +309,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                     name="address"
                     value={formData.address}
                     onChange={handleChange}
+                    autoComplete="street-address"
                     rows={3}
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="e.g., Flat 203, Krishna Heights, Sector 12, Vashi, Navi Mumbai - 400703"
@@ -319,6 +326,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                     name="emergency_contact"
                     value={formData.emergency_contact}
                     onChange={handleChange}
+                    autoComplete="tel"
                     className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="e.g., 9876543211"
                   />

@@ -771,8 +771,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           maxLength={type === 'tel' ? 10 : undefined}
           placeholder={placeholder}
           className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${errors[name]
-              ? 'border-red-500 focus:ring-red-500'
-              : 'border-gray-300 focus:ring-gray-900'
+            ? 'border-red-500 focus:ring-red-500'
+            : 'border-gray-300 focus:ring-gray-900'
             }`}
         />
         {errors[name] && (
@@ -832,8 +832,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     rows={2}
                     placeholder="Main reason for visit"
                     className={`w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${errors.chief_complaint
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-gray-900'
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300 focus:ring-gray-900'
                       }`}
                   />
                   {errors.chief_complaint && (
@@ -933,8 +933,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     min="0"
                     step="1"
                     className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${errors.consultation_fee
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-gray-900'
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300 focus:ring-gray-900'
                       }`}
                     placeholder="Enter consultation fee"
                   />
@@ -1006,8 +1006,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                   type="button"
                   onClick={() => setPatientType('existing')}
                   className={`px-4 py-2 text-sm font-medium rounded-md ${patientType === 'existing'
-                      ? 'bg-gray-900 text-white'
-                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                     }`}
                 >
                   Existing Patient
@@ -1016,8 +1016,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                   type="button"
                   onClick={() => setPatientType('new')}
                   className={`px-4 py-2 text-sm font-medium rounded-md ${patientType === 'new'
-                      ? 'bg-gray-900 text-white'
-                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                     }`}
                 >
                   New Patient
@@ -1051,8 +1051,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     onChange={handleChange}
                     onBlur={handleBlur}
                     className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${errors.gender
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-gray-900'
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300 focus:ring-gray-900'
                       }`}
                   >
                     <option value="">Select</option>
@@ -1089,8 +1089,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors bg-white ${errors.patient_id
-                        ? 'border-red-300 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-blue-500'
+                      ? 'border-red-300 focus:ring-red-500'
+                      : 'border-gray-300 focus:ring-blue-500'
                       }`}
                   />
                   {errors.patient_id && (
@@ -1216,8 +1216,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     rows={2}
                     placeholder="Main reason for visit"
                     className={`w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${errors.chief_complaint
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-gray-900'
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300 focus:ring-gray-900'
                       }`}
                   />
                   {errors.chief_complaint && (
@@ -1316,8 +1316,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     rows={2}
                     placeholder="Main reason for visit"
                     className={`w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${errors.chief_complaint
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-gray-900'
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300 focus:ring-gray-900'
                       }`}
                   />
                   {errors.chief_complaint && (
@@ -1449,8 +1449,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     min="0"
                     step="1"
                     className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${errors.consultation_fee
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-gray-900'
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300 focus:ring-gray-900'
                       }`}
                     placeholder="Enter consultation fee"
                   />
@@ -1526,8 +1526,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                     min="0"
                     step="1"
                     className={`w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-colors ${errors.consultation_fee
-                        ? 'border-red-500 focus:ring-red-500'
-                        : 'border-gray-300 focus:ring-gray-900'
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300 focus:ring-gray-900'
                       }`}
                     placeholder="Enter consultation fee"
                   />
@@ -1726,7 +1726,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Adding...
+                        Adding…
                       </span>
                     ) : (
                       'Add Visit'

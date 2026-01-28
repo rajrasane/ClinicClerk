@@ -305,11 +305,11 @@ export default function AdminVisits() {
                             {visit.first_name} {visit.last_name}
                           </div>
                           <div className="text-xs text-gray-600">
-                            {visit.chief_complaint.length > 50 ? `${visit.chief_complaint.substring(0, 50)}...` : visit.chief_complaint}
+                            {visit.chief_complaint.length > 50 ? `${visit.chief_complaint.substring(0, 50)}…` : visit.chief_complaint}
                           </div>
                           {visit.diagnosis && (
                             <div className="text-xs text-green-700">
-                              <span className="font-medium">Dx:</span> {visit.diagnosis.length > 40 ? `${visit.diagnosis.substring(0, 40)}...` : visit.diagnosis}
+                              <span className="font-medium">Dx:</span> {visit.diagnosis.length > 40 ? `${visit.diagnosis.substring(0, 40)}…` : visit.diagnosis}
                             </div>
                           )}
                         </div>
