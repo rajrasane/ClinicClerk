@@ -2,8 +2,13 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  devIndicators : false,
+  devIndicators: false,
   reactStrictMode: false, // Disable to prevent double API calls in dev
+  experimental: {
+    // Optimize barrel imports for icon libraries to reduce bundle size
+    optimizePackageImports: ['lucide-react', '@heroicons/react'],
+  },
+
   async headers() {
     return [
       {
