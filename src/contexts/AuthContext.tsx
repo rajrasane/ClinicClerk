@@ -37,17 +37,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [doctorLoading, setDoctorLoading] = useState(false)
   const fetchingRef = useRef(false)
-  const currentUserIdRef = useRef<string | null>(null)
+  const doctorDataRef = useRef<Doctor | null>(null) // Track doctor data for closure access
 
   // Fetch doctor data when user is available
   const fetchDoctorData = async (userId: string) => {
-    // Prevent duplicate calls for the same user
-    if (fetchingRef.current && currentUserIdRef.current === userId) {
+    // Prevent duplicate concurrent calls
+    if (fetchingRef.current) {
       return
     }
 
     fetchingRef.current = true
-    currentUserIdRef.current = userId
     setDoctorLoading(true)
     try {
       const { data, error } = await supabase
@@ -55,14 +54,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .select('id, first_name, middle_name, last_name, email, phone, clinic_name, clinic_address')
         .eq('id', userId)
         .single()
-      
+
       if (data && !error) {
+        doctorDataRef.current = data
         setDoctor(data)
       } else {
         // If doctor record doesn't exist (account deleted), sign out the user
         if (error?.code === 'PGRST116') {
           console.log('Doctor record not found, signing out user')
-          // Clear tokens before signing out
           if (typeof window !== 'undefined') {
             localStorage.clear()
             sessionStorage.clear()
@@ -70,10 +69,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await supabase.auth.signOut()
           return
         }
+        doctorDataRef.current = null
         setDoctor(null)
       }
     } catch (error) {
       console.error('Error fetching doctor data:', error)
+      doctorDataRef.current = null
       setDoctor(null)
     } finally {
       setDoctorLoading(false)
@@ -82,73 +83,93 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    // Get initial session with error handling for stale tokens
-    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
-      // Handle invalid refresh token error - clear stale tokens and reset
-      if (error?.message?.includes('Refresh Token') || error?.code === 'bad_jwt') {
-        console.warn('Stale auth tokens detected, clearing...')
-        if (typeof window !== 'undefined') {
-          localStorage.clear()
-          sessionStorage.clear()
-        }
-        setSession(null)
-        setUser(null)
-        setDoctor(null)
-        setLoading(false)
-        setDoctorLoading(false)
-        return
-      }
-      
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false) // Auth loading complete
-      
-      if (session?.user?.id) {
-        fetchDoctorData(session.user.id) // Fetch doctor data separately
-      } else {
-        setDoctor(null)
-        setDoctorLoading(false)
-      }
-    }).catch((err) => {
-      // Catch any unhandled auth errors (e.g., network issues, invalid tokens)
-      console.error('Auth session error:', err)
+    let hasFetchedDoctor = false // Track if we already fetched on this mount
+
+    // Helper to clear all Supabase tokens
+    const clearAuthTokens = () => {
       if (typeof window !== 'undefined') {
-        localStorage.clear()
+        // Clear all Supabase auth keys
+        const keys = Object.keys(localStorage).filter(k => k.startsWith('sb-'))
+        keys.forEach(k => localStorage.removeItem(k))
         sessionStorage.clear()
       }
+    }
+
+    // Helper to reset auth state
+    const resetAuthState = () => {
       setSession(null)
       setUser(null)
       setDoctor(null)
       setLoading(false)
       setDoctorLoading(false)
-    })
+    }
+
+    // Get initial session with error handling for stale tokens
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+
+        // Handle invalid refresh token error
+        if (error?.message?.includes('Refresh Token') || error?.code === 'bad_jwt') {
+          console.warn('Stale auth tokens detected, clearing...')
+          clearAuthTokens()
+          resetAuthState()
+          return
+        }
+
+        setSession(session)
+        setUser(session?.user ?? null)
+        setLoading(false)
+
+        if (session?.user?.id && !hasFetchedDoctor) {
+          hasFetchedDoctor = true
+          fetchDoctorData(session.user.id)
+        } else if (!session?.user) {
+          setDoctor(null)
+          setDoctorLoading(false)
+        }
+      } catch (err: unknown) {
+        // Catch AuthApiError thrown during refresh attempt
+        const errorMessage = err instanceof Error ? err.message : String(err)
+        if (errorMessage.includes('Refresh Token') || errorMessage.includes('Invalid') || errorMessage.includes('Not Found')) {
+          console.warn('Auth error during session init, clearing tokens:', errorMessage)
+          clearAuthTokens()
+        } else {
+          console.error('Auth session error:', err)
+          clearAuthTokens()
+        }
+        resetAuthState()
+      }
+    }
+
+    initializeAuth()
 
     // Listen for auth changes (including token refresh errors)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Handle token refresh failure
-      if (event === 'TOKEN_REFRESHED' && !session) {
-        console.warn('Token refresh failed, clearing session...')
-        if (typeof window !== 'undefined') {
-          localStorage.clear()
-          sessionStorage.clear()
+      // Handle token refresh failure or signout
+      if ((event === 'TOKEN_REFRESHED' && !session) || event === 'SIGNED_OUT') {
+        if (event === 'TOKEN_REFRESHED') {
+          console.warn('Token refresh failed, clearing session...')
         }
-        setSession(null)
-        setUser(null)
-        setDoctor(null)
-        setLoading(false)
-        setDoctorLoading(false)
+        clearAuthTokens()
+        resetAuthState()
+        doctorDataRef.current = null
+        hasFetchedDoctor = false
         return
       }
-      
+
       setSession(session)
       setUser(session?.user ?? null)
-      setLoading(false) // Auth loading complete
-      
-      if (session?.user?.id) {
-        fetchDoctorData(session.user.id) // Fetch doctor data separately
-      } else {
+      setLoading(false)
+
+      // Only fetch doctor data on actual sign in (not initial load or token refresh)
+      if (event === 'SIGNED_IN' && session?.user?.id && !hasFetchedDoctor) {
+        hasFetchedDoctor = true
+        fetchDoctorData(session.user.id)
+      } else if (!session?.user) {
+        doctorDataRef.current = null
         setDoctor(null)
         setDoctorLoading(false)
       }
@@ -162,12 +183,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email,
       password,
     })
-    
+
     // Clear cache on successful sign in to ensure fresh data for new user
     if (!error) {
       apiCache.clear()
     }
-    
+
     return { error }
   }
 
@@ -182,13 +203,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     // Clear all cached data before signing out
     apiCache.clear()
-    
+
     // Clear any stored tokens
     if (typeof window !== 'undefined') {
       localStorage.removeItem('supabase.auth.token')
       sessionStorage.removeItem('supabase.auth.token')
     }
-    
+
     await supabase.auth.signOut()
   }
 

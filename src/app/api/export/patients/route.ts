@@ -1,23 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { createSupabaseServerClient, getAuthenticatedUser } from '@/lib/supabase-server';
 import { generatePatientsPDFBuffer } from '@/lib/pdf-generator-server';
 import { generatePatientsExcelBuffer } from '@/lib/excel-generator-server';
 import { sanitizeSearchTerms } from '@/lib/sanitize';
 
 // GET /api/export/patients - Export patients data as CSV/PDF
 export async function GET(request: NextRequest) {
-  // Check authentication
-  const supabase = createSupabaseServerClient(request);
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
-  if (authError || !user) {
-    return NextResponse.json(
-      { success: false, error: 'Unauthorized' },
-      { status: 401 }
-    );
-  }
-
   try {
+    // Check authentication
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const supabase = createSupabaseServerClient(request);
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
     const format = searchParams.get('format') || 'csv';
@@ -120,9 +119,9 @@ export async function GET(request: NextRequest) {
     if (format === 'excel') {
       // Generate Excel buffer on server
       const excelBuffer = generatePatientsExcelBuffer(processedPatients);
-      
+
       const filename = `patients_export_${new Date().toISOString().split('T')[0]}.xlsx`;
-      
+
       return new NextResponse(Buffer.from(excelBuffer), {
         status: 200,
         headers: {
@@ -141,14 +140,14 @@ export async function GET(request: NextRequest) {
         .select('first_name, last_name')
         .eq('id', user.id)
         .single();
-      
+
       const doctorName = doctorData ? `Dr. ${doctorData.first_name} ${doctorData.last_name}` : 'Doctor';
-      
+
       // Generate PDF buffer on server
       const pdfBuffer = generatePatientsPDFBuffer(processedPatients, doctorName);
-      
+
       const filename = `patients_export_${new Date().toISOString().split('T')[0]}.pdf`;
-      
+
       return new NextResponse(Buffer.from(pdfBuffer), {
         status: 200,
         headers: {

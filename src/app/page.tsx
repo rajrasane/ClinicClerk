@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { Header } from '@/sections/Header';
 import AdminPatients from '@/components/Patients';
@@ -12,6 +12,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState('patients');
   const [visitedTabs, setVisitedTabs] = useState(new Set(['patients'])); // Track which tabs have been visited
   const { user, loading } = useAuth();
+  const shouldReduceMotion = useReducedMotion();
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
@@ -40,9 +41,9 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         <motion.div
           key={activeTab}
-          initial={{ opacity: 0, y: 20 }}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: shouldReduceMotion ? 0 : 0.3 }}
         >
           {/* Only render components that have been visited */}
           {activeTab === 'patients' && <AdminPatients />}

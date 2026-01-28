@@ -1,24 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateVisitsExcelBuffer } from '@/lib/excel-generator-server';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { createSupabaseServerClient, getAuthenticatedUser } from '@/lib/supabase-server';
 import { generateVisitsPDFBuffer } from '@/lib/pdf-generator-server';
 import { sanitizeSearchTerm } from '@/lib/sanitize';
 
 
 // GET /api/export/visits - Export visits data as CSV/PDF
 export async function GET(request: NextRequest) {
-  // Check authentication
-  const supabase = createSupabaseServerClient(request);
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
-  if (authError || !user) {
-    return NextResponse.json(
-      { success: false, error: 'Unauthorized' },
-      { status: 401 }
-    );
-  }
-
   try {
+    // Check authentication
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const supabase = createSupabaseServerClient(request);
     const { searchParams } = new URL(request.url);
     const patientId = searchParams.get('patient_id');
     const search = searchParams.get('search');
@@ -134,7 +133,7 @@ export async function GET(request: NextRequest) {
       ].join('\n');
 
       const timestamp = new Date().toISOString().split('T')[0];
-      const filename = patientId 
+      const filename = patientId
         ? `patient_${patientId}_visits_export_${timestamp}.csv`
         : `visits_export_${timestamp}.csv`;
 
@@ -152,9 +151,9 @@ export async function GET(request: NextRequest) {
     if (format === 'excel') {
       // Generate Excel buffer on server
       const excelBuffer = generateVisitsExcelBuffer(processedVisits);
-      
+
       const filename = `visits_export_${new Date().toISOString().split('T')[0]}.xlsx`;
-      
+
       return new NextResponse(Buffer.from(excelBuffer), {
         status: 200,
         headers: {
@@ -173,14 +172,14 @@ export async function GET(request: NextRequest) {
         .select('first_name, last_name')
         .eq('id', user.id)
         .single();
-      
+
       const doctorName = doctorData ? `Dr. ${doctorData.first_name} ${doctorData.last_name}` : 'Doctor';
-      
+
       // Generate PDF buffer on server
       const pdfBuffer = generateVisitsPDFBuffer(processedVisits, doctorName);
-      
+
       const filename = `visits_export_${new Date().toISOString().split('T')[0]}.pdf`;
-      
+
       return new NextResponse(Buffer.from(pdfBuffer), {
         status: 200,
         headers: {

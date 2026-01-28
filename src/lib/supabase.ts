@@ -54,6 +54,35 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Listen for auth errors globally and clear stale tokens
 if (typeof window !== 'undefined') {
+  // Pre-emptive check: if token exists but is malformed, clear it before Supabase tries to use it
+  try {
+    const projectId = supabaseUrl.split('//')[1]?.split('.')[0]
+    const tokenKey = `sb-${projectId}-auth-token`
+    const storedToken = localStorage.getItem(tokenKey)
+    if (storedToken) {
+      const parsed = JSON.parse(storedToken)
+      // Check if refresh token exists and is a valid string
+      if (!parsed?.refresh_token || typeof parsed.refresh_token !== 'string') {
+        console.warn('Invalid token structure detected, clearing...')
+        localStorage.removeItem(tokenKey)
+      }
+      // Check if access token has expired (with some buffer)
+      if (parsed?.expires_at) {
+        const expiresAt = parsed.expires_at * 1000 // Convert to ms
+        const now = Date.now()
+        // If access token expired more than 7 days ago, refresh token is likely invalid too
+        if (now - expiresAt > 7 * 24 * 60 * 60 * 1000) {
+          console.warn('Token expired too long ago, clearing...')
+          localStorage.removeItem(tokenKey)
+        }
+      }
+    }
+  } catch {
+    // If parsing fails, the token is corrupted - clear it
+    const keys = Object.keys(localStorage).filter(k => k.startsWith('sb-'))
+    keys.forEach(k => localStorage.removeItem(k))
+  }
+
   supabase.auth.onAuthStateChange((event, session) => {
     if (event === 'TOKEN_REFRESHED' && !session) {
       // Token refresh failed - clear everything
