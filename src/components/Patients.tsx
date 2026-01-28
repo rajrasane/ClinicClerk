@@ -11,45 +11,8 @@ import AddVisitModal from './AddVisitModal';
 import VisitDetailsModal from './VisitDetailsModal';
 import { supabase } from '@/lib/supabase';
 import { ExportDropdown } from '@/components/ui/export-dropdown';
+import type { Patient, Visit } from '@/types';
 
-
-interface Patient {
-  id: number;
-  first_name: string;
-  middle_name?: string;
-  last_name: string;
-  age: number;
-  age_recorded_at: string;
-  gender: 'M' | 'F' | 'O';
-  phone: string;
-  address: string;
-  blood_group: string;
-  allergies: string;
-  emergency_contact: string;
-  created_at: string;
-  updated_at: string;
-  visit_count?: number;
-}
-
-interface Visit {
-  id: number;
-  patient_id: number;
-  visit_date: string;
-  chief_complaint: string;
-  symptoms: string;
-  diagnosis: string;
-  prescription: string;
-  notes: string;
-  follow_up_date: string;
-  vitals: Record<string, string> | null;
-  created_at: string;
-  first_name: string;
-  last_name: string;
-  phone: string;
-  consultation_fee: number | null;
-  payment_status: 'P' | 'D' | null;
-  payment_method: 'C' | 'O' | null;
-}
 
 export default function AdminPatients() {
   // Use the custom hook for data management
@@ -100,7 +63,7 @@ export default function AdminPatients() {
           'Authorization': `Bearer ${session.access_token}`
         }
       });
-      
+
       if (response.ok) {
         toast.success('Patient deleted successfully!');
         // Clear cache and refresh
@@ -139,26 +102,26 @@ export default function AdminPatients() {
           <p className="text-gray-600">Manage patient records and information</p>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm sm:text-base"
-        >
-          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          <span>Add Patient</span>
-        </button>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm sm:text-base"
+          >
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Add Patient</span>
+          </button>
           <div className="md:hidden">
-            <ExportDropdown 
-              type="patients" 
+            <ExportDropdown
+              type="patients"
               filters={{ search: searchTerm }}
               variant="icon"
               hasRecords={patients.length > 0}
             />
           </div>
           <div className="hidden md:block">
-            <ExportDropdown 
-              type="patients" 
+            <ExportDropdown
+              type="patients"
               filters={{ search: searchTerm }}
               buttonText="Export Patients"
               hasRecords={patients.length > 0}
@@ -168,38 +131,38 @@ export default function AdminPatients() {
       </div>
 
       {/* Search and Filter */}
-        <div className="relative w-full">
-          <input
-            type="text"
-            placeholder="Search patients by name or phone..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base bg-white"
+      <div className="relative w-full">
+        <input
+          type="text"
+          placeholder="Search patients by name or phone..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base bg-white"
+        />
+        <svg
+          className="absolute left-3 top-2.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
           />
-          <svg
-            className="absolute left-3 top-2.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        </svg>
+        {searchTerm && (
+          <button
+            onClick={() => setSearchTerm('')}
+            className="absolute right-3 top-2.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="Clear search"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
-              className="absolute right-3 top-2.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-gray-600 transition-colors"
-              aria-label="Clear search"
-            >
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Patients Table */}

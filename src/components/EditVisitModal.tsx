@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { apiCache } from '@/lib/cache';
 import { DatePicker } from '@/components/ui/date-picker';
 import { supabase } from '@/lib/supabase';
+import type { Visit } from '@/types';
 
 // Helper function to format date without timezone issues
 const formatDateForAPI = (date: Date): string => {
@@ -14,33 +15,12 @@ const formatDateForAPI = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
-interface Visit {
-  id: number;
-  patient_id: number;
-  visit_date: string;
-  chief_complaint: string;
-  symptoms: string;
-  diagnosis: string;
-  prescription: string;
-  notes: string;
-  follow_up_date: string;
-  vitals: Record<string, string> | null;
-  first_name: string;
-  last_name: string;
-  phone: string;
-  age: number;
-  gender: string;
-  // Payment fields - nullable for existing visits
-  consultation_fee: number | null;
-  payment_status: 'P' | 'D' | null;
-  payment_method: 'C' | 'O' | null;
-}
-
 interface EditVisitModalProps {
   visit: Visit;
   onClose: () => void;
   onSuccess: () => void;
 }
+
 
 export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitModalProps) {
   // Format date to YYYY-MM-DD for date input, handling timezone correctly
@@ -93,7 +73,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
   useEffect(() => {
     // Prevent background scrolling when modal is open
     document.body.style.overflow = 'hidden';
-    
+
     return () => {
       // Restore background scrolling when modal closes
       document.body.style.overflow = 'unset';
@@ -114,7 +94,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
       statusChanged: formData.payment_status !== originalData.payment_status,
       methodChanged: formData.payment_status === 'P' && formData.payment_method !== originalData.payment_method
     };
-    
+
     return Object.values(changes).some(changed => changed);
   };
 
@@ -157,7 +137,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
 
   const handleDateChange = (name: string, date: Date | undefined) => {
     setFormData(prev => ({ ...prev, [name]: date }));
-    
+
     // Clear error when date is selected
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
@@ -234,10 +214,10 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
+
     if (name.startsWith('vitals.')) {
       const vitalName = name.split('.')[1];
-      
+
       // Handle different vitals input restrictions
       let filteredValue = value;
       if (vitalName === 'bp') {
@@ -247,7 +227,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
         // For all other vitals, allow only digits and decimal point
         filteredValue = value.replace(/[^0-9.]/g, '');
       }
-      
+
       setFormData({
         ...formData,
         vitals: {
@@ -296,7 +276,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">Visit Information</h3>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Visit Date</label>
                   <DatePicker
@@ -352,7 +332,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
 
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">Clinical Information</h3>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Diagnosis</label>
                   <textarea
@@ -383,7 +363,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
               {/* Payment Information Section */}
               <div className="md:col-span-2 space-y-3">
                 <h3 className="text-base font-semibold text-gray-900">Payment Information</h3>
-                
+
                 <div className={`grid gap-4 ${formData.payment_status === 'D' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-3'}`}>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -447,7 +427,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
 
               <div className="md:col-span-2 space-y-3">
                 <h3 className="text-base font-semibold text-gray-900">Vitals</h3>
-                
+
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Temperature</label>

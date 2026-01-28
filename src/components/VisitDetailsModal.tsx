@@ -3,27 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
-
-interface Visit {
-  id: number;
-  patient_id: number;
-  visit_date: string;
-  chief_complaint: string;
-  symptoms: string;
-  diagnosis: string;
-  prescription: string;
-  notes: string;
-  follow_up_date: string;
-  vitals: Record<string, string> | null;
-  created_at: string;
-  first_name: string;
-  last_name: string;
-  phone: string;
-  // Payment fields - nullable for existing visits
-  consultation_fee: number | null;
-  payment_status: 'P' | 'D' | null;
-  payment_method: 'C' | 'O' | null;
-}
+import type { Visit } from '@/types';
 
 interface VisitDetailsModalProps {
   visit: Visit | null;
@@ -31,15 +11,16 @@ interface VisitDetailsModalProps {
   onUpdate: () => void;
 }
 
+
 export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    
+
     // Prevent background scrolling when modal is open
     document.body.style.overflow = 'hidden';
-    
+
     return () => {
       setMounted(false);
       // Restore background scrolling when modal closes
@@ -68,13 +49,13 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
 
   const formatPrescription = (prescription: string) => {
     if (!prescription || !prescription.trim()) return [];
-    
+
     // Split by common separators and clean up
     const medications = prescription
       .split(/[,;\n]/)
       .map(med => med.trim())
       .filter(med => med.length > 0);
-    
+
     return medications;
   };
 
@@ -85,19 +66,19 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900">Clinical Assessment</h3>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700">Chief Complaint</label>
               <p className="mt-1 text-sm text-gray-900">{visit.chief_complaint || 'Not specified'}</p>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700">Symptoms</label>
               <p className="mt-1 text-sm text-gray-900 whitespace-pre-line">
                 {visit.symptoms || 'No symptoms recorded'}
               </p>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700">Diagnosis</label>
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -105,12 +86,12 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
               </span>
             </div>
           </div>
-          
+
           <hr className="md:hidden border-gray-200" />
-          
+
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900">Treatment Plan</h3>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700">Prescription</label>
               {visit.prescription && visit.prescription.trim() ? (
@@ -128,7 +109,7 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
                 <p className="mt-1 text-sm text-gray-500 italic">No prescription</p>
               )}
             </div>
-            
+
             {visit.follow_up_date && (
               <div>
                 <label className="block text-sm font-medium text-gray-700">Follow-up Date</label>
@@ -150,16 +131,16 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
                     {key === 'bp' ? 'Blood Pressure' : key.replace(/_/g, ' ')}
                   </label>
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                    {key === 'temperature' ? 
+                    {key === 'temperature' ?
                       (String(value).includes('°F') ? value : `${value}°F`) :
-                      key === 'pulse' ? 
-                      (String(value).toLowerCase().includes('bpm') ? value : `${value} bpm`) :
-                      key === 'weight' ? 
-                      (String(value).toLowerCase().includes('kg') ? value : `${value} kg`) :
-                      key === 'o2' ? 
-                      (String(value).includes('%') ? value : `${value}%`) :
-                      key === 'bp' ? value :
-                      String(value) || '—'}
+                      key === 'pulse' ?
+                        (String(value).toLowerCase().includes('bpm') ? value : `${value} bpm`) :
+                        key === 'weight' ?
+                          (String(value).toLowerCase().includes('kg') ? value : `${value} kg`) :
+                          key === 'o2' ?
+                            (String(value).includes('%') ? value : `${value}%`) :
+                            key === 'bp' ? value :
+                              String(value) || '—'}
                   </span>
                 </div>
               ))}
@@ -208,11 +189,10 @@ export default function VisitDetailsModal({ visit, onClose }: VisitDetailsModalP
                 <p className="text-xs text-gray-600">
                   {formatDate(visit.visit_date)}
                 </p>
-                <span className={`inline-flex items-center px-2 py-1 rounded-full text-[0.7rem] font-medium ${
-                  visit.payment_status === 'P' 
-                    ? 'bg-emerald-100 text-emerald-800' 
+                <span className={`inline-flex items-center px-2 py-1 rounded-full text-[0.7rem] font-medium ${visit.payment_status === 'P'
+                    ? 'bg-emerald-100 text-emerald-800'
                     : visit.payment_status === 'D' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
-                }`}>
+                  }`}>
                   {visit.consultation_fee !== null ? `₹${visit.consultation_fee}` : '—'} • {visit.payment_status === 'P' ? 'Paid' : visit.payment_status === 'D' ? 'Due' : '—'}{visit.payment_status === 'P' ? ` ${visit.payment_method === 'C' ? '(C)' : '(O)'}` : ''}
                 </span>
               </div>

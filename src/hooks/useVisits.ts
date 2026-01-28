@@ -1,36 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { cachedFetch, apiCache } from '@/lib/cache';
+import type { Visit, PaginationData } from '@/types';
 
-interface Visit {
-  id: number;
-  patient_id: number;
-  visit_date: string;
-  chief_complaint: string;
-  symptoms: string;
-  diagnosis: string;
-  prescription: string;
-  notes: string;
-  follow_up_date: string;
-  vitals: Record<string, string> | null;
-  created_at: string;
-  first_name: string;
-  last_name: string;
-  phone: string;
-  age: number;
-  gender: string;
-  // Payment fields - nullable for existing visits
-  consultation_fee: number | null;
-  payment_status: 'P' | 'D' | null;
-  payment_method: 'C' | 'O' | null;
-}
-
-interface PaginationData {
-  currentPage: number;
-  totalPages: number;
-  totalCount: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-}
 
 interface UseVisitsReturn {
   visits: Visit[];
@@ -43,8 +14,8 @@ interface UseVisitsReturn {
 }
 
 export function useVisits(
-  page: number = 1, 
-  searchQuery: string = '', 
+  page: number = 1,
+  searchQuery: string = '',
   dateRange: { startDate: string; endDate: string } = { startDate: '', endDate: '' },
   limit: number = 5
 ): UseVisitsReturn {
@@ -61,7 +32,7 @@ export function useVisits(
 
     // Create new abort controller for this request
     abortControllerRef.current = new AbortController();
-    
+
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -79,7 +50,7 @@ export function useVisits(
       }
 
       const data = await cachedFetch(`/api/visits?${params}`, undefined, 10); // 10 min cache
-      
+
       if (data.success) {
         setVisits(data.data);
         setPagination(data.pagination);
@@ -93,7 +64,7 @@ export function useVisits(
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
-    
+
     if (searchQuery || dateRange.startDate || dateRange.endDate) {
       // Debounce search and filter changes
       timeoutId = setTimeout(fetchVisits, 300);

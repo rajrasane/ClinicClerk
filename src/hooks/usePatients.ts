@@ -1,31 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { cachedFetch, apiCache } from '@/lib/cache';
+import type { Patient, PaginationData } from '@/types';
 
-interface Patient {
-  id: number;
-  first_name: string;
-  middle_name?: string;  // New optional field
-  last_name: string;
-  age: number;
-  age_recorded_at: string;
-  gender: 'M' | 'F' | 'O';  // Optimized to single character
-  phone: string;
-  address: string;
-  blood_group: string;
-  allergies: string;
-  emergency_contact: string;
-  created_at: string;
-  updated_at: string;
-  visit_count?: number;
-}
-
-interface PaginationData {
-  currentPage: number;
-  totalPages: number;
-  totalCount: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-}
 
 interface UsePatientsReturn {
   patients: Patient[];
@@ -51,14 +27,14 @@ export function usePatients(page: number = 1, searchTerm: string = '', limit: nu
 
     // Create new abort controller for this request
     abortControllerRef.current = new AbortController();
-    
+
     setLoading(true);
     try {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString()
       });
-      
+
       if (searchTerm.trim()) {
         params.append('search', searchTerm.trim());
       }
@@ -73,7 +49,7 @@ export function usePatients(page: number = 1, searchTerm: string = '', limit: nu
           headers: session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}
         });
         data = await response.json();
-        
+
         // Cache the fresh data for subsequent requests
         if (data.success) {
           apiCache.set(`/api/patients?${params}{}`, data, 10);
@@ -81,7 +57,7 @@ export function usePatients(page: number = 1, searchTerm: string = '', limit: nu
       } else {
         data = await cachedFetch(`/api/patients?${params}`, undefined, 10); // 10 min cache
       }
-      
+
       if (data.success) {
         setPatients(data.data);
         setPagination(data.pagination);
@@ -95,7 +71,7 @@ export function usePatients(page: number = 1, searchTerm: string = '', limit: nu
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
-    
+
     if (searchTerm) {
       // Debounce search
       timeoutId = setTimeout(fetchPatients, 300);

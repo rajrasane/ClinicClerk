@@ -3,24 +3,8 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabase';
-
-interface Patient {
-  id: number;
-  first_name: string;
-  middle_name?: string;
-  last_name: string;
-  age: number;
-  age_recorded_at: string;
-  gender: 'M' | 'F' | 'O';
-  phone: string;
-  address: string;
-  blood_group: string;
-  allergies: string;
-  emergency_contact: string;
-  created_at: string;
-  updated_at: string;
-  visit_count?: number;
-}
+import type { Patient } from '@/types';
+import { GENDER_DISPLAY_TO_DB, GENDER_DB_TO_DISPLAY } from '@/types';
 
 interface EditPatientModalProps {
   patient: Patient;
@@ -28,18 +12,6 @@ interface EditPatientModalProps {
   onSuccess: () => void;
 }
 
-// Gender mapping utilities
-const GENDER_DISPLAY_TO_DB = {
-  'Male': 'M',
-  'Female': 'F',
-  'Other': 'O'
-} as const;
-
-const GENDER_DB_TO_DISPLAY = {
-  'M': 'Male',
-  'F': 'Female',
-  'O': 'Other'
-} as const;
 
 export default function EditPatientModal({ patient, onClose, onSuccess }: EditPatientModalProps) {
   const [formData, setFormData] = useState({
@@ -106,7 +78,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
+
     // Special handling for phone number inputs - only allow digits
     if (name === 'phone' || name === 'emergency_contact') {
       const numericValue = value.replace(/\D/g, ''); // Remove all non-digits
@@ -123,7 +95,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
-    
+
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
@@ -252,7 +224,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700">First Name</label>
                   <input
@@ -338,7 +310,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
 
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">Contact Information</h3>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Phone</label>
                   <input
@@ -386,7 +358,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
 
               <div className="md:col-span-2 space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">Medical Information</h3>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Blood Group</label>
                   <select
