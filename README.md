@@ -31,7 +31,7 @@ A modern, secure digital patient records management system built for solo medica
 
 ## 🛠 Tech Stack
 
-- **Framework**: Next.js 15.2.4 with TypeScript & React 19
+- **Framework**: Next.js 15.2.8 with TypeScript & React 19
 - **Database**: Supabase (PostgreSQL) with Row Level Security
 - **Authentication**: Supabase Auth with custom forms
 - **Styling**: Tailwind CSS v4 with custom components
@@ -41,6 +41,7 @@ A modern, secure digital patient records management system built for solo medica
 - **Icons**: Heroicons & Lucide React
 - **Date Handling**: date-fns & React Day Picker
 - **Notifications**: React Hot Toast
+- **Export**: jspdf (PDF) & xlsx (Excel)
 
 ## 🚀 Quick Start
 
@@ -86,6 +87,7 @@ DATABASE_URL=your_database_url
 src/
 ├── app/
 │   ├── api/                    # API routes
+│   │   ├── export/            # Data export operations
 │   │   ├── patients/          # Patient CRUD operations
 │   │   ├── visits/            # Visit CRUD operations  
 │   │   └── profile/           # Doctor profile management
@@ -123,11 +125,6 @@ src/
 
 ## 🔌 API Endpoints
 
-### Authentication
-- `POST /api/auth/signup` - Doctor registration
-- `POST /api/auth/login` - Doctor login
-- `POST /api/auth/logout` - User logout
-
 ### Patients
 - `GET /api/patients` - Get all patients (filtered by doctor)
 - `POST /api/patients` - Create new patient
@@ -143,6 +140,10 @@ src/
 ### Profile
 - `GET /api/profile` - Get doctor profile
 - `PUT /api/profile` - Update doctor profile
+
+### Export
+- `GET /api/export/patients` - Export patients to Excel/PDF
+- `GET /api/export/visits` - Export visits to Excel/PDF
 
 ## 🏥 Usage
 

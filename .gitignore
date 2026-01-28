@@ -8,3 +8,7 @@ node_modules
 *.log
 *.sqlite
 *.sqlite-journal
+
+# Agent-Skills (regenerate with npx skills add skill_name)
+.agent/
+.agents/
