@@ -275,7 +275,7 @@ export default function LandingPage() {
                   <div className="w-56 h-56 bg-gradient-to-br from-teal-100 to-indigo-200 rounded-full flex items-center justify-center">
                     <div className="w-48 h-48 rounded-full overflow-hidden shadow-lg">
                       <Image
-                        src="/smiling-doctor.jpg"
+                        src="/smiling-doctor.webp"
                         alt="Smiling Indian Doctor using ClinicClerk"
                         width={160}
                         height={160}
