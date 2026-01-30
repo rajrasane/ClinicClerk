@@ -1,13 +1,160 @@
 @import "tailwindcss";
 
+/* Design System Tokens */
+:root {
+  /* Typography */
+  --font-sans: var(--font-sans, 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif);
+  --font-display: var(--font-display, 'DM Serif Display', ui-serif, Georgia, serif);
+
+  /* Color Palette - Moving away from generic blue/indigo to a distinctive Medical Premium palette */
+  --color-primary: 199 89% 28%;
+  /* Deep Teal - #0d6667 */
+  --color-primary-light: 177 76% 41%;
+  /* Lighter teal */
+  --color-accent: 36 100% 50%;
+  /* Warm Saffron - #ff9500 */
+  --color-accent-gold: 43 96% 56%;
+  /* Rich Gold - #f5b916 */
+
+  /* Neutrals with warmth */
+  --color-surface: 210 20% 98%;
+  /* Warm white */
+  --color-surface-elevated: 0 0% 100%;
+  --color-text: 220 20% 15%;
+  /* Warm dark */
+  --color-text-muted: 220 10% 45%;
+
+  /* Gradient tokens */
+  --gradient-primary: linear-gradient(135deg, hsl(var(--color-primary)) 0%, hsl(199 89% 22%) 100%);
+  --gradient-accent: linear-gradient(135deg, hsl(var(--color-accent)) 0%, hsl(var(--color-accent-gold)) 100%);
+}
+
 @layer base {
+  html {
+    font-family: var(--font-sans);
+  }
+
   body {
-    background: linear-gradient(to bottom right, rgb(239 246 255), rgb(224 231 255));
+    background: linear-gradient(to bottom right, hsl(180 25% 97%), hsl(199 30% 94%));
     min-height: 100vh;
+    font-feature-settings: 'ss01' on, 'ss02' on;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Display font for hero headings */
+  .font-display {
+    font-family: var(--font-display);
   }
 }
 
+/* ===============================
+   Visual Depth & Texture System
+   =============================== */
 
+/* Noise texture overlay for sections - adds sophistication */
+.noise-overlay {
+  position: relative;
+}
+
+.noise-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: 1;
+  mix-blend-mode: overlay;
+}
+
+/* Subtle gradient orbs for depth */
+.gradient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.gradient-orb-teal {
+  background: radial-gradient(circle, hsl(180 60% 70%) 0%, transparent 70%);
+}
+
+.gradient-orb-gold {
+  background: radial-gradient(circle, hsl(40 80% 70%) 0%, transparent 70%);
+}
+
+/* Enhanced glassmorphism variants */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -1px rgba(0, 0, 0, 0.03),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
+}
+
+.glass-card-elevated {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.08),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
+}
+
+/* Subtle dot pattern for sections */
+.dot-pattern {
+  background-image: radial-gradient(circle, rgba(13, 102, 103, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Decorative line accents */
+.accent-line {
+  position: relative;
+}
+
+.accent-line::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, hsl(177 76% 41%), hsl(199 89% 28%));
+  border-radius: 2px;
+}
+
+.accent-line-center::after {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Floating decorative elements */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-10px) rotate(2deg);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float 6s ease-in-out 2s infinite;
+}
 
 /* Smooth page transitions for auth pages */
 @keyframes fadeIn {
@@ -38,6 +185,26 @@
 
 .animate-slide-up {
   animation: slideUp 0.35s ease-out 0.05s both;
+}
+
+/* Premium shimmer effect for CTAs */
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.shimmer-effect {
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.2) 50%,
+      transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
 }
 
 @utility glass-panel {

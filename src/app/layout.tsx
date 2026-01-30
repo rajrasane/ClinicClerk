@@ -4,12 +4,20 @@ import "./globals.css";
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '@/contexts/AuthContext';
 
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans, DM_Serif_Display } from "next/font/google";
 
-const inter = Inter({
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   display: 'swap',
-  preload: false
+  variable: '--font-sans',
+  weight: ['400', '500', '600', '700', '800'],
+});
+
+const dmSerifDisplay = DM_Serif_Display({
+  subsets: ["latin"],
+  display: 'swap',
+  variable: '--font-display',
+  weight: ['400'],
 });
 
 export const metadata: Metadata = {
@@ -46,7 +54,7 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://rsms.me/" />
       </head>
-      <body className={inter.className}>
+      <body className={`${plusJakarta.variable} ${dmSerifDisplay.variable} font-sans`}>
         <AuthProvider>
           {children}
           <Toaster

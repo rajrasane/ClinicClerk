@@ -21,8 +21,11 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f3f3f7' }}>
-        <div className="text-lg">Loading…</div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-teal-50/30 to-white">
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-teal-600 border-t-transparent"></div>
+          <div className="text-teal-700 font-medium">Loading…</div>
+        </div>
       </div>
     );
   }
@@ -34,7 +37,7 @@ export default function Home() {
 
   // Show dashboard for authenticated users
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#f3f3f7' }}>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-teal-50/30 to-white dot-pattern">
       <Header activeTab={activeTab} setActiveTab={handleTabChange} />
 
       {/* Content */}

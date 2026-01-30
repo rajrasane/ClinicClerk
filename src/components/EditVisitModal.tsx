@@ -299,7 +299,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                     onChange={handleInputChange}
                     autoComplete="off"
                     rows={3}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                     placeholder="e.g., Fever and headache for 2 days"
                   />
                   {errors.chief_complaint && (
@@ -315,7 +315,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                     onChange={handleInputChange}
                     autoComplete="off"
                     rows={3}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                     placeholder="Detailed symptoms description"
                   />
                 </div>
@@ -343,7 +343,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                     onChange={handleInputChange}
                     autoComplete="off"
                     rows={3}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                     placeholder="Clinical diagnosis"
                   />
                 </div>
@@ -356,7 +356,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                     onChange={handleInputChange}
                     autoComplete="off"
                     rows={3}
-                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                     placeholder="Enter prescription details (e.g., Paracetamol 500mg, Amoxicillin 250mg)"
                   />
                 </div>
@@ -383,7 +383,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                         min="0"
                         max="99999"
                         placeholder="Enter amount"
-                        className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       />
                     </div>
                     {errors.consultation_fee && (
@@ -398,7 +398,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                       name="payment_status"
                       value={formData.payment_status}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                     >
                       <option value="P">Paid</option>
                       <option value="D">Due</option>
@@ -414,7 +414,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                         name="payment_method"
                         value={formData.payment_method}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       >
                         <option value="C">Cash</option>
                         <option value="O">Online</option>
@@ -441,7 +441,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                       name="vitals.temperature"
                       value={formData.vitals.temperature}
                       onChange={handleInputChange}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       placeholder="e.g., 98.6°F"
                     />
                   </div>
@@ -453,7 +453,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                       name="vitals.bp"
                       value={formData.vitals.bp}
                       onChange={handleInputChange}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       placeholder="e.g., 120/80"
                     />
                   </div>
@@ -466,7 +466,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                       name="vitals.pulse"
                       value={formData.vitals.pulse}
                       onChange={handleInputChange}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       placeholder="e.g., 72 bpm"
                     />
                   </div>
@@ -479,7 +479,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                       name="vitals.weight"
                       value={formData.vitals.weight}
                       onChange={handleInputChange}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       placeholder="e.g., 70 kg"
                     />
                   </div>
@@ -492,7 +492,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                       name="vitals.o2"
                       value={formData.vitals.o2}
                       onChange={handleInputChange}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       placeholder="e.g., 98%"
                     />
                   </div>
@@ -515,7 +515,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
             type="submit"
             form="edit-visit-form"
             disabled={loading || !hasChanges() || !isFormValid()}
-            className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors"
+            className="px-3 py-1.5 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-colors shadow-md"
             onClick={handleSubmit}
           >
             {loading ? 'Updating…' : 'Update Visit'}

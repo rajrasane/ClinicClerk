@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useInView } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,7 +9,6 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowDownTrayIcon,
   CheckIcon,
-  CheckCircleIcon,
   ShieldCheckIcon,
   ClockIcon,
   PhotoIcon,
@@ -24,6 +23,42 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { useRef } from 'react';
+
+// Animation variants
+const fadeInUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0 }
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.1
+    }
+  }
+};
+
+// Animated section wrapper
+function AnimatedSection({ children, className }: { children: React.ReactNode; className?: string }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+
+  return (
+    <motion.div
+      ref={ref}
+      initial="hidden"
+      animate={isInView ? "visible" : "hidden"}
+      variants={staggerContainer}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 export default function LandingPage() {
   const { user, loading } = useAuth();
@@ -38,7 +73,7 @@ export default function LandingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 to-cyan-100">
         <div className="text-lg">Loading…</div>
       </div>
     );
@@ -132,7 +167,7 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 overflow-x-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-cyan-100 overflow-x-hidden">
       {/* Navigation */}
       <nav className="bg-white/90 backdrop-blur-md border-b border-white/20 fixed top-0 left-0 right-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -150,7 +185,7 @@ export default function LandingPage() {
               />
               <h1 className="text-lg sm:text-xl lg:text-2xl font-bold">
                 <span className="text-gray-900">Clinic</span>
-                <span className="text-blue-800">Clerk</span>
+                <span className="text-teal-700">Clerk</span>
               </h1>
             </Link>
 
@@ -199,7 +234,7 @@ export default function LandingPage() {
               </Link>
               <Link
                 href="/signup"
-                className="hidden sm:inline-flex bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 transition-colors duration-200 text-sm sm:text-base whitespace-nowrap"
+                className="hidden sm:inline-flex bg-gradient-to-r from-teal-600 to-teal-700 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium hover:from-teal-700 hover:to-teal-800 transition-colors duration-200 text-sm sm:text-base whitespace-nowrap"
               >
                 Get Started
               </Link>
@@ -208,8 +243,8 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="relative py-12 sm:py-16 lg:py-24 pt-20 sm:pt-24 lg:pt-32">
+      {/* Hero Section - Extended to fill viewport */}
+      <section className="relative min-h-[calc(100vh-80px)] py-16 sm:py-20 lg:py-34 pt-24 sm:pt-28 lg:pt-45 flex items-center">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 lg:gap-12 items-center">
             <motion.div
@@ -218,13 +253,13 @@ export default function LandingPage() {
               transition={{ duration: 0.6 }}
               className="text-center md:text-left"
             >
-              <h1 className="text-3xl sm:text-4xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 mb-4 sm:mb-6 leading-tight">
+              <h1 className="font-display text-3xl sm:text-4xl md:text-4xl lg:text-5xl xl:text-6xl text-gray-900 mb-4 sm:mb-6 leading-tight">
                 Smart Patient Management for{' '}
-                <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent block sm:inline">
+                <span className="bg-gradient-to-r from-teal-600 to-teal-700 bg-clip-text text-transparent block sm:inline">
                   Indian Doctors
                 </span>
               </h1>
-              <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-6 sm:mb-8 max-w-2xl md:max-w-none mx-auto md:mx-0">
+              <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-6 sm:mb-8 max-w-2xl md:max-w-none mx-6 md:mx-0 text-balanced">
                 <span className="sm:hidden">Digital patient records made easy. Store patient details, track visits, and manage your clinic efficiently.</span>
                 <span className="hidden sm:block">Digital patient records made easy. Store patient details, track visits, and manage your clinic efficiently - all in one secure platform designed for Indian medical practices.</span>
               </p>
@@ -237,7 +272,7 @@ export default function LandingPage() {
                 className="flex md:hidden justify-center items-center mb-6"
               >
                 <div className="relative">
-                  <div className="w-56 h-56 bg-gradient-to-br from-blue-100 to-indigo-200 rounded-full flex items-center justify-center">
+                  <div className="w-56 h-56 bg-gradient-to-br from-teal-100 to-indigo-200 rounded-full flex items-center justify-center">
                     <div className="w-48 h-48 rounded-full overflow-hidden shadow-lg">
                       <Image
                         src="/smiling-doctor.jpg"
@@ -250,8 +285,8 @@ export default function LandingPage() {
                     </div>
                   </div>
                   {/* Floating elements - smaller for sm */}
-                  <div className="absolute -top-1 -right-1 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="absolute -top-1 -right-1 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
@@ -267,7 +302,7 @@ export default function LandingPage() {
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start items-center">
                 <Link
                   href="/signup"
-                  className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-colors duration-200 flex items-center justify-center gap-2 text-sm sm:text-base"
+                  className="w-full sm:w-auto bg-gradient-to-r from-teal-600 to-teal-700 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold hover:from-teal-700 hover:to-teal-800 transition-colors duration-200 flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
                   Start For Free
                   <ArrowRightIcon className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -289,7 +324,7 @@ export default function LandingPage() {
               className="hidden md:flex justify-center items-center"
             >
               <div className="relative">
-                <div className="w-72 h-72 md:w-80 md:h-80 lg:w-96 lg:h-96 bg-gradient-to-br from-blue-100 to-indigo-200 rounded-full flex items-center justify-center">
+                <div className="w-72 h-72 md:w-80 md:h-80 lg:w-96 lg:h-96 bg-gradient-to-br from-teal-100 to-blue-200 rounded-full flex items-center justify-center">
                   {/* Doctor Image */}
                   <div className="w-60 h-60 md:w-64 md:h-64 lg:w-80 lg:h-80 rounded-full overflow-hidden shadow-lg">
                     <Image
@@ -303,8 +338,8 @@ export default function LandingPage() {
                   </div>
                 </div>
                 {/* Floating elements */}
-                <div className="absolute -top-2 -right-2 md:-top-4 md:-right-4 w-12 h-12 md:w-16 md:h-16 bg-green-100 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6 md:w-8 md:h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="absolute -top-2 -right-2 md:-top-4 md:-right-4 w-12 h-12 md:w-16 md:h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 md:w-8 md:h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
@@ -327,8 +362,8 @@ export default function LandingPage() {
               Why Choose ClinicClerk?
             </h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6 sm:gap-8 sm:[&>*:nth-child(3)]:col-start-1 sm:[&>*:nth-child(3)]:col-end-3 sm:[&>*:nth-child(3)]:justify-self-center sm:[&>*:nth-child(3)]:w-full sm:[&>*:nth-child(3)]:max-w-sm md:[&>*:nth-child(3)]:col-start-auto md:[&>*:nth-child(3)]:col-end-auto md:[&>*:nth-child(3)]:justify-self-auto md:[&>*:nth-child(3)]:max-w-none lg:[&>*:nth-child(3)]:col-start-auto lg:[&>*:nth-child(3)]:col-end-auto lg:[&>*:nth-child(3)]:justify-self-auto lg:[&>*:nth-child(3)]:max-w-none">
-            <div className="text-center p-6 bg-white/80 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+          <AnimatedSection className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6 sm:gap-8 sm:[&>*:nth-child(3)]:col-start-1 sm:[&>*:nth-child(3)]:col-end-3 sm:[&>*:nth-child(3)]:justify-self-center sm:[&>*:nth-child(3)]:w-full sm:[&>*:nth-child(3)]:max-w-sm md:[&>*:nth-child(3)]:col-start-auto md:[&>*:nth-child(3)]:col-end-auto md:[&>*:nth-child(3)]:justify-self-auto md:[&>*:nth-child(3)]:max-w-none lg:[&>*:nth-child(3)]:col-start-auto lg:[&>*:nth-child(3)]:col-end-auto lg:[&>*:nth-child(3)]:justify-self-auto lg:[&>*:nth-child(3)]:max-w-none">
+            <motion.div variants={fadeInUp} className="text-center p-6 bg-white/80 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300">
               <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -336,8 +371,8 @@ export default function LandingPage() {
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Lightning Fast</h3>
               <p className="text-sm text-gray-600">Access patient records instantly</p>
-            </div>
-            <div className="text-center p-6 bg-white/80 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+            </motion.div>
+            <motion.div variants={fadeInUp} className="text-center p-6 bg-white/80 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300">
               <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -345,15 +380,15 @@ export default function LandingPage() {
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">No Setup Required</h3>
               <p className="text-sm text-gray-600">Start using immediately - no installation or training needed</p>
-            </div>
-            <div className="text-center p-6 bg-white/80 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+            </motion.div>
+            <motion.div variants={fadeInUp} className="text-center p-6 bg-white/80 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300">
               <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-xl font-bold text-purple-600">₹</span>
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Cost Effective</h3>
               <p className="text-sm text-gray-600">Affordable for solo practitioners</p>
-            </div>
-          </div>
+            </motion.div>
+          </AnimatedSection>
         </div>
       </section>
 
@@ -369,14 +404,14 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-8">
+          <AnimatedSection className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-8">
             {features.map((feature, index) => (
-              <div
+              <motion.div
                 key={index}
-                className="bg-white/90 rounded-2xl p-4 sm:p-6 border border-white/20 hover:shadow-xl transition-colors duration-300"
-                style={{ willChange: 'transform' }}
+                variants={fadeInUp}
+                className="bg-white/90 rounded-2xl p-4 sm:p-6 border border-white/20 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
               >
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mb-3 sm:mb-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-teal-600 to-teal-700 rounded-xl flex items-center justify-center mb-3 sm:mb-4 group-hover:scale-110 transition-transform">
                   <feature.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
                 <h3 className="text-sm sm:text-lg lg:text-xl font-semibold text-gray-900 mb-1 sm:mb-2 lg:mb-3">
@@ -385,9 +420,9 @@ export default function LandingPage() {
                 <p className="text-xs sm:text-sm lg:text-base text-gray-600 leading-tight sm:leading-normal">
                   {feature.description}
                 </p>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </AnimatedSection>
         </div>
       </section>
 
@@ -416,16 +451,16 @@ export default function LandingPage() {
                 <div className="relative">
                   <div
                     className={`mt-2 md:mt-0 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 lg:p-8 border transition-colors duration-300 hover:shadow-xl relative ${plan.popular
-                        ? 'bg-white/95 border-blue-300 ring-2 ring-blue-500 md:transform md:scale-105'
-                        : plan.premium
-                          ? 'bg-white/95 border-gray-800 ring-2 ring-gray-800 md:transform md:scale-105'
-                          : 'bg-white/90 border-white/20'
+                      ? 'bg-white/95 border-teal-300 ring-2 ring-teal-500 md:transform md:scale-105'
+                      : plan.premium
+                        ? 'bg-white/95 border-gray-800 ring-2 ring-gray-800 md:transform md:scale-105'
+                        : 'bg-white/90 border-white/20'
                       }`}
                     style={{ willChange: 'transform' }}
                   >
                     {plan.popular && (
                       <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                        <span className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-1.5 rounded-full text-xs font-semibold shadow-lg">Most Popular</span>
+                        <span className="bg-gradient-to-r from-teal-600 to-teal-700 text-white px-4 py-1.5 rounded-full text-xs font-semibold shadow-lg">Most Popular</span>
                       </div>
                     )}
                     {plan.premium && (
@@ -435,10 +470,10 @@ export default function LandingPage() {
                     )}
 
                     <div className="text-center p-3 sm:p-4 md:p-6 lg:p-8">
-                      <h3 className={`text-lg sm:text-xl md:text-xl lg:text-2xl font-bold mb-2 ${plan.popular ? 'text-blue-900' : plan.premium ? 'text-gray-900' : 'text-gray-900'
+                      <h3 className={`text-lg sm:text-xl md:text-xl lg:text-2xl font-bold mb-2 ${plan.popular ? 'text-teal-800' : plan.premium ? 'text-gray-900' : 'text-gray-900'
                         }`}>{plan.name}</h3>
                       <div className="mb-4">
-                        <span className={`text-2xl sm:text-3xl md:text-3xl lg:text-4xl font-bold ${plan.popular ? 'text-blue-900' : plan.premium ? 'text-gray-900' : 'text-gray-900'
+                        <span className={`text-2xl sm:text-3xl md:text-3xl lg:text-4xl font-bold ${plan.popular ? 'text-teal-800' : plan.premium ? 'text-gray-900' : 'text-gray-900'
                           }`}>{plan.price}</span>
                         {plan.price !== "Free" && <span className="text-gray-600 ml-1 text-sm sm:text-base">/{plan.period}</span>}
                       </div>
@@ -450,9 +485,9 @@ export default function LandingPage() {
                             return (
                               <div key={featureIndex} className="mb-2">
                                 <li className="flex items-start gap-2 sm:gap-3">
-                                  <div className={`h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 lg:h-5 lg:w-5 mt-0 sm:mt-0.5 lg:mt-1 flex-shrink-0 rounded-full flex items-center justify-center ${plan.premium && featureIndex === 0 ? 'bg-blue-100' : ''
+                                  <div className={`h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 lg:h-5 lg:w-5 mt-0 sm:mt-0.5 lg:mt-1 flex-shrink-0 rounded-full flex items-center justify-center ${plan.premium && featureIndex === 0 ? 'bg-teal-100' : ''
                                     }`}>
-                                    <CheckIcon className={`h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 lg:h-4 lg:w-4 ${plan.popular ? 'text-blue-600' : plan.premium && featureIndex === 0 ? 'text-blue-600' : plan.premium ? 'text-gray-700' : 'text-green-500'
+                                    <CheckIcon className={`h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 lg:h-4 lg:w-4 ${plan.popular ? 'text-teal-600' : plan.premium && featureIndex === 0 ? 'text-teal-600' : plan.premium ? 'text-gray-700' : 'text-green-500'
                                       }`} />
                                   </div>
                                   <span className="text-gray-700 text-xs sm:text-sm md:text-sm lg:text-base leading-tight sm:leading-normal">{feature}</span>
@@ -469,7 +504,7 @@ export default function LandingPage() {
                           }
                           return (
                             <li key={featureIndex} className="flex items-start gap-2 sm:gap-3">
-                              <CheckIcon className={`h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 mt-0 sm:mt-0.5 flex-shrink-0 ${plan.popular ? 'text-blue-600' : plan.premium ? 'text-gray-700' : 'text-green-500'
+                              <CheckIcon className={`h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 mt-0 sm:mt-0.5 flex-shrink-0 ${plan.popular ? 'text-teal-600' : plan.premium ? 'text-gray-700' : 'text-green-500'
                                 }`} />
                               <span className="text-gray-700 text-xs sm:text-sm md:text-sm lg:text-base leading-tight sm:leading-normal">{feature}</span>
                             </li>
@@ -478,14 +513,14 @@ export default function LandingPage() {
                       </ul>
 
                       <button className={`w-full py-2.5 sm:py-3 md:py-3 lg:py-4 px-4 sm:px-5 md:px-6 rounded-lg sm:rounded-xl font-semibold transition-colors duration-200 text-sm sm:text-base md:text-base lg:text-lg ${plan.popular
-                          ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl'
-                          : plan.premium
-                            ? 'bg-gradient-to-r from-gray-900 to-black text-white hover:from-gray-800 hover:to-gray-900 shadow-lg hover:shadow-xl'
-                            : plan.name === 'Basic'
-                              ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl'
-                              : plan.name === 'Enterprise'
-                                ? 'border-2 bg-gray-800 text-white hover:shadow-lg'
-                                : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                        ? 'bg-gradient-to-r from-teal-600 to-teal-700 text-white hover:from-teal-700 hover:to-teal-800 shadow-lg hover:shadow-xl'
+                        : plan.premium
+                          ? 'bg-gradient-to-r from-gray-900 to-black text-white hover:from-gray-800 hover:to-gray-900 shadow-lg hover:shadow-xl'
+                          : plan.name === 'Basic'
+                            ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl'
+                            : plan.name === 'Enterprise'
+                              ? 'border-2 bg-gray-800 text-white hover:shadow-lg'
+                              : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                         }`}>
                         {plan.cta}
                       </button>
@@ -549,8 +584,8 @@ export default function LandingPage() {
                   &quot;{testimonial.quote}&quot;
                 </blockquote>
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-indigo-200 rounded-full flex items-center justify-center">
-                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-12 h-12 bg-gradient-to-br from-teal-100 to-cyan-200 rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   </div>
@@ -639,7 +674,7 @@ export default function LandingPage() {
             <div className="text-center mt-8">
               <button
                 onClick={() => setShowAllFAQs(true)}
-                className="bg-white border-2 border-blue-600 text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-colors duration-200"
+                className="bg-white border-2 border-teal-600 text-teal-600 px-6 py-3 rounded-xl font-semibold hover:bg-teal-50 transition-colors duration-200"
               >
                 Load More FAQs
               </button>
@@ -652,7 +687,7 @@ export default function LandingPage() {
             </p>
             <Link
               href="mailto:support@clinicclerk.com"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-colors duration-200"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-teal-600 to-teal-700 text-white px-6 py-3 rounded-xl font-semibold hover:from-teal-700 hover:to-teal-800 transition-colors duration-200"
             >
               Contact Support
               <ArrowRightIcon className="w-4 h-4" />
@@ -661,11 +696,15 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Divider */}
+      <div className="max-w-4xl mx-auto px-10 sm:px-10 lg:px-8">
+        <div className="h-px bg-gray-300"></div>
+      </div>
+
       {/* Demo/Trial Section */}
-      <section className="py-12 sm:py-16 bg-white/50" style={{ willChange: 'transform' }}>
+      {/* <section className="py-12 sm:py-16 bg-white/50" style={{ willChange: 'transform' }}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            {/* Left side - Demo info */}
             <div>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4 sm:mb-6">
                 Try ClinicClerk Risk-Free
@@ -701,20 +740,19 @@ export default function LandingPage() {
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <Link
                   href="/demo"
-                  className="flex-1 sm:flex-none bg-white border-2 border-blue-600 text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-colors duration-200 text-center"
+                  className="flex-1 sm:flex-none bg-white border-2 border-teal-600 text-teal-600 px-6 py-3 rounded-xl font-semibold hover:bg-teal-50 transition-colors duration-200 text-center"
                 >
                   View Live Demo
                 </Link>
                 <Link
                   href="/signup"
-                  className="flex-1 sm:flex-none bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-colors duration-200 text-center"
+                  className="flex-1 sm:flex-none bg-gradient-to-r from-teal-600 to-teal-700 text-white px-6 py-3 rounded-xl font-semibold hover:from-teal-700 hover:to-teal-800 transition-colors duration-200 text-center"
                 >
                   Start For Free
                 </Link>
               </div>
             </div>
 
-            {/* Right side - Actual Screenshot */}
             <div className="relative">
               <div className="bg-white/90 rounded-2xl p-3 border border-white/20 shadow-xl" style={{ willChange: 'transform' }}>
                 <div className="flex items-center gap-3 mb-3">
@@ -726,7 +764,6 @@ export default function LandingPage() {
                   </div>
                 </div>
 
-                {/* Actual ClinicClerk Screenshot */}
                 <div className="rounded-lg overflow-hidden">
                   <Image
                     src="/site_screenshot.png"
@@ -739,19 +776,18 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Floating elements */}
               <div className="absolute -top-2 -right-2 sm:-top-4 sm:-right-4 w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center shadow-lg">
                 <CheckCircleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
               </div>
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* CTA Section */}
       <section className="py-12 sm:py-16 lg:py-20" style={{ willChange: 'transform' }}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 text-white" style={{ willChange: 'transform' }}>
+          <div className="bg-gradient-to-r from-teal-600 to-teal-700 rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-12 text-white" style={{ willChange: 'transform' }}>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4">
               Ready to Modernize Your Practice?
             </h2>
@@ -761,7 +797,7 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
               <Link
                 href="/signup"
-                className="w-full sm:w-auto bg-white text-blue-600 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center gap-2 text-base sm:text-lg"
+                className="w-full sm:w-auto bg-white text-teal-700 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center gap-2 text-base sm:text-lg"
               >
                 Start For Free
                 <ArrowRightIcon className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -803,7 +839,7 @@ export default function LandingPage() {
                 />
                 <h3 className="text-lg sm:text-xl font-bold">
                   <span className="text-white">Clinic</span>
-                  <span className="text-blue-400">Clerk</span>
+                  <span className="text-teal-400">Clerk</span>
                 </h3>
               </div>
               <p className="text-gray-400 text-sm sm:text-base mb-4 sm:mb-6 max-w-md leading-relaxed">
@@ -870,10 +906,14 @@ export default function LandingPage() {
           <div className="border-t border-gray-800 pt-6 sm:pt-8">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
               <div className="text-gray-400 text-xs sm:text-sm text-center sm:text-left">
-                <p>&copy; {new Date().getFullYear()} ClinicClerk. Built with ❤️ for modern medical practices in India.</p>
-              </div>
-              <div className="flex items-center gap-4 text-xs sm:text-sm">
-                <span className="text-gray-400">🇮🇳 Made in India</span>
+                <p>
+                  <span className="block sm:inline">&copy; {new Date().getFullYear()} ClinicClerk.</span>{' '}
+                  <span className="block sm:inline mt-1 sm:mt-0">
+                    Built with{' '}
+                    <Image src="/heart.svg" alt="Love" width={16} height={16} className="inline-block align-middle" />{' '}
+                    for modern medical practices in India.
+                  </span>
+                </p>
               </div>
             </div>
           </div>
