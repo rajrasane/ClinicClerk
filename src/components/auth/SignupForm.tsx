@@ -101,7 +101,7 @@ export default function SignupForm() {
             </svg>
             Back to Home
           </Link>
-          <div className="flex justify-center mb-5 sm:mb-6">
+          {/* <div className="flex justify-center mb-5 sm:mb-6">
             <Image
               src="/logo.png"
               alt="ClinicClerk Logo"
@@ -110,7 +110,7 @@ export default function SignupForm() {
               className="rounded-xl shadow-lg"
               priority
             />
-          </div>
+          </div> */}
           <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
             Create your account
           </h2>

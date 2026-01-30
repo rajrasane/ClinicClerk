@@ -51,16 +51,16 @@ export default function LoginForm() {
             </svg>
             Back to Home
           </Link>
-          <div className="flex justify-center mb-5 sm:mb-6">
+          {/* <div className="flex justify-center mb-5 sm:mb-6">
             <Image
-              src="/logo.png"
+              src="/android-chrome-192x192.png"
               alt="ClinicClerk Logo"
               width={70}
               height={70}
               className="rounded-xl shadow-lg"
               priority
             />
-          </div>
+          </div> */}
           <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
             Welcome back
           </h2>
