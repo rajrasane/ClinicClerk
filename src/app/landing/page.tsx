@@ -328,11 +328,11 @@ export default function LandingPage() {
                   {/* Doctor Image */}
                   <div className="w-60 h-60 md:w-64 md:h-64 lg:w-80 lg:h-80 rounded-full overflow-hidden shadow-lg">
                     <Image
-                      src="/smiling-doctor.jpg"
+                      src="/smiling-doctor.webp"
                       alt="Smiling Indian Doctor using ClinicClerk"
                       width={320}
                       height={320}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover object-top"
                       priority
                     />
                   </div>
