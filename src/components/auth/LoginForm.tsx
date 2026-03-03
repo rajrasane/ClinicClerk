@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'react-hot-toast'
-import Image from 'next/image'
 import Link from 'next/link'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 
