@@ -1,5 +1,5 @@
 # ClinicClerk
-
+## Note : This project is currently put on hold , as I need to improve it's security and make sure it follows med related approval or certs
 A modern, secure digital patient records management system built for solo medical practitioners. Designed to replace handwritten patient notebooks with a comprehensive, searchable digital solution featuring multi-tenancy, authentication, and optimized performance.
 
 ## ✨ Features
