@@ -1,5 +1,7 @@
 'use client';
 
+import { useModalFocus } from '@/hooks/useModalFocus';
+
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
@@ -15,6 +17,7 @@ interface VisitDetailsModalProps {
 
 
 export default function VisitDetailsModal({ visit, onClose, onEdit }: VisitDetailsModalProps) {
+  const modalRef = useModalFocus(onClose);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -180,13 +183,18 @@ export default function VisitDetailsModal({ visit, onClose, onEdit }: VisitDetai
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
+          ref={modalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="visit-details-title"
+          tabIndex={-1}
           className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <div className="flex justify-between items-center p-6 border-b">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">{visit.first_name} {visit.last_name}</h2>
+              <h2 id="visit-details-title" className="text-2xl font-bold text-gray-900">{visit.first_name} {visit.last_name}</h2>
               <div className="flex items-center gap-3 mt-2">
                 <p className="text-xs text-gray-600">
                   {formatDate(visit.visit_date)}
@@ -215,7 +223,8 @@ export default function VisitDetailsModal({ visit, onClose, onEdit }: VisitDetai
               )}
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 text-2xl"
+                aria-label="Close modal"
+              className="h-11 w-11 shrink-0 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 text-2xl"
               >
                 ×
               </button>

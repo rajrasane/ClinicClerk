@@ -108,15 +108,15 @@ export default function AdminPatients() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-700">Patient Management</h2>
-          <p className="text-gray-600">Manage patient records and information</p>
+          <h2 className="text-2xl font-bold tracking-tight text-gray-800">Patient Management</h2>
+          <p className="mt-1 text-sm sm:text-base text-gray-600">Manage patient records and information</p>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
           <button
             onClick={() => setShowAddModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm sm:text-base"
+            className="bg-blue-600 text-white min-h-11 px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm sm:text-base"
           >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             <span>Add Patient</span>
@@ -144,13 +144,16 @@ export default function AdminPatients() {
       <div className="relative w-full">
         <input
           type="text"
+          aria-label="Search patients"
+          name="patients-search"
+          autoComplete="off"
           placeholder="Search patients by name or phone…"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base bg-white"
+          className="w-full min-h-11 pl-10 pr-12 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base bg-white"
         />
-        <svg
-          className="absolute left-3 top-2.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400"
+        <svg aria-hidden="true"
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -165,10 +168,10 @@ export default function AdminPatients() {
         {searchTerm && (
           <button
             onClick={() => setSearchTerm('')}
-            className="absolute right-3 top-2.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-gray-600 transition-colors"
+            className="absolute right-0 top-0 h-11 w-11 p-3 rounded-lg text-gray-500 hover:text-gray-700 transition-colors"
             aria-label="Clear search"
           >
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -178,19 +181,19 @@ export default function AdminPatients() {
       {/* Patients Table */}
       <div className="glass-panel rounded-xl shadow-lg border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full">
+          <table aria-label="Patients" aria-busy={loading} className="min-w-full w-full table-fixed sm:table-auto">
             <thead className="bg-linear-to-r from-gray-50 to-gray-100 border-b border-gray-200">
               <tr>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Patient
                 </th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+                <th scope="col" className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
                   Age/Gender
                 </th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                <th scope="col" className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                   Phone
                 </th>
-                <th className="px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -198,31 +201,33 @@ export default function AdminPatients() {
             <tbody className="bg-white divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="px-3 sm:px-6 py-4 text-center">
-                    <div className="flex justify-center">
+                  <td colSpan={4} className="px-3 sm:px-6 py-10 text-center">
+                    <div role="status" className="flex justify-center">
+                      <span className="sr-only">Loading patients…</span>
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                     </div>
                   </td>
                 </tr>
               ) : patients.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-3 sm:px-6 py-4 text-center text-gray-500">
-                    No patients found
+                  <td colSpan={4} className="px-3 sm:px-6 py-10 text-center text-gray-500">
+                    <p className="font-medium text-gray-700">No patients found</p>
+                    <p className="mt-1 text-sm">{searchTerm ? 'Try adjusting your search.' : 'Add your first patient to get started.'}</p>
                   </td>
                 </tr>
               ) : (
                 patients.map((patient) => (
-                  <tr key={patient.id} className="hover:bg-gray-50">
+                  <tr key={patient.id} className="hover:bg-gray-50/80 transition-colors">
                     <td className="px-3 sm:px-6 py-4">
                       <div className="flex items-center">
-                        <div className="shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-blue-100 text-blue-800 font-medium text-sm sm:text-base">
+                        <div className="shrink-0 h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center rounded-full bg-blue-100 text-blue-800 font-medium text-sm sm:text-base">
                           {`${patient.first_name[0]}${patient.last_name[0]}`}
                         </div>
-                        <div className="ml-3">
+                        <div className="ml-2 sm:ml-3 min-w-0 break-words">
                           <div className="text-sm font-medium text-gray-900">
                             {patient.first_name}{' '}{patient.last_name}
                           </div>
-                          <div className="text-[10px] text-gray-500 sm:hidden">
+                          <div className="text-xs leading-relaxed text-gray-500 sm:hidden">
                             {patient.age}yrs • {patient.gender === 'M' ? 'Male' : patient.gender === 'F' ? 'Female' : 'Other'}
                             {patient.phone && ` • ${patient.phone}`}
                           </div>
@@ -241,30 +246,32 @@ export default function AdminPatients() {
                       <div className="text-sm text-gray-900">{patient.phone || '-'}</div>
                     </td>
                     <td className="px-3 sm:px-6 py-4 text-center">
-                      <div className="flex justify-center items-center space-x-2 lg:space-x-3">
+                      <div className="flex flex-wrap justify-center items-center gap-1.5 sm:gap-2 lg:gap-3">
                         <button
                           onClick={() => handleViewPatient(patient)}
-                          className="px-3 py-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors text-sm font-medium"
+                          className="min-h-10 px-3 py-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors text-sm font-medium"
                           title="View Details"
                         >
                           View
                         </button>
                         <button
                           onClick={() => handleEditPatient(patient)}
-                          className="inline-flex items-center justify-center h-9 w-9 sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 rounded-full sm:rounded-md bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors"
+                          className="inline-flex items-center justify-center h-10 w-10 sm:w-auto sm:px-3 sm:py-1.5 rounded-full sm:rounded-md bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors"
+                          aria-label="Edit patient"
                           title="Edit Patient"
                         >
-                          <svg className="h-4 w-4 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg aria-hidden="true" className="h-4 w-4 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
                           <span className="hidden sm:inline sm:ml-2 text-sm font-medium">Edit</span>
                         </button>
                         <button
                           onClick={() => handleDeletePatient(patient.id, `${patient.first_name} ${patient.last_name}`)}
-                          className="inline-flex items-center justify-center h-9 w-9 sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 rounded-full sm:rounded-md bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors"
+                          className="inline-flex items-center justify-center h-10 w-10 sm:w-auto sm:px-3 sm:py-1.5 rounded-full sm:rounded-md bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors"
+                          aria-label="Delete patient"
                           title="Delete Patient"
                         >
-                          <svg className="h-4 w-4 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg aria-hidden="true" className="h-4 w-4 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
                           <span className="hidden sm:inline sm:ml-2 text-sm font-medium">Delete</span>
@@ -279,7 +286,7 @@ export default function AdminPatients() {
         </div>
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4 px-4 py-3 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 px-4 py-4 border-t border-gray-200">
             <div className="text-sm text-gray-700">
               Page {currentPage} of {totalPages}
             </div>
@@ -287,14 +294,14 @@ export default function AdminPatients() {
               <button
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className="px-3 sm:px-4 py-2 border rounded-md text-sm disabled:opacity-50 hover:bg-gray-50"
+                className="px-3 sm:px-4 py-2 border rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed enabled:hover:bg-gray-50"
               >
                 Previous
               </button>
               <button
                 onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="px-3 sm:px-4 py-2 border rounded-md text-sm disabled:opacity-50 hover:bg-gray-50"
+                className="px-3 sm:px-4 py-2 border rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed enabled:hover:bg-gray-50"
               >
                 Next
               </button>

@@ -90,7 +90,7 @@ export default function SignupForm() {
             href="/"
             className="group inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors mb-4 text-sm font-medium"
           >
-            <svg
+            <svg aria-hidden="true"
               className="w-4 h-4 mr-1.5 transition-transform group-hover:-translate-x-0.5"
               fill="none"
               viewBox="0 0 24 24"
@@ -118,7 +118,7 @@ export default function SignupForm() {
           </p>
         </div>
         <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-4 sm:p-5 lg:p-6 border border-white/20">
-          <form className="space-y-4" onSubmit={handleSubmit}>
+          <form aria-busy={loading} className="space-y-4" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
                 First Name *
@@ -178,6 +178,7 @@ export default function SignupForm() {
                 name="email"
                 type="email"
                 autoComplete="email"
+                spellCheck={false}
                 required
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors duration-200 text-sm"
                 placeholder="e.g doctor123@example.com"
@@ -196,9 +197,10 @@ export default function SignupForm() {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
+                  aria-describedby="password-requirements"
                   required
                   className={`w-full px-4 py-2.5 ${password ? 'pr-12' : 'pr-4'} border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors duration-200 text-sm`}
-                  placeholder="Min 8 chars, 1 uppercase, 1 number"
+                  placeholder="Create a password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   minLength={8}
@@ -206,7 +208,9 @@ export default function SignupForm() {
                 {password && (
                   <button
                     type="button"
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition-colors"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-pressed={showPassword}
+                    className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-lg text-gray-500 hover:text-gray-700 transition-colors"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
@@ -217,6 +221,9 @@ export default function SignupForm() {
                   </button>
                 )}
               </div>
+              <p id="password-requirements" className="mt-2 text-xs leading-relaxed text-gray-600">
+                Use at least 8 characters, including an uppercase letter and a number.
+              </p>
             </div>
 
             <button
@@ -235,7 +242,7 @@ export default function SignupForm() {
             </button>
           </form>
 
-          <div className="text-center pt-4 border-t border-gray-200">
+          <div className="text-center mt-5 pt-4 border-t border-gray-200">
             <span className="text-sm text-gray-600">
               Already have an account?{' '}
               <Link href="/login" className="font-medium text-teal-600 hover:text-teal-500 transition-colors">

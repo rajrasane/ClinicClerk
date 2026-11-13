@@ -1,5 +1,7 @@
 'use client';
 
+import { useModalFocus } from '@/hooks/useModalFocus';
+
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabase';
@@ -14,6 +16,7 @@ interface EditPatientModalProps {
 
 
 export default function EditPatientModal({ patient, onClose, onSuccess }: EditPatientModalProps) {
+  const modalRef = useModalFocus(onClose);
   // Initialize form data directly from patient prop to prevent flicker
   const getInitialData = () => ({
     first_name: patient.first_name || '',
@@ -168,25 +171,31 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
 
   return (
     <div className="fixed inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center z-99999 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+      <div ref={modalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="edit-patient-title"
+          tabIndex={-1}
+          className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b">
+        <div className="flex justify-between items-center gap-3 p-4 sm:p-6 border-b">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Edit Patient</h2>
+            <h2 id="edit-patient-title" className="text-2xl font-bold text-gray-900">Edit Patient</h2>
             <p className="text-sm text-gray-600 mt-1">Update patient information</p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl"
+            aria-label="Close modal"
+            className="h-11 w-11 shrink-0 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 text-2xl"
           >
             ×
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[60vh]">
+        <div className="p-4 sm:p-6 overflow-y-auto overscroll-contain max-h-[60vh]">
           {errors.general && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <div role="alert" className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
               <p className="text-sm text-red-600">{errors.general}</p>
             </div>
           )}
@@ -197,9 +206,12 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                 <h3 className="text-lg font-semibold text-gray-900">Personal Information</h3>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">First Name</label>
+                  <label htmlFor="edit-patient-first_name" className="block text-sm font-medium text-gray-700">First Name</label>
                   <input
                     type="text"
+                    id="edit-patient-first_name"
+                    aria-invalid={!!errors.first_name}
+                    aria-describedby={errors.first_name ? "edit-patient-first_name-error" : undefined}
                     name="first_name"
                     value={formData.first_name}
                     onChange={handleChange}
@@ -208,14 +220,15 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                     placeholder="e.g., Rahul"
                   />
                   {errors.first_name && (
-                    <p className="mt-1 text-sm text-red-600">{errors.first_name}</p>
+                    <p id="edit-patient-first_name-error" className="mt-1 text-sm text-red-600">{errors.first_name}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Middle Name</label>
+                  <label htmlFor="edit-patient-middle_name" className="block text-sm font-medium text-gray-700">Middle Name</label>
                   <input
                     type="text"
+                    id="edit-patient-middle_name"
                     name="middle_name"
                     value={formData.middle_name}
                     onChange={handleChange}
@@ -226,9 +239,12 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Last Name</label>
+                  <label htmlFor="edit-patient-last_name" className="block text-sm font-medium text-gray-700">Last Name</label>
                   <input
                     type="text"
+                    id="edit-patient-last_name"
+                    aria-invalid={!!errors.last_name}
+                    aria-describedby={errors.last_name ? "edit-patient-last_name-error" : undefined}
                     name="last_name"
                     value={formData.last_name}
                     onChange={handleChange}
@@ -237,14 +253,17 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                     placeholder="e.g., Sharma"
                   />
                   {errors.last_name && (
-                    <p className="mt-1 text-sm text-red-600">{errors.last_name}</p>
+                    <p id="edit-patient-last_name-error" className="mt-1 text-sm text-red-600">{errors.last_name}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Age</label>
+                  <label htmlFor="edit-patient-age" className="block text-sm font-medium text-gray-700">Age</label>
                   <input
                     type="number"
+                    id="edit-patient-age"
+                    aria-invalid={!!errors.age}
+                    aria-describedby={errors.age ? "edit-patient-age-error" : undefined}
                     name="age"
                     value={formData.age}
                     onChange={handleChange}
@@ -258,13 +277,16 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                     Current age as reported by patient
                   </p>
                   {errors.age && (
-                    <p className="mt-1 text-sm text-red-600">{errors.age}</p>
+                    <p id="edit-patient-age-error" className="mt-1 text-sm text-red-600">{errors.age}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Gender</label>
+                  <label htmlFor="edit-patient-gender" className="block text-sm font-medium text-gray-700">Gender</label>
                   <select
+                    id="edit-patient-gender"
+                    aria-invalid={!!errors.gender}
+                    aria-describedby={errors.gender ? "edit-patient-gender-error" : undefined}
                     name="gender"
                     value={formData.gender}
                     onChange={handleChange}
@@ -277,7 +299,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                     <option value="Other">Other</option>
                   </select>
                   {errors.gender && (
-                    <p className="mt-1 text-sm text-red-600">{errors.gender}</p>
+                    <p id="edit-patient-gender-error" className="mt-1 text-sm text-red-600">{errors.gender}</p>
                   )}
                 </div>
               </div>
@@ -288,9 +310,12 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                 <h3 className="text-lg font-semibold text-gray-900">Contact Information</h3>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Phone</label>
+                  <label htmlFor="edit-patient-phone" className="block text-sm font-medium text-gray-700">Phone</label>
                   <input
                     type="tel"
+                    id="edit-patient-phone"
+                    aria-invalid={!!errors.phone}
+                    aria-describedby={errors.phone ? "edit-patient-phone-error" : undefined}
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
@@ -299,13 +324,16 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                     placeholder="e.g., 9876543210"
                   />
                   {errors.phone && (
-                    <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+                    <p id="edit-patient-phone-error" className="mt-1 text-sm text-red-600">{errors.phone}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Address</label>
+                  <label htmlFor="edit-patient-address" className="block text-sm font-medium text-gray-700">Address</label>
                   <textarea
+                    id="edit-patient-address"
+                    aria-invalid={!!errors.address}
+                    aria-describedby={errors.address ? "edit-patient-address-error" : undefined}
                     name="address"
                     value={formData.address}
                     onChange={handleChange}
@@ -315,14 +343,15 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                     placeholder="e.g., Flat 203, Krishna Heights, Sector 12, Vashi, Navi Mumbai - 400703"
                   />
                   {errors.address && (
-                    <p className="mt-1 text-sm text-red-600">{errors.address}</p>
+                    <p id="edit-patient-address-error" className="mt-1 text-sm text-red-600">{errors.address}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Emergency Contact</label>
+                  <label htmlFor="edit-patient-emergency_contact" className="block text-sm font-medium text-gray-700">Emergency Contact</label>
                   <input
                     type="tel"
+                    id="edit-patient-emergency_contact"
                     name="emergency_contact"
                     value={formData.emergency_contact}
                     onChange={handleChange}
@@ -339,8 +368,9 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                 <h3 className="text-lg font-semibold text-gray-900">Medical Information</h3>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Blood Group</label>
+                  <label htmlFor="edit-patient-blood_group" className="block text-sm font-medium text-gray-700">Blood Group</label>
                   <select
+                    id="edit-patient-blood_group"
                     name="blood_group"
                     value={formData.blood_group || ''}
                     onChange={(e) => {
@@ -362,8 +392,9 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Allergies</label>
+                  <label htmlFor="edit-patient-allergies" className="block text-sm font-medium text-gray-700">Allergies</label>
                   <textarea
+                    id="edit-patient-allergies"
                     name="allergies"
                     value={formData.allergies}
                     onChange={handleChange}

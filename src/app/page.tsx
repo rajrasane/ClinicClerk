@@ -38,10 +38,13 @@ export default function Home() {
   // Show dashboard for authenticated users
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-teal-50/30 to-white dot-pattern">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-3 focus:text-gray-900 focus:shadow-lg">
+        Skip to main content
+      </a>
       <Header activeTab={activeTab} setActiveTab={handleTabChange} />
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+      <main id="main-content" tabIndex={-1} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <motion.div
           key={activeTab}
           initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
@@ -52,7 +55,7 @@ export default function Home() {
           {activeTab === 'patients' && <AdminPatients />}
           {activeTab === 'visits' && visitedTabs.has('visits') && <AdminVisits />}
         </motion.div>
-      </div>
+      </main>
     </div>
   );
 }
