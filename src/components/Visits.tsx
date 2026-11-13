@@ -3,9 +3,9 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useVisits } from '@/hooks/useVisits';
-import { apiCache } from '@/lib/cache';
+import { apiCache, authenticatedJsonFetch, isAbortedRequest } from '@/lib/cache';
 import { DatePicker } from '@/components/ui/date-picker';
-import { supabase } from '@/lib/supabase';
+
 import { ExportDropdown } from '@/components/ui/export-dropdown';
 import type { Visit } from '@/types';
 import dynamic from 'next/dynamic';
@@ -72,19 +72,11 @@ export default function AdminVisits() {
       return;
     }
 
+    const operation = apiCache.snapshot();
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        toast.error('Authentication required');
-        return;
-      }
-
-      const response = await fetch(`/api/visits/${visitId}`, {
+      const { response } = await authenticatedJsonFetch(`/api/visits/${visitId}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      });
+      }, operation);
 
       if (response.ok) {
         toast.success('Visit deleted successfully!');
@@ -99,6 +91,7 @@ export default function AdminVisits() {
         toast.error(errorMessage);
       }
     } catch (error) {
+      if (isAbortedRequest(error) || !apiCache.isCurrent(operation)) return;
       console.error('Error deleting visit:', error);
       toast.error('Failed to delete visit. Please try again.');
     }

@@ -68,7 +68,7 @@ export function generateVisitsExcelBuffer(visits: VisitData[]): Buffer {
   const excelData = visits.map(visit => {
     const row: Record<string, string | number> = {
       'Patient Name': visit.patient_name,
-      'Visit Date': new Date(visit.visit_date).toLocaleDateString('en-IN')
+      'Visit Date': new Date(visit.visit_date).toLocaleDateString('en-IN', { timeZone: 'UTC' })
     };
     
     // Only add optional fields if they have values
@@ -77,7 +77,7 @@ export function generateVisitsExcelBuffer(visits: VisitData[]): Buffer {
     if (visit.diagnosis) row['Diagnosis'] = visit.diagnosis;
     if (visit.prescription) row['Prescription'] = visit.prescription;
     if (visit.notes) row['Notes'] = visit.notes;
-    if (visit.follow_up_date) row['Follow-up'] = new Date(visit.follow_up_date).toLocaleDateString('en-IN');
+    if (visit.follow_up_date) row['Follow-up'] = new Date(visit.follow_up_date).toLocaleDateString('en-IN', { timeZone: 'UTC' });
     if (visit.vitals) {
       // Format vitals as readable text instead of JSON
       const vitalsText = typeof visit.vitals === 'string' ? visit.vitals : JSON.stringify(visit.vitals);

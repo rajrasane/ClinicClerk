@@ -6,7 +6,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { toast } from 'react-hot-toast';
-import { supabase } from '@/lib/supabase';
+import { apiCache, authenticatedJsonFetch, isAbortedRequest } from '@/lib/cache';
+
 import { XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 interface AddPatientModalProps {
@@ -191,22 +192,13 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
     };
 
     setLoading(true);
+    const operation = apiCache.snapshot();
     try {
-      // Get the current session token
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      const response = await fetch('/api/patients', {
+      const { response, data } = await authenticatedJsonFetch('/api/patients', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(submitData),
-      });
-
-      const data = await response.json();
+      }, operation);
 
       if (response.ok) {
         toast.success('Patient added successfully!');
@@ -216,6 +208,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
         toast.error(data.error || 'Failed to add patient');
       }
     } catch (error) {
+      if (isAbortedRequest(error) || !apiCache.isCurrent(operation)) return;
       console.error('Error adding patient:', error);
       toast.error('An unexpected error occurred');
     } finally {

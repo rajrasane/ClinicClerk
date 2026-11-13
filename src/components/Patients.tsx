@@ -3,9 +3,9 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { usePatients } from '@/hooks/usePatients';
-import { apiCache } from '@/lib/cache';
+import { apiCache, authenticatedJsonFetch, isAbortedRequest } from '@/lib/cache';
 import dynamic from 'next/dynamic';
-import { supabase } from '@/lib/supabase';
+
 import { ExportDropdown } from '@/components/ui/export-dropdown';
 import type { Patient, Visit } from '@/types';
 
@@ -55,19 +55,11 @@ export default function AdminPatients() {
       return;
     }
 
+    const operation = apiCache.snapshot();
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        toast.error('Authentication required');
-        return;
-      }
-
-      const response = await fetch(`/api/patients/${patientId}`, {
+      const { response } = await authenticatedJsonFetch(`/api/patients/${patientId}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      });
+      }, operation);
 
       if (response.ok) {
         toast.success('Patient deleted successfully!');
@@ -80,6 +72,7 @@ export default function AdminPatients() {
         toast.error('Failed to delete patient');
       }
     } catch (error) {
+      if (isAbortedRequest(error) || !apiCache.isCurrent(operation)) return;
       console.error('Error deleting patient:', error);
       toast.error('Failed to delete patient. Please try again.');
     }

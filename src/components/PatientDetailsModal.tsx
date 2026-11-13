@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { cachedFetch, isAbortedRequest } from '@/lib/cache';
 import type { Patient, Visit } from '@/types';
 
 interface PatientDetailsModalProps {
@@ -32,6 +33,7 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
 
   // Ref for scrollable content area
   const contentRef = useRef<HTMLDivElement>(null);
+  const visitsRequestRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -41,6 +43,8 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
 
     return () => {
       setMounted(false);
+      visitsRequestRef.current?.abort();
+      visitsRequestRef.current = null;
       // Restore background scrolling when modal closes
       document.body.style.overflow = 'unset';
     };
@@ -57,20 +61,22 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
       return;
     }
 
+    const controller = new AbortController();
+    visitsRequestRef.current?.abort();
+    visitsRequestRef.current = controller;
     setVisitsLoading(true);
     try {
       // Use cached fetch for visit history
-      const { cachedFetch } = await import('@/lib/cache');
-      const data = await cachedFetch(`/api/visits?patient_id=${patient.id}`, undefined, 5); // 5 min cache
+      const data = await cachedFetch(`/api/visits?patient_id=${patient.id}`, { signal: controller.signal }, 5); // 5 min cache
 
       if (data.success && data.data) {
         setVisits(data.data);
         setVisitsLoaded(true);
       }
     } catch (error) {
-      console.error('Error loading visits:', error);
+      if (!isAbortedRequest(error)) console.error('Error loading visits');
     } finally {
-      setVisitsLoading(false);
+      if (visitsRequestRef.current === controller) setVisitsLoading(false);
     }
   };
 

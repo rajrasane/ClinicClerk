@@ -98,4 +98,11 @@ CREATE POLICY "visits_optimized_policy" ON visits
     FOR ALL
     TO authenticated
     USING (doctor_id = (SELECT auth.uid()))
-    WITH CHECK (doctor_id = (SELECT auth.uid()));
+    WITH CHECK (
+        doctor_id = (SELECT auth.uid())
+        AND EXISTS (
+            SELECT 1 FROM public.patients AS patient
+            WHERE patient.id = visits.patient_id
+              AND patient.doctor_id = (SELECT auth.uid())
+        )
+    );

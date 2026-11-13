@@ -4,7 +4,8 @@ import { useModalFocus } from '@/hooks/useModalFocus';
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { supabase } from '@/lib/supabase';
+import { apiCache, authenticatedJsonFetch, isAbortedRequest } from '@/lib/cache';
+
 import type { Patient } from '@/types';
 import { GENDER_DISPLAY_TO_DB, GENDER_DB_TO_DISPLAY } from '@/types';
 
@@ -123,6 +124,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
 
     setLoading(true);
 
+    const operation = apiCache.snapshot();
     try {
       // Prepare form data with null for empty values
       const submitData = {
@@ -135,22 +137,11 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
         emergency_contact: formData.emergency_contact.trim() || null
       };
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        toast.error('Authentication required');
-        return;
-      }
-
-      const response = await fetch(`/api/patients/${patient.id}`, {
+      const { data: result } = await authenticatedJsonFetch(`/api/patients/${patient.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(submitData),
-      });
-
-      const result = await response.json();
+      }, operation);
 
       if (result.success) {
         toast.success('Patient updated successfully!');
@@ -161,6 +152,7 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
         setErrors({ general: result.error || 'Failed to update patient' });
       }
     } catch (error) {
+      if (isAbortedRequest(error) || !apiCache.isCurrent(operation)) return;
       console.error('Error updating patient:', error);
       toast.error('Failed to update patient. Please try again.');
       setErrors({ general: 'Failed to update patient. Please try again.' });
@@ -171,12 +163,14 @@ export default function EditPatientModal({ patient, onClose, onSuccess }: EditPa
 
   return (
     <div className="fixed inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center z-99999 p-4">
-      <div ref={modalRef}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="edit-patient-title"
-          tabIndex={-1}
-          className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-patient-title"
+        tabIndex={-1}
+        className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+      >
         {/* Header */}
         <div className="flex justify-between items-center gap-3 p-4 sm:p-6 border-b">
           <div>

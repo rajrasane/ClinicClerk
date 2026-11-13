@@ -4,12 +4,12 @@ import { useModalFocus } from '@/hooks/useModalFocus';
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { apiCache } from '@/lib/cache';
+import { apiCache, authenticatedJsonFetch, isAbortedRequest } from '@/lib/cache';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { DatePicker } from '@/components/ui/date-picker';
-import { supabase } from '@/lib/supabase';
+
 
 interface Patient {
   id: number;
@@ -123,33 +123,27 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
   useEffect(() => {
     // Only search when user types something
     if (patientType === 'existing' && searchTerm.trim().length >= 1) {
+      const controller = new AbortController();
       const debounceTimer = setTimeout(() => {
-        fetchPatients(searchTerm.trim());
+        fetchPatients(searchTerm.trim(), controller.signal);
       }, 350);
-      return () => clearTimeout(debounceTimer);
+      return () => {
+        clearTimeout(debounceTimer);
+        controller.abort();
+      };
     } else if (patientType === 'existing' && searchTerm.trim().length === 0) {
       setPatients([]); // Clear results when search is empty
     }
   }, [searchTerm, patientType]);
 
-  const fetchPatients = async (search: string) => {
+  const fetchPatients = async (search: string, signal: AbortSignal) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        console.error('No auth token available');
-        return;
-      }
-
-      const response = await fetch(`/api/patients?limit=20&search=${encodeURIComponent(search)}`, {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      });
-      const data = await response.json();
+      const { data } = await authenticatedJsonFetch(`/api/patients?limit=20&search=${encodeURIComponent(search)}`, { signal });
       if (data.success) {
         setPatients(data.data);
       }
     } catch (error) {
+      if (isAbortedRequest(error)) return;
       console.error('Error fetching patients:', error);
     }
   };
@@ -417,6 +411,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     }
 
     setLoading(true);
+    const operation = apiCache.snapshot();
     try {
       let patientId = parseInt(formData.patient_id);
 
@@ -435,25 +430,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           emergency_contact: formData.emergency_contact.trim() || null
         };
 
-        // Get the current session token for patient creation
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.access_token) {
-          toast.error('Authentication required');
-          setLoading(false);
-          return;
-        }
-
-        const patientResponse = await fetch('/api/patients', {
+        const { response: patientResponse, data: patientResult } = await authenticatedJsonFetch('/api/patients', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(patientData),
-        });
-
-        const patientResult = await patientResponse.json();
+        }, operation);
         if (!patientResponse.ok) {
           toast.error(patientResult.error || 'Failed to create patient');
           setErrors({ general: patientResult.error || 'Failed to create patient' });
@@ -471,18 +452,9 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           return acc;
         }, {} as Record<string, string>);
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        toast.error('Authentication required');
-        return;
-      }
-
-      const response = await fetch('/api/visits', {
+      const { data: result } = await authenticatedJsonFetch('/api/visits', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           patient_id: patientId,
           visit_date: formatDateForAPI(formData.visit_date),
@@ -498,9 +470,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           payment_status: formData.payment_status,
           payment_method: formData.payment_status === 'P' ? formData.payment_method : null
         }),
-      });
-
-      const result = await response.json();
+      }, operation);
 
       if (result.success) {
         toast.success('Visit added successfully!');
@@ -513,7 +483,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         toast.error(result.error || 'Failed to create visit');
         setErrors({ general: result.error || 'Failed to create visit' });
       }
-    } catch {
+    } catch (error) {
+      if (isAbortedRequest(error) || !apiCache.isCurrent(operation)) return;
       toast.error('Network error. Please try again.');
       setErrors({ general: 'Network error. Please try again.' });
     } finally {

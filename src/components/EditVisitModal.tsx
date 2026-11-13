@@ -4,9 +4,9 @@ import { useModalFocus } from '@/hooks/useModalFocus';
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { apiCache } from '@/lib/cache';
+import { apiCache, authenticatedJsonFetch, isAbortedRequest } from '@/lib/cache';
 import { DatePicker } from '@/components/ui/date-picker';
-import { supabase } from '@/lib/supabase';
+
 import type { Visit } from '@/types';
 
 // Helper function to format date without timezone issues
@@ -154,6 +154,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
     }
     setLoading(true);
 
+    const operation = apiCache.snapshot();
     try {
       // Prepare vitals data - only include non-empty values
       const vitalsData = Object.entries(formData.vitals)
@@ -178,22 +179,11 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
         payment_method: formData.payment_status === 'P' ? formData.payment_method : null
       };
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        toast.error('Authentication required');
-        return;
-      }
-
-      const response = await fetch(`/api/visits/${visit.id}`, {
+      const { data: result } = await authenticatedJsonFetch(`/api/visits/${visit.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(submitData),
-      });
-
-      const result = await response.json();
+      }, operation);
 
       if (result.success) {
         toast.success('Visit updated successfully!');
@@ -207,6 +197,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
         setErrors({ general: result.error || 'Failed to update visit' });
       }
     } catch (error) {
+      if (isAbortedRequest(error) || !apiCache.isCurrent(operation)) return;
       console.error('Error updating visit:', error);
       toast.error('Failed to update visit. Please try again.');
       setErrors({ general: 'Failed to update visit. Please try again.' });
@@ -250,12 +241,14 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
 
   return (
     <div className="fixed inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center z-99999 p-4">
-      <div ref={modalRef}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="edit-visit-title"
-          tabIndex={-1}
-          className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-visit-title"
+        tabIndex={-1}
+        className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+      >
         {/* Header */}
         <div className="flex justify-between items-center gap-3 p-4 sm:p-6 border-b">
           <div>

@@ -13,3 +13,13 @@ node_modules
 # Agent-Skills (regenerate with npx skills add skill_name)
 .agent/
 .agents/
+
+# Keep credentials, database archives, and generated review output out of Git.
+.env*
+!.env.example
+*.backup
+*.backup.gz
+*.dump
+*.dump.gz
+test-results/
+playwright-report/

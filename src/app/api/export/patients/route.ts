@@ -1,3 +1,5 @@
+import { apiFailure } from '@/lib/api-security';
+import { createCsv } from '@/lib/csv';
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient, getAuthenticatedUser } from '@/lib/supabase-server';
 import { generatePatientsPDFBuffer } from '@/lib/pdf-generator-server';
@@ -26,7 +28,7 @@ export async function GET(request: NextRequest) {
     }
 
 
-    // Build query with RLS automatically filtering by doctor_id
+    // Scope to the authenticated doctor in addition to database RLS.
     // Only fetch fields needed for export to save bandwidth
     let query = supabase
       .from('patients')
@@ -35,6 +37,7 @@ export async function GET(request: NextRequest) {
         phone, address, blood_group, allergies, 
         emergency_contact
       `)
+      .eq('doctor_id', user.id)
       .order('created_at', { ascending: false });
 
     // Add search filter if provided (sanitized to prevent injection)
@@ -87,20 +90,17 @@ export async function GET(request: NextRequest) {
       ];
 
       const csvRows = processedPatients.map(patient => [
-        `"${patient.full_name}"`,
+        patient.full_name,
         patient.age,
         patient.gender,
         patient.phone,
-        `"${patient.address}"`,
+        patient.address,
         patient.blood_group,
-        `"${patient.allergies}"`,
+        patient.allergies,
         patient.emergency_contact
       ]);
 
-      const csvContent = [
-        csvHeaders.join(','),
-        ...csvRows.map(row => row.join(','))
-      ].join('\n');
+      const csvContent = createCsv(csvHeaders, csvRows);
 
       const timestamp = new Date().toISOString().split('T')[0];
       const filename = `patients_export_${timestamp}.csv`;
@@ -108,9 +108,9 @@ export async function GET(request: NextRequest) {
       return new NextResponse(csvContent, {
         status: 200,
         headers: {
-          'Content-Type': 'text/csv',
+          'Content-Type': 'text/csv; charset=utf-8',
           'Content-Disposition': `attachment; filename="${filename}"`,
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'private, no-store'
         }
       });
     }
@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           'Content-Disposition': `attachment; filename="${filename}"`,
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'private, no-store'
         }
       });
     }
@@ -153,7 +153,7 @@ export async function GET(request: NextRequest) {
         headers: {
           'Content-Type': 'application/pdf',
           'Content-Disposition': `attachment; filename="${filename}"`,
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'private, no-store'
         }
       });
     }
@@ -165,14 +165,10 @@ export async function GET(request: NextRequest) {
         data: processedPatients,
         total: processedPatients.length,
         exported_at: new Date().toISOString()
-      });
+      }, { headers: { 'Cache-Control': 'private, no-store' } });
     }
 
   } catch (error) {
-    console.error('Error exporting patients:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to export patients' },
-      { status: 500 }
-    );
+    return apiFailure(error, 'Failed to export patients');
   }
 }
