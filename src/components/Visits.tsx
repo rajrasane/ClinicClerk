@@ -258,10 +258,10 @@ export default function AdminVisits() {
                 <th scope="col" className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell md:w-[30%] lg:w-[28%]">
                   Chief Complaint
                 </th>
-                <th scope="col" className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell lg:w-[22%]">
+                <th scope="col" className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell lg:w-[18%]">
                   Diagnosis
                 </th>
-                <th scope="col" className="px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider md:w-[33%] lg:w-[20%]">
+                <th scope="col" className="px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider md:w-[33%] lg:w-[24%]">
                   Actions
                 </th>
               </tr>

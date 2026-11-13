@@ -144,15 +144,15 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-
-    // Only validate if user has entered something and then removed it
-    if (value.trim() !== '') {
-      setTouchedFields(prev => new Set(prev).add(name));
-      const error = validateField(name, value);
-      if (error) {
-        setErrors(prev => ({ ...prev, [name]: error }));
-      }
-    }
+    // A cleared required field still needs feedback after the user leaves it.
+    setTouchedFields(prev => new Set(prev).add(name));
+    const error = validateField(name, value);
+    setErrors(prev => {
+      const next = { ...prev };
+      if (error) next[name] = error;
+      else delete next[name];
+      return next;
+    });
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
