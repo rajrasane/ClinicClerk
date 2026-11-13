@@ -40,7 +40,7 @@ export default function LoginForm() {
             href="/"
             className="group inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors mb-4 text-sm font-medium"
           >
-            <svg
+            <svg aria-hidden="true"
               className="w-4 h-4 mr-1.5 transition-transform group-hover:-translate-x-0.5"
               fill="none"
               viewBox="0 0 24 24"
@@ -68,7 +68,7 @@ export default function LoginForm() {
           </p>
         </div>
         <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-4 sm:p-5 lg:p-6 border border-white/20">
-          <form className="space-y-4" onSubmit={handleSubmit}>
+          <form aria-busy={loading} className="space-y-4" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email Address *
@@ -78,6 +78,7 @@ export default function LoginForm() {
                 name="email"
                 type="email"
                 autoComplete="email"
+                spellCheck={false}
                 required
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors duration-200 text-sm"
                 placeholder="Enter your email"
@@ -105,7 +106,9 @@ export default function LoginForm() {
                 {password && (
                   <button
                     type="button"
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition-colors"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-pressed={showPassword}
+                    className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-lg text-gray-500 hover:text-gray-700 transition-colors"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
@@ -121,7 +124,7 @@ export default function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-teal-600 to-teal-700 text-white py-2.5 px-4 rounded-lg font-medium hover:from-teal-700 hover:to-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm shadow-md hover:shadow-lg"
+              className="w-full bg-gradient-to-r from-teal-600 to-teal-700 text-white py-2.5 px-4 rounded-lg font-medium hover:from-teal-700 hover:to-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-[color,background-color,box-shadow] duration-200 text-sm shadow-md hover:shadow-lg"
             >
               {loading ? (
                 <div className="flex items-center justify-center">
@@ -134,7 +137,7 @@ export default function LoginForm() {
             </button>
           </form>
 
-          <div className="text-center pt-4 border-t border-gray-200">
+          <div className="text-center mt-5 pt-4 border-t border-gray-200">
             <span className="text-sm text-gray-600">
               Don&apos;t have an account?{' '}
               <Link href="/signup" className="font-medium text-teal-600 hover:text-teal-500 transition-colors">

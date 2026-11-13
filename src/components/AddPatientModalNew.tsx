@@ -1,10 +1,13 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useModalFocus } from '@/hooks/useModalFocus';
+
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { toast } from 'react-hot-toast';
-import { supabase } from '@/lib/supabase';
+import { apiCache, authenticatedJsonFetch, isAbortedRequest } from '@/lib/cache';
+
 import { XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 interface AddPatientModalProps {
@@ -45,6 +48,7 @@ const GENDER_DISPLAY_TO_DB = {
 } as const;
 
 export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalProps) {
+  const shouldReduceMotion = useReducedMotion();
   const [formData, setFormData] = useState({
     first_name: '',
     middle_name: '',
@@ -64,10 +68,8 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
   const totalSteps = 2;
 
   // Focus management
-  const modalRef = useRef<HTMLDivElement | null>(null);
+  const modalRef = useModalFocus(onClose);
   useEffect(() => {
-    modalRef.current?.focus();
-
     // Prevent background scrolling when modal is open
     document.body.style.overflow = 'hidden';
 
@@ -142,15 +144,15 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-
-    // Only validate if user has entered something and then removed it
-    if (value.trim() !== '') {
-      setTouchedFields(prev => new Set(prev).add(name));
-      const error = validateField(name, value);
-      if (error) {
-        setErrors(prev => ({ ...prev, [name]: error }));
-      }
-    }
+    // A cleared required field still needs feedback after the user leaves it.
+    setTouchedFields(prev => new Set(prev).add(name));
+    const error = validateField(name, value);
+    setErrors(prev => {
+      const next = { ...prev };
+      if (error) next[name] = error;
+      else delete next[name];
+      return next;
+    });
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -190,22 +192,13 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
     };
 
     setLoading(true);
+    const operation = apiCache.snapshot();
     try {
-      // Get the current session token
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      const response = await fetch('/api/patients', {
+      const { response, data } = await authenticatedJsonFetch('/api/patients', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(submitData),
-      });
-
-      const data = await response.json();
+      }, operation);
 
       if (response.ok) {
         toast.success('Patient added successfully!');
@@ -215,6 +208,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
         toast.error(data.error || 'Failed to add patient');
       }
     } catch (error) {
+      if (isAbortedRequest(error) || !apiCache.isCurrent(operation)) return;
       console.error('Error adding patient:', error);
       toast.error('An unexpected error occurred');
     } finally {
@@ -255,12 +249,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
 
   // Removed unused handleFormKeyDown function
 
-  const handleOverlayKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Escape') {
-      e.stopPropagation();
-      onClose();
-    }
-  };
+
 
   const canProceed = () => {
     const currentStepFields = getCurrentStepFields();
@@ -304,6 +293,9 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
       </label>
       <input
         id={name}
+        aria-required={required || undefined}
+        aria-invalid={!!errors[name]}
+        aria-describedby={errors[name] ? `${name}-error` : undefined}
         type={type}
         name={name}
         value={formData[name as keyof typeof formData] || ''}
@@ -318,7 +310,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
           }`}
       />
       {errors[name] && (
-        <p className="mt-1 text-sm text-red-600">{errors[name]}</p>
+        <p id={`${name}-error`} className="mt-1 text-sm text-red-600">{errors[name]}</p>
       )}
     </div>
   );
@@ -430,18 +422,19 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
   const modalContent = (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0 }}
+        initial={shouldReduceMotion ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        transition={shouldReduceMotion ? { duration: 0 } : undefined}
         className="fixed inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center z-99999 p-2 sm:p-4"
         onClick={onClose}
-        onKeyDown={handleOverlayKeyDown}
         aria-hidden={false}
       >
         <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
+          initial={shouldReduceMotion ? false : { scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.9, opacity: 0 }}
+          exit={shouldReduceMotion ? { opacity: 0 } : { scale: 0.9, opacity: 0 }}
+          transition={shouldReduceMotion ? { duration: 0 } : undefined}
           className="bg-white rounded-2xl sm:rounded-3xl shadow-xl w-full max-w-[95vw] sm:max-w-xl md:max-w-2xl lg:max-w-4xl h-[82vh] sm:h-[85vh] lg:h-[94vh] flex flex-col overflow-hidden"
           onClick={(e) => e.stopPropagation()}
           role="dialog"
@@ -459,7 +452,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
               </div>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 text-xl sm:text-2xl p-1"
+                className="h-11 w-11 shrink-0 inline-flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700"
                 aria-label="Close modal"
               >
                 <XMarkIcon className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -484,10 +477,10 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 min-h-0 flex flex-col">
             {/* Content */}
             <div className="flex-1 min-h-0 relative">
-              <div className="absolute inset-0 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 hover:scrollbar-thumb-gray-400 scrollbar-track-transparent p-3 sm:p-4 md:p-5">
+              <div className="absolute inset-0 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-gray-300 hover:scrollbar-thumb-gray-400 scrollbar-track-transparent p-3 sm:p-4 md:p-5">
                 {renderStepContent()}
               </div>
             </div>
@@ -532,7 +525,7 @@ export default function AddPatientModal({ onClose, onSuccess }: AddPatientModalP
                   >
                     {loading ? (
                       <span className="flex items-center">
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <svg aria-hidden="true" className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>

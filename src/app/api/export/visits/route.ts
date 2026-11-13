@@ -1,3 +1,6 @@
+import { apiFailure } from '@/lib/api-security';
+import { ApiError, parsePositiveId, validateDate } from '@/lib/api-validation';
+import { createCsv } from '@/lib/csv';
 import { NextRequest, NextResponse } from 'next/server';
 import { generateVisitsExcelBuffer } from '@/lib/excel-generator-server';
 import { createSupabaseServerClient, getAuthenticatedUser } from '@/lib/supabase-server';
@@ -19,10 +22,14 @@ export async function GET(request: NextRequest) {
 
     const supabase = createSupabaseServerClient(request);
     const { searchParams } = new URL(request.url);
-    const patientId = searchParams.get('patient_id');
+    const rawPatientId = searchParams.get('patient_id');
+    const patientId = rawPatientId === null ? null : parsePositiveId(rawPatientId, 'Patient ID');
     const search = searchParams.get('search');
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
+    const rawStartDate = searchParams.get('startDate');
+    const startDate = rawStartDate === null ? null : validateDate(rawStartDate, 'Start date');
+    const rawEndDate = searchParams.get('endDate');
+    const endDate = rawEndDate === null ? null : validateDate(rawEndDate, 'End date');
+    if (startDate && endDate && startDate > endDate) throw new ApiError('Start date must not be after end date');
     const format = searchParams.get('format') || 'csv';
 
     if (!['csv', 'json', 'pdf', 'excel'].includes(format)) {
@@ -30,7 +37,7 @@ export async function GET(request: NextRequest) {
     }
 
 
-    // Build query with RLS automatically filtering by doctor_id
+    // Scope to the authenticated doctor in addition to database RLS.
     // Only fetch fields needed for export to save bandwidth
     let query = supabase
       .from('visits')
@@ -38,13 +45,15 @@ export async function GET(request: NextRequest) {
         patient_id, visit_date, chief_complaint, 
         symptoms, diagnosis, prescription, notes, 
         follow_up_date, vitals,
-        patients(first_name, middle_name, last_name)
+        patients!inner(first_name, middle_name, last_name)
       `)
+      .eq('doctor_id', user.id)
+      .eq('patients.doctor_id', user.id)
       .order('visit_date', { ascending: false });
 
     // Add filters
     if (patientId) {
-      query = query.eq('patient_id', parseInt(patientId));
+      query = query.eq('patient_id', patientId);
     }
 
     if (search) {
@@ -76,7 +85,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Process visits data - only fields needed for export
-    const processedVisits = (visits as {
+    const processedVisits = (visits as unknown as {
       patients: { first_name?: string; middle_name?: string; last_name?: string };
       visit_date: string;
       chief_complaint?: string;
@@ -90,16 +99,22 @@ export async function GET(request: NextRequest) {
       const patient = visit.patients;
       return {
         patient_name: `${patient?.first_name || ''} ${patient?.middle_name ? patient.middle_name + ' ' : ''}${patient?.last_name || ''}`.trim(),
-        visit_date: new Date(visit.visit_date).toLocaleDateString('en-IN'),
+        visit_date: visit.visit_date,
         chief_complaint: visit.chief_complaint || '',
         symptoms: visit.symptoms || '',
         diagnosis: visit.diagnosis || '',
         prescription: visit.prescription || '',
         notes: visit.notes || '',
-        follow_up_date: visit.follow_up_date ? new Date(visit.follow_up_date).toLocaleDateString('en-IN') : '',
-        vitals: visit.vitals || ''
+        follow_up_date: visit.follow_up_date || '',
+        vitals: typeof visit.vitals === 'object' && visit.vitals !== null ? JSON.stringify(visit.vitals) : visit.vitals || ''
       };
     });
+
+    const displayVisits = processedVisits.map(visit => ({
+      ...visit,
+      visit_date: new Date(visit.visit_date).toLocaleDateString('en-IN', { timeZone: 'UTC' }),
+      follow_up_date: visit.follow_up_date ? new Date(visit.follow_up_date).toLocaleDateString('en-IN', { timeZone: 'UTC' }) : ''
+    }));
 
     if (format === 'csv') {
       // Generate CSV - only essential fields
@@ -115,22 +130,19 @@ export async function GET(request: NextRequest) {
         'Vitals'
       ];
 
-      const csvRows = processedVisits.map(visit => [
-        `"${visit.patient_name}"`,
+      const csvRows = displayVisits.map(visit => [
+        visit.patient_name,
         visit.visit_date,
-        `"${visit.chief_complaint}"`,
-        `"${visit.symptoms}"`,
-        `"${visit.diagnosis}"`,
-        `"${visit.prescription}"`,
-        `"${visit.notes}"`,
+        visit.chief_complaint,
+        visit.symptoms,
+        visit.diagnosis,
+        visit.prescription,
+        visit.notes,
         visit.follow_up_date,
-        `"${visit.vitals}"`
+        visit.vitals
       ]);
 
-      const csvContent = [
-        csvHeaders.join(','),
-        ...csvRows.map(row => row.join(','))
-      ].join('\n');
+      const csvContent = createCsv(csvHeaders, csvRows);
 
       const timestamp = new Date().toISOString().split('T')[0];
       const filename = patientId
@@ -140,9 +152,9 @@ export async function GET(request: NextRequest) {
       return new NextResponse(csvContent, {
         status: 200,
         headers: {
-          'Content-Type': 'text/csv',
+          'Content-Type': 'text/csv; charset=utf-8',
           'Content-Disposition': `attachment; filename="${filename}"`,
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'private, no-store'
         }
       });
     }
@@ -159,7 +171,7 @@ export async function GET(request: NextRequest) {
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           'Content-Disposition': `attachment; filename="${filename}"`,
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'private, no-store'
         }
       });
     }
@@ -176,7 +188,7 @@ export async function GET(request: NextRequest) {
       const doctorName = doctorData ? `Dr. ${doctorData.first_name} ${doctorData.last_name}` : 'Doctor';
 
       // Generate PDF buffer on server
-      const pdfBuffer = generateVisitsPDFBuffer(processedVisits, doctorName);
+      const pdfBuffer = generateVisitsPDFBuffer(displayVisits, doctorName);
 
       const filename = `visits_export_${new Date().toISOString().split('T')[0]}.pdf`;
 
@@ -185,7 +197,7 @@ export async function GET(request: NextRequest) {
         headers: {
           'Content-Type': 'application/pdf',
           'Content-Disposition': `attachment; filename="${filename}"`,
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'private, no-store'
         }
       });
     }
@@ -194,17 +206,13 @@ export async function GET(request: NextRequest) {
     if (format === 'json') {
       return NextResponse.json({
         success: true,
-        data: processedVisits,
+        data: displayVisits,
         total: processedVisits.length,
         exported_at: new Date().toISOString()
-      });
+      }, { headers: { 'Cache-Control': 'private, no-store' } });
     }
 
   } catch (error) {
-    console.error('Error exporting visits:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to export visits' },
-      { status: 500 }
-    );
+    return apiFailure(error, 'Failed to export visits');
   }
 }

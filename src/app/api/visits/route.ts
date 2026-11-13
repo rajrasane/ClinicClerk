@@ -1,266 +1,72 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient, getAuthenticatedUser } from '@/lib/supabase-server';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { sanitizeSearchTerm } from '@/lib/sanitize';
+import { ApiError, parsePagination, parsePositiveId, validateDate, validateVisit } from '@/lib/api-validation';
+import { apiFailure, checkRecord, readJsonObject, requireApiUser } from '@/lib/api-security';
 
-// GET /api/visits - List visits with optional patient filter
 export async function GET(request: NextRequest) {
   try {
-    // Check authentication
-    const user = await getAuthenticatedUser(request);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
+    const user = await requireApiUser(request);
     const { searchParams } = new URL(request.url);
-    const patientId = searchParams.get('patient_id');
-    const search = searchParams.get('search');
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 100); // Max 100 per page
-    const offset = (page - 1) * limit;
-
+    const { page, limit, offset } = parsePagination(searchParams);
+    const patientId = searchParams.has('patient_id') ? parsePositiveId(searchParams.get('patient_id'), 'patient ID') : null;
+    const startDate = searchParams.has('startDate') ? validateDate(searchParams.get('startDate'), 'start date') : null;
+    const endDate = searchParams.has('endDate') ? validateDate(searchParams.get('endDate'), 'end date') : null;
+    if (startDate && endDate && startDate > endDate) throw new ApiError('Start date must not be after end date');
     const supabase = createSupabaseServerClient(request);
-
-    // Build query with RLS automatically filtering by doctor_id
-    let query = supabase
-      .from('visits')
-      .select(`
-        id, patient_id, visit_date, chief_complaint, 
-        symptoms, diagnosis, prescription, notes, 
-        follow_up_date, vitals, created_at, updated_at,
-        consultation_fee, payment_status, payment_method,
-        patients(first_name, last_name, phone, age, gender)
-      `)
-      .order('visit_date', { ascending: false })
-      .order('created_at', { ascending: false });
-
-    // Add patient filter
-    if (patientId) {
-      query = query.eq('patient_id', parseInt(patientId));
-    }
-
-    // Add search filter - first find matching patients if search is present (sanitized)
+    let query = supabase.from('visits').select(`
+      id, patient_id, visit_date, chief_complaint, symptoms, diagnosis, prescription, notes,
+      follow_up_date, vitals, created_at, updated_at, consultation_fee, payment_status, payment_method,
+      patients!inner(first_name, last_name, phone, age, gender)
+    `, { count: 'exact' })
+      .eq('doctor_id', user.id).eq('patients.doctor_id', user.id)
+      .order('visit_date', { ascending: false }).order('created_at', { ascending: false });
+    if (patientId) query = query.eq('patient_id', patientId);
+    const search = sanitizeSearchTerm(searchParams.get('search') || '');
     if (search) {
-      const sanitizedSearch = sanitizeSearchTerm(search);
-      if (sanitizedSearch) {
-        // Search for matching patients
-        const { data: matchingPatients } = await supabase
-          .from('patients')
-          .select('id')
-          .or(`first_name.ilike.%${sanitizedSearch}%,last_name.ilike.%${sanitizedSearch}%`);
-
-        const patientIds = matchingPatients?.map(p => p.id) || [];
-
-        // Build condition: search in visit fields OR patient IDs
-        if (patientIds.length > 0) {
-          query = query.or(`chief_complaint.ilike.%${sanitizedSearch}%,diagnosis.ilike.%${sanitizedSearch}%,patient_id.in.(${patientIds.join(',')})`);
-        } else {
-          // No matching patients, just search in visit fields
-          query = query.or(`chief_complaint.ilike.%${sanitizedSearch}%,diagnosis.ilike.%${sanitizedSearch}%`);
-        }
-      }
+      const { data: matchingPatients, error } = await supabase.from('patients').select('id')
+        .eq('doctor_id', user.id).or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%`);
+      if (error) throw error;
+      const patientIds = matchingPatients?.map(patient => patient.id) || [];
+      const patientFilter = patientIds.length ? `,patient_id.in.(${patientIds.join(',')})` : '';
+      query = query.or(`chief_complaint.ilike.%${search}%,diagnosis.ilike.%${search}%${patientFilter}`);
     }
-
-    // Add date range filter
-    if (startDate) {
-      query = query.gte('visit_date', startDate);
-    }
-
-    if (endDate) {
-      query = query.lte('visit_date', endDate);
-    }
-
-    // Get total count for pagination
-    const { count } = await supabase
-      .from('visits')
-      .select('*', { count: 'exact', head: true });
-
-    // Apply pagination
-    query = query.range(offset, offset + limit - 1);
-
-    const { data: visits, error } = await query;
-
-    if (error) {
-      console.error('Error fetching visits:', error);
-      return NextResponse.json(
-        { success: false, error: 'Failed to fetch visits' },
-        { status: 500 }
-      );
-    }
-
+    if (startDate) query = query.gte('visit_date', startDate);
+    if (endDate) query = query.lte('visit_date', endDate);
+    const { data: visits, count, error } = await query.range(offset, offset + limit - 1);
+    if (error) throw error;
     const totalCount = count || 0;
     const totalPages = Math.ceil(totalCount / limit);
-
-    // Flatten the patient data for easier frontend consumption
-    const visitsWithPatientData = visits?.map((visit: Record<string, unknown>) => {
-      const patients = visit.patients as Record<string, unknown> | undefined;
+    const data = visits?.map((visit: Record<string, unknown>) => {
+      const patient = visit.patients as Record<string, unknown> | undefined;
       return {
-        ...visit,
-        first_name: patients?.first_name || '',
-        last_name: patients?.last_name || '',
-        phone: patients?.phone || '',
-        age: patients?.age || 0,
-        gender: patients?.gender || '',
-        patients: undefined // Remove nested patients object
+        ...visit, first_name: patient?.first_name || '', last_name: patient?.last_name || '',
+        phone: patient?.phone || '', age: patient?.age || 0, gender: patient?.gender || '', patients: undefined
       };
     }) || [];
-
     return NextResponse.json({
-      success: true,
-      data: visitsWithPatientData,
-      pagination: {
-        page,
-        limit,
-        totalCount,
-        totalPages,
-        hasNext: page < totalPages,
-        hasPrev: page > 1
-      }
+      success: true, data,
+      pagination: { page, limit, totalCount, totalPages, hasNext: page < totalPages, hasPrev: page > 1 }
     });
-
   } catch (error) {
-    console.error('Error fetching visits:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch visits' },
-      { status: 500 }
-    );
+    return apiFailure(error, 'Failed to fetch visits');
   }
 }
 
-// POST /api/visits - Create new visit
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
-    const user = await getAuthenticatedUser(request);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
-    const {
-      patient_id,
-      visit_date,
-      chief_complaint,
-      symptoms,
-      diagnosis,
-      prescription,
-      notes,
-      follow_up_date,
-      vitals,
-      consultation_fee,
-      payment_status,
-      payment_method
-    } = body;
-
-    // Validate required fields
-    if (!patient_id || !visit_date || !chief_complaint) {
-      return NextResponse.json(
-        { success: false, error: 'Patient ID, visit date, and chief complaint are required' },
-        { status: 400 }
-      );
-    }
-
-    // Input length validation (matches DB schema constraints)
-    const lengthLimits = [
-      { field: 'chief_complaint', value: chief_complaint, max: 300 },
-      { field: 'symptoms', value: symptoms, max: 500 },
-      { field: 'diagnosis', value: diagnosis, max: 300 },
-      { field: 'prescription', value: prescription, max: 1000 },
-      { field: 'notes', value: notes, max: 500 },
-    ];
-    for (const { field, value, max } of lengthLimits) {
-      if (value && value.length > max) {
-        return NextResponse.json(
-          { success: false, error: `${field} exceeds maximum length of ${max} characters` },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Validate payment fields
-    if (payment_status === 'D' && payment_method) {
-      return NextResponse.json(
-        { success: false, error: 'Payment method should not be set for Due status' },
-        { status: 400 }
-      );
-    }
-
-    if (consultation_fee && consultation_fee < 0) {
-      return NextResponse.json(
-        { success: false, error: 'Consultation fee cannot be negative' },
-        { status: 400 }
-      );
-    }
-
-    // Validate date format
-    const visitDate = new Date(visit_date);
-    if (isNaN(visitDate.getTime())) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid visit date format' },
-        { status: 400 }
-      );
-    }
-
-    // Validate follow-up date if provided
-    if (follow_up_date) {
-      const followUpDate = new Date(follow_up_date);
-      if (isNaN(followUpDate.getTime())) {
-        return NextResponse.json(
-          { success: false, error: 'Invalid follow-up date format' },
-          { status: 400 }
-        );
-      }
-    }
-
+    const user = await requireApiUser(request);
+    const data = validateVisit(await readJsonObject(request));
     const supabase = createSupabaseServerClient(request);
-
-    // Insert visit with doctor_id from authenticated user
-    const { data: visit, error } = await supabase
-      .from('visits')
-      .insert({
-        doctor_id: user.id,
-        patient_id: parseInt(patient_id),
-        visit_date,
-        chief_complaint,
-        symptoms: symptoms || null,
-        diagnosis: diagnosis || null,
-        prescription: prescription || null,
-        notes: notes || null,
-        follow_up_date: follow_up_date || null,
-        vitals: vitals || null,
-        consultation_fee: consultation_fee ?? null,
-        payment_status: payment_status ?? 'D',
-        payment_method: payment_method ?? null
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating visit:', error);
-      return NextResponse.json(
-        { success: false, error: 'Failed to create visit' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: visit,
-      message: 'Visit created successfully'
-    });
-
+    // A visit's doctor_id alone does not establish ownership of its parent patient.
+    const { data: patient, error: patientError } = await supabase.from('patients').select('id')
+      .eq('id', data.patient_id).eq('doctor_id', user.id).single();
+    checkRecord(patient, patientError, 'Patient');
+    const { data: visit, error } = await supabase.from('visits')
+      .insert({ ...data, doctor_id: user.id }).select().single();
+    if (error) throw error;
+    return NextResponse.json({ success: true, data: visit, message: 'Visit created successfully' });
   } catch (error) {
-    console.error('Error creating visit:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to create visit' },
-      { status: 500 }
-    );
+    return apiFailure(error, 'Failed to create visit');
   }
 }

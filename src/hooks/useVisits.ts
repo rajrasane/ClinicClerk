@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { cachedFetch, apiCache } from '@/lib/cache';
+import { useAuth } from '@/contexts/AuthContext';
 import type { Visit, PaginationData } from '@/types';
-
 
 interface UseVisitsReturn {
   visits: Visit[];
@@ -13,99 +13,71 @@ interface UseVisitsReturn {
   addVisit: (visit: Visit) => void;
 }
 
-export function useVisits(
-  page: number = 1,
-  searchQuery: string = '',
+export function useVisits(page: number = 1, searchQuery: string = '',
   dateRange: { startDate: string; endDate: string } = { startDate: '', endDate: '' },
-  limit: number = 5
-): UseVisitsReturn {
-  const [visits, setVisits] = useState<Visit[]>([]);
+  limit: number = 5): UseVisitsReturn {
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+  const [result, setResult] = useState<{ owner: string | null; records: Visit[]; pagination: PaginationData | null }>({ owner: null, records: [], pagination: null });
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState<PaginationData | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const fetchVisits = useCallback(async () => {
-    // Cancel any pending request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    // Create new abort controller for this request
-    abortControllerRef.current = new AbortController();
-
+  const fetchVisits = useCallback(async (forceRefresh = false) => {
+    abortControllerRef.current?.abort();
+    if (!userId) return;
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
     setLoading(true);
     try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString()
-      });
-
-      if (searchQuery.trim()) {
-        params.append('search', searchQuery.trim());
-      }
-
+      const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
+      if (searchQuery.trim()) params.set('search', searchQuery.trim());
       if (dateRange.startDate && dateRange.endDate) {
-        params.append('startDate', dateRange.startDate);
-        params.append('endDate', dateRange.endDate);
+        params.set('startDate', dateRange.startDate);
+        params.set('endDate', dateRange.endDate);
       }
-
-      const data = await cachedFetch(`/api/visits?${params}`, undefined, 10); // 10 min cache
-
-      if (data.success) {
-        setVisits(data.data);
-        setPagination(data.pagination);
+      const data = await cachedFetch(`/api/visits?${params}`, { signal: controller.signal }, 10, forceRefresh);
+      if (!controller.signal.aborted && data.success) {
+        setResult({ owner: userId, records: data.data, pagination: data.pagination });
       }
     } catch (error) {
-      console.error('Error fetching visits:', error);
+      if (!(error instanceof DOMException && error.name === 'AbortError')) {
+        console.error('Error fetching visits');
+      }
     } finally {
-      setLoading(false);
+      if (abortControllerRef.current === controller) setLoading(false);
     }
-  }, [page, searchQuery, dateRange.startDate, dateRange.endDate, limit]);
+  }, [userId, page, searchQuery, limit, dateRange.startDate, dateRange.endDate]);
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
-    if (searchQuery || dateRange.startDate || dateRange.endDate) {
-      // Debounce search and filter changes
-      timeoutId = setTimeout(fetchVisits, 300);
-    } else {
-      // Immediate load for page changes
-      fetchVisits();
-    }
-
+    setResult({ owner: userId, records: [], pagination: null });
+    setLoading(false);
+    const timeout = setTimeout(() => { void fetchVisits(); }, searchQuery || dateRange.startDate || dateRange.endDate ? 300 : 0);
     return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-      // Abort any pending request when component unmounts or dependencies change
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
+      clearTimeout(timeout);
+      abortControllerRef.current?.abort();
     };
-  }, [fetchVisits, searchQuery, dateRange.startDate, dateRange.endDate]);
+  }, [userId, fetchVisits, searchQuery, dateRange.startDate, dateRange.endDate]);
 
-  // Optimistic updates
   const updateVisit = useCallback((id: number, updates: Partial<Visit>) => {
-    setVisits(prev => prev.map(v => v.id === id ? { ...v, ...updates } : v));
-    // Only invalidate list cache - individual visit cache not needed for optimistic updates
-    apiCache.invalidate('/api/visits?');
-  }, []);
+    setResult(prev => prev.owner === userId ? { ...prev, records: prev.records.map(record => record.id === id ? { ...record, ...updates } : record) } : prev);
+    apiCache.invalidate('/api/visits');
+  }, [userId]);
 
   const removeVisit = useCallback((id: number) => {
-    setVisits(prev => prev.filter(v => v.id !== id));
-    // No cache invalidation needed - UI is already updated optimistically
-  }, []);
+    setResult(prev => prev.owner === userId ? { ...prev, records: prev.records.filter(record => record.id !== id) } : prev);
+    apiCache.invalidate('/api/visits');
+  }, [userId]);
 
   const addVisit = useCallback((visit: Visit) => {
-    setVisits(prev => [visit, ...prev]);
-    apiCache.invalidate('/api/visits?');
-  }, []);
+    setResult(prev => prev.owner === userId ? { ...prev, records: [visit, ...prev.records] } : prev);
+    apiCache.invalidate('/api/visits');
+  }, [userId]);
 
   return {
-    visits,
-    loading,
-    pagination,
-    refetch: fetchVisits,
-    updateVisit,
-    removeVisit,
-    addVisit
+    visits: userId && result.owner === userId ? result.records : [],
+    loading: Boolean(userId) && loading,
+    pagination: userId && result.owner === userId ? result.pagination : null,
+    refetch: () => fetchVisits(true),
+    updateVisit, removeVisit, addVisit
   };
 }

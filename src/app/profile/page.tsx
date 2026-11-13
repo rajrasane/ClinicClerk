@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast';
 import { ArrowLeft, Save, Trash2, User, Phone, Building, MapPin } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { apiCache } from '@/lib/cache';
 
 interface DoctorProfile {
   first_name: string;
@@ -18,7 +19,23 @@ interface DoctorProfile {
 }
 
 export default function ProfilePage() {
-  const { doctor, signOut, refreshDoctorData } = useAuth();
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) router.replace('/login');
+  }, [loading, user, router]);
+
+  if (loading || !user) {
+    return <div className="min-h-screen flex items-center justify-center" role="status">Loading profile…</div>;
+  }
+
+  // Account changes must discard every draft and account-deletion confirmation.
+  return <ProfileContent key={user.id} />;
+}
+
+function ProfileContent() {
+  const { user, doctor, signOut, refreshDoctorData } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -80,12 +97,16 @@ export default function ProfilePage() {
       return;
     }
 
+    const owner = apiCache.snapshot();
+    const isCurrent = () => owner.userId === user?.id && apiCache.isCurrent(owner);
+    if (!isCurrent()) return;
     setLoading(true);
     try {
       // Get the session token from Supabase client
       const { data: { session } } = await supabase.auth.getSession();
+      if (!isCurrent()) return;
 
-      if (!session?.access_token) {
+      if (!session?.access_token || session.user.id !== owner.userId) {
         toast.error('Please log in again');
         router.push('/login');
         return;
@@ -100,20 +121,24 @@ export default function ProfilePage() {
         body: JSON.stringify(profile)
       });
 
+      if (!isCurrent()) return;
       if (response.ok) {
         toast.success('Profile updated successfully');
         // Update the original profile state to reflect changes
         setOriginalProfile(profile);
         // Refresh the doctor data in AuthContext
         await refreshDoctorData();
+        if (!isCurrent()) return;
         // Navigate back smoothly without full page reload
         router.push('/');
       } else {
         const error = await response.json();
+        if (!isCurrent()) return;
         toast.error(error.message || 'Failed to update profile');
       }
-    } catch (error) {
-      console.error('Error updating profile:', error);
+    } catch {
+      if (!isCurrent()) return;
+      console.error('Error updating profile');
       toast.error('An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -121,12 +146,16 @@ export default function ProfilePage() {
   };
 
   const handleDeleteAccount = async () => {
+    const owner = apiCache.snapshot();
+    const isCurrent = () => owner.userId === user?.id && apiCache.isCurrent(owner);
+    if (!isCurrent()) return;
     setDeleteLoading(true);
     try {
       // Get the session token from Supabase client
       const { data: { session } } = await supabase.auth.getSession();
+      if (!isCurrent()) return;
 
-      if (!session?.access_token) {
+      if (!session?.access_token || session.user.id !== owner.userId) {
         toast.error('Please log in again');
         router.push('/login');
         return;
@@ -139,16 +168,19 @@ export default function ProfilePage() {
         }
       });
 
+      if (!isCurrent()) return;
       if (response.ok) {
         toast.success('Account deleted successfully');
         await signOut();
         router.push('/login');
       } else {
         const error = await response.json();
+        if (!isCurrent()) return;
         toast.error(error.message || 'Failed to delete account');
       }
-    } catch (error) {
-      console.error('Error deleting account:', error);
+    } catch {
+      if (!isCurrent()) return;
+      console.error('Error deleting account');
       toast.error('An unexpected error occurred');
     } finally {
       setDeleteLoading(false);

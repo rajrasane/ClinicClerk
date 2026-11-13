@@ -1,10 +1,13 @@
 'use client';
 
+import { useModalFocus } from '@/hooks/useModalFocus';
+
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { cachedFetch, isAbortedRequest } from '@/lib/cache';
 import type { Patient, Visit } from '@/types';
 
 interface PatientDetailsModalProps {
@@ -17,6 +20,7 @@ interface PatientDetailsModalProps {
 
 
 export default function PatientDetailsModal({ patient, onClose, onAddVisit, onViewVisit }: PatientDetailsModalProps) {
+  const modalRef = useModalFocus(onClose);
   const [activeTab, setActiveTab] = useState('details');
   const [mounted, setMounted] = useState(false);
   const [visits, setVisits] = useState<Visit[]>([]);
@@ -29,6 +33,7 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
 
   // Ref for scrollable content area
   const contentRef = useRef<HTMLDivElement>(null);
+  const visitsRequestRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -38,6 +43,8 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
 
     return () => {
       setMounted(false);
+      visitsRequestRef.current?.abort();
+      visitsRequestRef.current = null;
       // Restore background scrolling when modal closes
       document.body.style.overflow = 'unset';
     };
@@ -54,20 +61,22 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
       return;
     }
 
+    const controller = new AbortController();
+    visitsRequestRef.current?.abort();
+    visitsRequestRef.current = controller;
     setVisitsLoading(true);
     try {
       // Use cached fetch for visit history
-      const { cachedFetch } = await import('@/lib/cache');
-      const data = await cachedFetch(`/api/visits?patient_id=${patient.id}`, undefined, 5); // 5 min cache
+      const data = await cachedFetch(`/api/visits?patient_id=${patient.id}`, { signal: controller.signal }, 5); // 5 min cache
 
       if (data.success && data.data) {
         setVisits(data.data);
         setVisitsLoaded(true);
       }
     } catch (error) {
-      console.error('Error loading visits:', error);
+      if (!isAbortedRequest(error)) console.error('Error loading visits');
     } finally {
-      setVisitsLoading(false);
+      if (visitsRequestRef.current === controller) setVisitsLoading(false);
     }
   };
 
@@ -153,6 +162,11 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
+          ref={modalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="patient-details-title"
+          tabIndex={-1}
           className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
           onClick={(e) => e.stopPropagation()}
           onTouchStart={onTouchStart}
@@ -162,14 +176,15 @@ export default function PatientDetailsModal({ patient, onClose, onAddVisit, onVi
           {/* Header */}
           <div className="flex justify-between items-center p-6 border-b">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">{patient.first_name} {patient.last_name}</h2>
+              <h2 id="patient-details-title" className="text-2xl font-bold text-gray-900">{patient.first_name} {patient.last_name}</h2>
               <p className="text-sm text-gray-600 mt-1">
                 {patient.age} years • {patient.gender === 'M' ? 'Male' : patient.gender === 'F' ? 'Female' : 'Other'}
               </p>
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl"
+              aria-label="Close modal"
+              className="h-11 w-11 shrink-0 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 text-2xl"
             >
               ×
             </button>

@@ -3,9 +3,9 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useVisits } from '@/hooks/useVisits';
-import { apiCache } from '@/lib/cache';
+import { apiCache, authenticatedJsonFetch, isAbortedRequest } from '@/lib/cache';
 import { DatePicker } from '@/components/ui/date-picker';
-import { supabase } from '@/lib/supabase';
+
 import { ExportDropdown } from '@/components/ui/export-dropdown';
 import type { Visit } from '@/types';
 import dynamic from 'next/dynamic';
@@ -72,19 +72,11 @@ export default function AdminVisits() {
       return;
     }
 
+    const operation = apiCache.snapshot();
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        toast.error('Authentication required');
-        return;
-      }
-
-      const response = await fetch(`/api/visits/${visitId}`, {
+      const { response } = await authenticatedJsonFetch(`/api/visits/${visitId}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      });
+      }, operation);
 
       if (response.ok) {
         toast.success('Visit deleted successfully!');
@@ -99,6 +91,7 @@ export default function AdminVisits() {
         toast.error(errorMessage);
       }
     } catch (error) {
+      if (isAbortedRequest(error) || !apiCache.isCurrent(operation)) return;
       console.error('Error deleting visit:', error);
       toast.error('Failed to delete visit. Please try again.');
     }
@@ -115,15 +108,15 @@ export default function AdminVisits() {
         {/* Header and Add Button */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-700">Visit Management</h2>
-            <p className="text-gray-600">Record and manage patient visits</p>
+            <h2 className="text-2xl font-bold tracking-tight text-gray-800">Visit Management</h2>
+            <p className="mt-1 text-sm sm:text-base text-gray-600">Record and manage patient visits</p>
           </div>
           <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
             <button
               onClick={() => setShowAddModal(true)}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm sm:text-base"
+              className="bg-green-600 text-white min-h-11 px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm sm:text-base"
             >
-              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
               <span>Add Visit</span>
@@ -162,13 +155,16 @@ export default function AdminVisits() {
             <div className="relative grow mr-1 sm:mr-2">
               <input
                 type="text"
+                aria-label="Search visits"
+                name="visits-search"
+                autoComplete="off"
                 placeholder="Search by patient name or complaint…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base bg-white"
+                className="w-full min-h-11 pl-10 pr-12 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base bg-white"
               />
-              <svg
-                className="absolute left-3 top-2.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400"
+              <svg aria-hidden="true"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -183,35 +179,27 @@ export default function AdminVisits() {
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-2.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-gray-600 transition-colors z-10"
+                  className="absolute right-0 top-0 h-11 w-11 p-3 rounded-lg text-gray-500 hover:text-gray-700 transition-colors z-10"
                   aria-label="Clear search"
                 >
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               )}
             </div>
             <button
-              onClick={() => {
-                if (dateRange.startDate && dateRange.endDate) {
-                  // If both dates are selected, do nothing
-                  return;
-                } else {
-                  setShowDateFilter(!showDateFilter);
-                }
-              }}
-              disabled={!!(dateRange.startDate && dateRange.endDate)}
-              className={`ml-1 sm:ml-2 p-2.75 rounded-lg transition-colors flex items-center gap-2 ${dateRange.startDate && dateRange.endDate
-                ? 'bg-red-100 text-red-700 cursor-not-allowed opacity-75'
-                : showDateFilter
-                  ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                  : (dateRange.startDate || dateRange.endDate)
-                    ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              type="button"
+              aria-label="Filter visits by date"
+              aria-expanded={showDateFilter}
+              aria-controls="visit-date-filters"
+              onClick={() => setShowDateFilter(!showDateFilter)}
+              className={`ml-1 sm:ml-2 min-h-11 min-w-11 p-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 ${showDateFilter || dateRange.startDate || dateRange.endDate
+                ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
               </svg>
               <span className="hidden md:inline text-sm">Filter by Date</span>
@@ -219,7 +207,7 @@ export default function AdminVisits() {
           </div>
 
           {/* Date Inputs */}
-          <div className="space-y-4 mt-2">
+          <div id="visit-date-filters" className="space-y-4 mt-2">
             {showDateFilter && (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
@@ -258,22 +246,22 @@ export default function AdminVisits() {
       {/* Visits Table */}
       <div className="glass-panel rounded-xl shadow-lg border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto md:overflow-x-visible">
-          <table className="min-w-full md:w-full md:table-fixed">
+          <table aria-label="Visits" aria-busy={loading} className="min-w-full w-full table-fixed sm:table-auto md:table-fixed">
             <thead className="bg-linear-to-r from-gray-50 to-gray-100 border-b border-gray-200">
               <tr>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider md:w-[15%] lg:w-[12%]">
+                <th scope="col" className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider md:w-[15%] lg:w-[12%]">
                   Visit
                 </th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell md:w-[22%] lg:w-[18%]">
+                <th scope="col" className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell md:w-[22%] lg:w-[18%]">
                   Patient
                 </th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell md:w-[30%] lg:w-[28%]">
+                <th scope="col" className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell md:w-[30%] lg:w-[28%]">
                   Chief Complaint
                 </th>
-                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell lg:w-[22%]">
+                <th scope="col" className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell lg:w-[18%]">
                   Diagnosis
                 </th>
-                <th className="px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider md:w-[33%] lg:w-[20%]">
+                <th scope="col" className="px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider md:w-[33%] lg:w-[24%]">
                   Actions
                 </th>
               </tr>
@@ -281,21 +269,23 @@ export default function AdminVisits() {
             <tbody className="bg-white divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-3 sm:px-6 py-4 text-center">
-                    <div className="flex justify-center">
+                  <td colSpan={5} className="px-3 sm:px-6 py-10 text-center">
+                    <div role="status" className="flex justify-center">
+                      <span className="sr-only">Loading visits…</span>
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
                     </div>
                   </td>
                 </tr>
               ) : visits.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-3 sm:px-6 py-4 text-center text-gray-500">
-                    No visits found
+                  <td colSpan={5} className="px-3 sm:px-6 py-10 text-center text-gray-500">
+                    <p className="font-medium text-gray-700">No visits found</p>
+                    <p className="mt-1 text-sm">{searchQuery || dateRange.startDate || dateRange.endDate ? 'Try adjusting your search or date filters.' : 'Add your first visit to get started.'}</p>
                   </td>
                 </tr>
               ) : (
                 visits.map((visit) => (
-                  <tr key={visit.id} className="hover:bg-gray-50">
+                  <tr key={visit.id} className="hover:bg-gray-50/80 transition-colors">
                     <td className="px-3 sm:px-6 py-3">
                       <div className="space-y-1">
                         <div className="text-xs md:text-sm text-gray-500">
@@ -303,10 +293,10 @@ export default function AdminVisits() {
                         </div>
 
                         <div className="sm:hidden space-y-1 mt-1">
-                          <div className="text-sm text-gray-700 font-medium">
+                          <div className="text-sm text-gray-700 font-medium break-words">
                             {visit.first_name} {visit.last_name}
                           </div>
-                          <div className="text-xs text-gray-600">
+                          <div className="text-xs text-gray-600 break-words">
                             {visit.chief_complaint.length > 50 ? `${visit.chief_complaint.substring(0, 50)}…` : visit.chief_complaint}
                           </div>
                           {visit.diagnosis && (
@@ -336,30 +326,32 @@ export default function AdminVisits() {
                       </div>
                     </td>
                     <td className="px-3 sm:px-6 py-4 text-center">
-                      <div className="flex justify-center items-center space-x-2 md:space-x-1 lg:space-x-1.5">
+                      <div className="flex flex-wrap justify-center items-center gap-1.5 md:gap-1 lg:gap-1.5">
                         <button
                           onClick={() => handleViewVisit(visit)}
-                          className="px-3 py-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors text-sm font-medium md:text-xs md:px-2 lg:text-xs lg:px-2.5 whitespace-nowrap"
+                          className="min-h-10 px-3 py-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 transition-colors text-sm font-medium md:text-xs md:px-2 lg:text-xs lg:px-2.5 whitespace-nowrap"
                           title="View Details"
                         >
                           View
                         </button>
                         <button
                           onClick={() => handleEditVisit(visit)}
-                          className="inline-flex items-center justify-center h-9 w-9 sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 rounded-full sm:rounded-md bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors md:px-2 lg:px-2.5 whitespace-nowrap"
+                          className="inline-flex items-center justify-center h-10 w-10 sm:w-auto sm:px-3 sm:py-1.5 rounded-full sm:rounded-md bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 transition-colors md:px-2 lg:px-2.5 whitespace-nowrap"
+                          aria-label="Edit visit"
                           title="Edit Visit"
                         >
-                          <svg className="h-4 w-4 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg aria-hidden="true" className="h-4 w-4 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
                           <span className="hidden sm:inline sm:ml-2 text-sm font-medium md:ml-1 md:text-xs lg:text-xs">Edit</span>
                         </button>
                         <button
                           onClick={() => handleDeleteVisit(visit.id, `${visit.first_name} ${visit.last_name}`)}
-                          className="inline-flex items-center justify-center h-9 w-9 sm:h-auto sm:w-auto sm:px-3 sm:py-1.5 rounded-full sm:rounded-md bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors md:px-2 lg:px-2.5 whitespace-nowrap"
+                          className="inline-flex items-center justify-center h-10 w-10 sm:w-auto sm:px-3 sm:py-1.5 rounded-full sm:rounded-md bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-colors md:px-2 lg:px-2.5 whitespace-nowrap"
+                          aria-label="Delete visit"
                           title="Delete Visit"
                         >
-                          <svg className="h-4 w-4 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg aria-hidden="true" className="h-4 w-4 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
                           <span className="hidden sm:inline sm:ml-2 text-sm font-medium md:ml-1 md:text-xs lg:text-xs">Delete</span>
@@ -375,7 +367,7 @@ export default function AdminVisits() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4 px-4 py-3 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 px-4 py-4 border-t border-gray-200">
             <div className="text-sm text-gray-700">
               Page {currentPage} of {totalPages}
             </div>
@@ -383,14 +375,14 @@ export default function AdminVisits() {
               <button
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className="px-3 sm:px-4 py-2 border rounded-md text-sm disabled:opacity-50 hover:bg-gray-50"
+                className="px-3 sm:px-4 py-2 border rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed enabled:hover:bg-gray-50"
               >
                 Previous
               </button>
               <button
                 onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="px-3 sm:px-4 py-2 border rounded-md text-sm disabled:opacity-50 hover:bg-gray-50"
+                className="px-3 sm:px-4 py-2 border rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed enabled:hover:bg-gray-50"
               >
                 Next
               </button>

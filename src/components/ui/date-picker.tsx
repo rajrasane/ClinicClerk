@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/popover"
 
 interface DatePickerProps {
+  id?: string
+  "aria-describedby"?: string
   date?: Date
   onDateChange: (date: Date | undefined) => void
   placeholder?: string
@@ -24,11 +26,15 @@ interface DatePickerProps {
 }
 
 export function DatePicker({
+  id,
+  "aria-describedby": describedBy,
   date,
   onDateChange,
   placeholder = "Pick a date",
   className,
   disabled = false,
+  required = false,
+  error = false,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false)
 
@@ -46,10 +52,16 @@ export function DatePicker({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          id={id}
+          type="button"
+          aria-label={`${placeholder}${required ? " (required)" : ""}${date ? `: ${format(date, "MMM d, yyyy")}` : ""}`}
+          aria-describedby={describedBy}
+          aria-invalid={error || undefined}
           variant="outline"
           className={cn(
-            "w-full justify-start text-left font-normal bg-white hover:bg-gray-50 border-gray-300 shadow-sm rounded-lg text-xs sm:text-sm truncate",
-            !date && "text-muted-foreground",
+            "min-h-11 w-full justify-start text-left font-normal bg-white hover:bg-gray-50 border-gray-300 shadow-sm rounded-lg text-xs sm:text-sm truncate",
+            !date && "text-gray-500",
+            error && "border-red-500",
             className
           )}
           disabled={disabled}

@@ -39,6 +39,7 @@ export function middleware(request: NextRequest) {
       { 
         status: 429,
         headers: {
+          'Cache-Control': 'private, no-store',
           'Retry-After': String(Math.ceil(result.resetIn / 1000)),
           'X-RateLimit-Remaining': '0',
           'X-RateLimit-Reset': String(Math.ceil(result.resetIn / 1000)),
@@ -49,6 +50,7 @@ export function middleware(request: NextRequest) {
 
   // Add rate limit headers to successful responses
   const response = NextResponse.next();
+  response.headers.set('Cache-Control', 'private, no-store');
   response.headers.set('X-RateLimit-Remaining', String(result.remaining));
   response.headers.set('X-RateLimit-Reset', String(Math.ceil(result.resetIn / 1000)));
   

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Download, FileImage, Loader2, FileSpreadsheet } from 'lucide-react'
 import {
   DropdownMenu,
@@ -11,6 +11,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { supabase } from '@/lib/supabase'
+import { apiCache } from '@/lib/cache'
+import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'react-hot-toast'
 
 interface ExportDropdownProps {
@@ -36,13 +38,35 @@ export function ExportDropdown({
   hasRecords = true
 }: ExportDropdownProps) {
   const [isExporting, setIsExporting] = useState(false)
+  const { user } = useAuth()
+  const userId = user?.id ?? null
+  const exportControllerRef = useRef<AbortController | null>(null)
+
+  useEffect(() => {
+    setIsExporting(false)
+    return () => {
+      exportControllerRef.current?.abort()
+      exportControllerRef.current = null
+    }
+  }, [userId])
 
   const handleExport = async (format: 'csv' | 'json' | 'pdf' | 'excel') => {
+    exportControllerRef.current?.abort()
+    const controller = new AbortController()
+    exportControllerRef.current = controller
+    const owner = apiCache.snapshot()
+    const assertCurrent = () => {
+      if (controller.signal.aborted || !apiCache.isCurrent(owner)) {
+        throw new DOMException('Export is no longer current', 'AbortError')
+      }
+    }
     setIsExporting(true)
 
     try {
+      assertCurrent()
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.access_token) {
+      assertCurrent()
+      if (!session?.access_token || !userId || owner.userId !== userId || session.user.id !== userId) {
         toast.error('Authentication required')
         return
       }
@@ -56,20 +80,26 @@ export function ExportDropdown({
       if (filters.startDate) params.append('startDate', filters.startDate)
       if (filters.endDate) params.append('endDate', filters.endDate)
 
+      assertCurrent()
       const response = await fetch(`/api/export/${type}?${params.toString()}`, {
+        signal: controller.signal,
+        cache: 'no-store',
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
       })
 
+      assertCurrent()
       if (!response.ok) {
         const errorData = await response.json()
+        assertCurrent()
         throw new Error(errorData.error || 'Export failed')
       }
 
       if (format === 'csv' || format === 'excel' || format === 'pdf') {
         // Handle file download (CSV, Excel, PDF)
         const blob = await response.blob()
+        assertCurrent()
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
@@ -91,6 +121,7 @@ export function ExportDropdown({
       } else {
         // Handle JSON download
         const data = await response.json()
+        assertCurrent()
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
@@ -104,10 +135,14 @@ export function ExportDropdown({
         toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} exported successfully!`)
       }
     } catch (error) {
-      console.error('Export error:', error)
-      toast.error(error instanceof Error ? error.message : 'Export failed')
+      if (!controller.signal.aborted && apiCache.isCurrent(owner) && !(error instanceof DOMException && error.name === 'AbortError')) {
+        toast.error(error instanceof Error ? error.message : 'Export failed')
+      }
     } finally {
-      setIsExporting(false)
+      if (exportControllerRef.current === controller) {
+        exportControllerRef.current = null
+        setIsExporting(false)
+      }
     }
   }
 
@@ -117,14 +152,17 @@ export function ExportDropdown({
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <button
+            type="button"
+            aria-busy={isExporting}
             disabled={isExporting || !hasRecords}
-            className={`inline-flex items-center justify-center h-9 w-9 rounded-lg bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none ${className}`}
+            className={`inline-flex items-center justify-center h-11 w-11 rounded-lg bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none ${className}`}
+            aria-label={isExporting ? `Exporting ${type}…` : `Export ${type}`}
             title={!hasRecords ? `No ${type} to export` : `Export ${type}`}
           >
             {isExporting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
             ) : (
-              <Download className="h-4 w-4" />
+              <Download aria-hidden="true" className="h-4 w-4" />
             )}
           </button>
         </DropdownMenuTrigger>
@@ -136,7 +174,7 @@ export function ExportDropdown({
             disabled={isExporting || !hasRecords}
             className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:bg-gray-50 cursor-pointer rounded-md mx-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            <FileSpreadsheet aria-hidden="true" className="mr-2 h-4 w-4" />
             Download as Excel
           </DropdownMenuItem>
           <DropdownMenuItem
@@ -144,7 +182,7 @@ export function ExportDropdown({
             disabled={isExporting || !hasRecords}
             className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:bg-gray-50 cursor-pointer rounded-md mx-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <FileImage className="mr-2 h-4 w-4" />
+            <FileImage aria-hidden="true" className="mr-2 h-4 w-4" />
             Download as PDF
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -156,14 +194,16 @@ export function ExportDropdown({
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <button
+          type="button"
+          aria-busy={isExporting}
           disabled={isExporting || !hasRecords}
-          className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none ${className}`}
+          className={`inline-flex min-h-11 items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none ${className}`}
           title={!hasRecords ? `No ${type} to export` : undefined}
         >
           {isExporting ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
           ) : (
-            <Download className="h-4 w-4" />
+            <Download aria-hidden="true" className="h-4 w-4" />
           )}
           {buttonText}
         </button>
@@ -176,7 +216,7 @@ export function ExportDropdown({
           disabled={isExporting || !hasRecords}
           className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:bg-gray-50 cursor-pointer rounded-md mx-1 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <FileSpreadsheet className="mr-2 h-4 w-4" />
+          <FileSpreadsheet aria-hidden="true" className="mr-2 h-4 w-4" />
           Download as Excel
         </DropdownMenuItem>
         <DropdownMenuItem
@@ -184,7 +224,7 @@ export function ExportDropdown({
           disabled={isExporting || !hasRecords}
           className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 focus:bg-gray-50 cursor-pointer rounded-md mx-1 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <FileImage className="mr-2 h-4 w-4" />
+          <FileImage aria-hidden="true" className="mr-2 h-4 w-4" />
           Download as PDF
         </DropdownMenuItem>
       </DropdownMenuContent>

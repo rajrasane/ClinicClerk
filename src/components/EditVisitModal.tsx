@@ -1,10 +1,12 @@
 'use client';
 
+import { useModalFocus } from '@/hooks/useModalFocus';
+
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { apiCache } from '@/lib/cache';
+import { apiCache, authenticatedJsonFetch, isAbortedRequest } from '@/lib/cache';
 import { DatePicker } from '@/components/ui/date-picker';
-import { supabase } from '@/lib/supabase';
+
 import type { Visit } from '@/types';
 
 // Helper function to format date without timezone issues
@@ -23,6 +25,7 @@ interface EditVisitModalProps {
 
 
 export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitModalProps) {
+  const modalRef = useModalFocus(onClose);
   // Format date to YYYY-MM-DD for date input, handling timezone correctly
 
   const [formData, setFormData] = useState({
@@ -151,6 +154,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
     }
     setLoading(true);
 
+    const operation = apiCache.snapshot();
     try {
       // Prepare vitals data - only include non-empty values
       const vitalsData = Object.entries(formData.vitals)
@@ -175,22 +179,11 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
         payment_method: formData.payment_status === 'P' ? formData.payment_method : null
       };
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        toast.error('Authentication required');
-        return;
-      }
-
-      const response = await fetch(`/api/visits/${visit.id}`, {
+      const { data: result } = await authenticatedJsonFetch(`/api/visits/${visit.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(submitData),
-      });
-
-      const result = await response.json();
+      }, operation);
 
       if (result.success) {
         toast.success('Visit updated successfully!');
@@ -204,6 +197,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
         setErrors({ general: result.error || 'Failed to update visit' });
       }
     } catch (error) {
+      if (isAbortedRequest(error) || !apiCache.isCurrent(operation)) return;
       console.error('Error updating visit:', error);
       toast.error('Failed to update visit. Please try again.');
       setErrors({ general: 'Failed to update visit. Please try again.' });
@@ -247,27 +241,35 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
 
   return (
     <div className="fixed inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center z-99999 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-visit-title"
+        tabIndex={-1}
+        className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+      >
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b">
+        <div className="flex justify-between items-center gap-3 p-4 sm:p-6 border-b">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Edit Visit</h2>
+            <h2 id="edit-visit-title" className="text-2xl font-bold text-gray-900">Edit Visit</h2>
             <p className="text-sm text-gray-600 mt-1">
               {visit.first_name} {visit.last_name}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl"
+            aria-label="Close modal"
+            className="h-11 w-11 shrink-0 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 text-2xl"
           >
             ×
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[60vh]">
+        <div className="p-4 sm:p-6 overflow-y-auto overscroll-contain max-h-[60vh]">
           {errors.general && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <div role="alert" className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
               <p className="text-sm text-red-600">{errors.general}</p>
             </div>
           )}
@@ -278,8 +280,10 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                 <h3 className="text-lg font-semibold text-gray-900">Visit Information</h3>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Visit Date</label>
+                  <label htmlFor="edit-visit-visit_date" className="block text-sm font-medium text-gray-700">Visit Date</label>
                   <DatePicker
+                    id="edit-visit-visit_date"
+                    aria-describedby={errors.visit_date ? "edit-visit-visit_date-error" : undefined}
                     date={formData.visit_date}
                     onDateChange={(date) => handleDateChange('visit_date', date)}
                     placeholder="Select visit date"
@@ -287,13 +291,16 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                     className={errors.visit_date ? 'border-red-500' : ''}
                   />
                   {errors.visit_date && (
-                    <p className="mt-1 text-sm text-red-600">{errors.visit_date}</p>
+                    <p id="edit-visit-visit_date-error" className="mt-1 text-sm text-red-600">{errors.visit_date}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Chief Complaint</label>
+                  <label htmlFor="edit-visit-chief_complaint" className="block text-sm font-medium text-gray-700">Chief Complaint</label>
                   <textarea
+                    id="edit-visit-chief_complaint"
+                    aria-invalid={!!errors.chief_complaint}
+                    aria-describedby={errors.chief_complaint ? "edit-visit-chief_complaint-error" : undefined}
                     name="chief_complaint"
                     value={formData.chief_complaint}
                     onChange={handleInputChange}
@@ -303,13 +310,14 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                     placeholder="e.g., Fever and headache for 2 days"
                   />
                   {errors.chief_complaint && (
-                    <p className="mt-1 text-sm text-red-600">{errors.chief_complaint}</p>
+                    <p id="edit-visit-chief_complaint-error" className="mt-1 text-sm text-red-600">{errors.chief_complaint}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Symptoms</label>
+                  <label htmlFor="edit-visit-symptoms" className="block text-sm font-medium text-gray-700">Symptoms</label>
                   <textarea
+                    id="edit-visit-symptoms"
                     name="symptoms"
                     value={formData.symptoms}
                     onChange={handleInputChange}
@@ -321,8 +329,9 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Follow-up Date</label>
+                  <label htmlFor="edit-visit-follow_up_date" className="block text-sm font-medium text-gray-700">Follow-up Date</label>
                   <DatePicker
+                    id="edit-visit-follow_up_date"
                     date={formData.follow_up_date}
                     onDateChange={(date) => handleDateChange('follow_up_date', date)}
                     placeholder="Select follow-up date (optional)"
@@ -336,8 +345,9 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                 <h3 className="text-lg font-semibold text-gray-900">Clinical Information</h3>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Diagnosis</label>
+                  <label htmlFor="edit-visit-diagnosis" className="block text-sm font-medium text-gray-700">Diagnosis</label>
                   <textarea
+                    id="edit-visit-diagnosis"
                     name="diagnosis"
                     value={formData.diagnosis}
                     onChange={handleInputChange}
@@ -349,8 +359,9 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Prescription</label>
+                  <label htmlFor="edit-visit-prescription" className="block text-sm font-medium text-gray-700">Prescription</label>
                   <textarea
+                    id="edit-visit-prescription"
                     name="prescription"
                     value={formData.prescription}
                     onChange={handleInputChange}
@@ -370,13 +381,16 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
 
                 <div className={`grid gap-4 ${formData.payment_status === 'D' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-3'}`}>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="edit-visit-consultation_fee" className="block text-sm font-medium text-gray-700 mb-1">
                       Consultation Fee
                     </label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">₹</span>
                       <input
                         type="number"
+                        id="edit-visit-consultation_fee"
+                        aria-invalid={!!errors.consultation_fee}
+                        aria-describedby={errors.consultation_fee ? "edit-visit-consultation_fee-error" : undefined}
                         name="consultation_fee"
                         value={formData.consultation_fee}
                         onChange={handleInputChange}
@@ -387,14 +401,15 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                       />
                     </div>
                     {errors.consultation_fee && (
-                      <p className="mt-1 text-sm text-red-600">{errors.consultation_fee}</p>
+                      <p id="edit-visit-consultation_fee-error" className="mt-1 text-sm text-red-600">{errors.consultation_fee}</p>
                     )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="edit-visit-payment_status" className="block text-sm font-medium text-gray-700 mb-1">
                       Payment Status
                     </label>
                     <select
+                      id="edit-visit-payment_status"
                       name="payment_status"
                       value={formData.payment_status}
                       onChange={handleInputChange}
@@ -407,10 +422,13 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                   </div>
                   {formData.payment_status === 'P' && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="edit-visit-payment_method" className="block text-sm font-medium text-gray-700 mb-1">
                         Payment Method
                       </label>
                       <select
+                        id="edit-visit-payment_method"
+                        aria-invalid={!!errors.payment_method}
+                        aria-describedby={errors.payment_method ? "edit-visit-payment_method-error" : undefined}
                         name="payment_method"
                         value={formData.payment_method}
                         onChange={handleInputChange}
@@ -420,7 +438,7 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                         <option value="O">Online</option>
                       </select>
                       {errors.payment_method && (
-                        <p className="mt-1 text-sm text-red-600">{errors.payment_method}</p>
+                        <p id="edit-visit-payment_method-error" className="mt-1 text-sm text-red-600">{errors.payment_method}</p>
                       )}
                     </div>
                   )}
@@ -434,10 +452,11 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
 
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Temperature</label>
+                    <label htmlFor="edit-visit-vitals-temperature" className="block text-sm font-medium text-gray-700">Temperature</label>
                     <input
                       type="text"
                       inputMode="decimal"
+                      id="edit-visit-vitals-temperature"
                       name="vitals.temperature"
                       value={formData.vitals.temperature}
                       onChange={handleInputChange}
@@ -447,9 +466,10 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Blood Pressure</label>
+                    <label htmlFor="edit-visit-vitals-bp" className="block text-sm font-medium text-gray-700">Blood Pressure</label>
                     <input
                       type="text"
+                      id="edit-visit-vitals-bp"
                       name="vitals.bp"
                       value={formData.vitals.bp}
                       onChange={handleInputChange}
@@ -459,10 +479,11 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Pulse</label>
+                    <label htmlFor="edit-visit-vitals-pulse" className="block text-sm font-medium text-gray-700">Pulse</label>
                     <input
                       type="text"
                       inputMode="numeric"
+                      id="edit-visit-vitals-pulse"
                       name="vitals.pulse"
                       value={formData.vitals.pulse}
                       onChange={handleInputChange}
@@ -472,10 +493,11 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Weight</label>
+                    <label htmlFor="edit-visit-vitals-weight" className="block text-sm font-medium text-gray-700">Weight</label>
                     <input
                       type="text"
                       inputMode="decimal"
+                      id="edit-visit-vitals-weight"
                       name="vitals.weight"
                       value={formData.vitals.weight}
                       onChange={handleInputChange}
@@ -485,10 +507,11 @@ export default function EditVisitModal({ visit, onClose, onSuccess }: EditVisitM
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">O2 Saturation</label>
+                    <label htmlFor="edit-visit-vitals-o2" className="block text-sm font-medium text-gray-700">O2 Saturation</label>
                     <input
                       type="text"
                       inputMode="numeric"
+                      id="edit-visit-vitals-o2"
                       name="vitals.o2"
                       value={formData.vitals.o2}
                       onChange={handleInputChange}

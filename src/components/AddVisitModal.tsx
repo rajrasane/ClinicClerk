@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useModalFocus } from '@/hooks/useModalFocus';
+
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { apiCache } from '@/lib/cache';
-import { motion, AnimatePresence } from 'framer-motion';
+import { apiCache, authenticatedJsonFetch, isAbortedRequest } from '@/lib/cache';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { DatePicker } from '@/components/ui/date-picker';
-import { supabase } from '@/lib/supabase';
+
 
 interface Patient {
   id: number;
@@ -64,6 +66,7 @@ const formatDateForAPI = (date: Date): string => {
 
 export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId }: AddVisitModalProps) {
   const [patients, setPatients] = useState<Patient[]>([]);
+  const shouldReduceMotion = useReducedMotion();
   const [formData, setFormData] = useState({
     patient_id: preselectedPatientId?.toString() || '',
     visit_date: new Date(),
@@ -106,10 +109,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
   const totalSteps = patientType === 'new' ? 6 : (preselectedPatientId ? 3 : 5);
 
   // Focus management
-  const modalRef = useRef<HTMLDivElement | null>(null);
+  const modalRef = useModalFocus(onClose);
   useEffect(() => {
-    modalRef.current?.focus();
-
     // Prevent background scrolling when modal is open
     document.body.style.overflow = 'hidden';
 
@@ -122,33 +123,27 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
   useEffect(() => {
     // Only search when user types something
     if (patientType === 'existing' && searchTerm.trim().length >= 1) {
+      const controller = new AbortController();
       const debounceTimer = setTimeout(() => {
-        fetchPatients(searchTerm.trim());
+        fetchPatients(searchTerm.trim(), controller.signal);
       }, 350);
-      return () => clearTimeout(debounceTimer);
+      return () => {
+        clearTimeout(debounceTimer);
+        controller.abort();
+      };
     } else if (patientType === 'existing' && searchTerm.trim().length === 0) {
       setPatients([]); // Clear results when search is empty
     }
   }, [searchTerm, patientType]);
 
-  const fetchPatients = async (search: string) => {
+  const fetchPatients = async (search: string, signal: AbortSignal) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        console.error('No auth token available');
-        return;
-      }
-
-      const response = await fetch(`/api/patients?limit=20&search=${encodeURIComponent(search)}`, {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      });
-      const data = await response.json();
+      const { data } = await authenticatedJsonFetch(`/api/patients?limit=20&search=${encodeURIComponent(search)}`, { signal });
       if (data.success) {
         setPatients(data.data);
       }
     } catch (error) {
+      if (isAbortedRequest(error)) return;
       console.error('Error fetching patients:', error);
     }
   };
@@ -361,14 +356,15 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-
-    if (value.trim() !== '') {
-      setTouchedFields(prev => new Set(prev).add(name));
-      const error = validateField(name, value);
-      if (error) {
-        setErrors(prev => ({ ...prev, [name]: error }));
-      }
-    }
+    // A cleared required field still needs feedback after the user leaves it.
+    setTouchedFields(prev => new Set(prev).add(name));
+    const error = validateField(name, value);
+    setErrors(prev => {
+      const next = { ...prev };
+      if (error) next[name] = error;
+      else delete next[name];
+      return next;
+    });
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -416,6 +412,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     }
 
     setLoading(true);
+    const operation = apiCache.snapshot();
     try {
       let patientId = parseInt(formData.patient_id);
 
@@ -434,25 +431,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           emergency_contact: formData.emergency_contact.trim() || null
         };
 
-        // Get the current session token for patient creation
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.access_token) {
-          toast.error('Authentication required');
-          setLoading(false);
-          return;
-        }
-
-        const patientResponse = await fetch('/api/patients', {
+        const { response: patientResponse, data: patientResult } = await authenticatedJsonFetch('/api/patients', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(patientData),
-        });
-
-        const patientResult = await patientResponse.json();
+        }, operation);
         if (!patientResponse.ok) {
           toast.error(patientResult.error || 'Failed to create patient');
           setErrors({ general: patientResult.error || 'Failed to create patient' });
@@ -470,18 +453,9 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           return acc;
         }, {} as Record<string, string>);
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        toast.error('Authentication required');
-        return;
-      }
-
-      const response = await fetch('/api/visits', {
+      const { data: result } = await authenticatedJsonFetch('/api/visits', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           patient_id: patientId,
           visit_date: formatDateForAPI(formData.visit_date),
@@ -497,9 +471,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
           payment_status: formData.payment_status,
           payment_method: formData.payment_status === 'P' ? formData.payment_method : null
         }),
-      });
-
-      const result = await response.json();
+      }, operation);
 
       if (result.success) {
         toast.success('Visit added successfully!');
@@ -512,7 +484,8 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         toast.error(result.error || 'Failed to create visit');
         setErrors({ general: result.error || 'Failed to create visit' });
       }
-    } catch {
+    } catch (error) {
+      if (isAbortedRequest(error) || !apiCache.isCurrent(operation)) return;
       toast.error('Network error. Please try again.');
       setErrors({ general: 'Network error. Please try again.' });
     } finally {
@@ -582,12 +555,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
     }
   };
 
-  const handleOverlayKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Escape') {
-      e.stopPropagation();
-      onClose();
-    }
-  };
+
 
   const canProceed = () => {
     // Step 1: Patient type selection
@@ -762,6 +730,9 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
         </label>
         <input
           id={name}
+          aria-required={required || undefined}
+          aria-invalid={!!errors[name]}
+          aria-describedby={errors[name] ? `${name}-error` : undefined}
           type={type}
           inputMode={inputMode}
           name={name}
@@ -776,7 +747,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
             }`}
         />
         {errors[name] && (
-          <p className="mt-1 text-sm text-red-600">{errors[name]}</p>
+          <p id={`${name}-error`} className="mt-1 text-sm text-red-600">{errors[name]}</p>
         )}
       </div>
     );
@@ -795,10 +766,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-visit_date" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Visit Date <span className="text-red-500">*</span>
                   </label>
                   <DatePicker
+                    id="add-visit-visit_date"
                     date={formData.visit_date}
                     onDateChange={(date) => handleDateChange('visit_date', date)}
                     placeholder="Select visit date"
@@ -810,20 +782,22 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-follow_up_date" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Follow-up Date
                   </label>
                   <DatePicker
+                    id="add-visit-follow_up_date"
                     date={formData.follow_up_date}
                     onDateChange={(date) => handleDateChange('follow_up_date', date)}
                     placeholder="Select follow-up date (optional)"
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-chief_complaint" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Chief Complaint <span className="text-red-500">*</span>
                   </label>
                   <textarea
+                    id="add-visit-chief_complaint"
                     name="chief_complaint"
                     value={formData.chief_complaint}
                     onChange={handleChange}
@@ -841,10 +815,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                   )}
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-symptoms" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Symptoms
                   </label>
                   <textarea
+                    id="add-visit-symptoms"
                     name="symptoms"
                     value={formData.symptoms}
                     onChange={handleChange}
@@ -854,10 +829,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-diagnosis" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Diagnosis
                   </label>
                   <textarea
+                    id="add-visit-diagnosis"
                     name="diagnosis"
                     value={formData.diagnosis}
                     onChange={handleChange}
@@ -867,10 +843,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-prescription" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Prescription
                   </label>
                   <textarea
+                    id="add-visit-prescription"
                     name="prescription"
                     value={formData.prescription}
                     onChange={handleChange}
@@ -897,10 +874,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                 {renderInput("Weight", "vitals.weight", "text", false, "e.g., 70 kg")}
                 {renderInput("O2 Saturation", "vitals.o2", "text", false, "e.g., 98%")}
                 <div className="md:col-span-2">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-notes" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Additional Notes
                   </label>
                   <textarea
+                    id="add-visit-notes"
                     name="notes"
                     value={formData.notes}
                     onChange={handleChange}
@@ -921,10 +899,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-consultation_fee" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Consultation Fee (₹) <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id="add-visit-consultation_fee"
                     type="number"
                     name="consultation_fee"
                     value={formData.consultation_fee}
@@ -944,10 +923,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                 </div>
 
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-payment_status" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Payment Status
                   </label>
                   <select
+                    id="add-visit-payment_status"
                     name="payment_status"
                     value={formData.payment_status}
                     onChange={handleChange}
@@ -960,10 +940,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                 </div>
 
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-payment_method" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Payment Method
                   </label>
                   <select
+                    id="add-visit-payment_method"
                     name="payment_method"
                     value={formData.payment_method}
                     onChange={handleChange}
@@ -1080,11 +1061,16 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
               </div>
               <div className="grid grid-cols-1 gap-6">
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="visit-patient-search" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Search Patient <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
+                    id="visit-patient-search"
+                    name="visit-patient-search"
+                    autoComplete="off"
+                    aria-invalid={!!errors.patient_id}
+                    aria-describedby={errors.patient_id ? "visit-patient-search-error" : undefined}
                     placeholder="Search by name or phone…"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -1094,21 +1080,23 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                       }`}
                   />
                   {errors.patient_id && (
-                    <p className="mt-1 text-sm text-red-600">{errors.patient_id}</p>
+                    <p id="visit-patient-search-error" className="mt-1 text-sm text-red-600">{errors.patient_id}</p>
                   )}
                 </div>
                 {searchTerm && (
                   <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-lg">
                     {filteredPatients.length > 0 ? (
                       filteredPatients.map((patient) => (
-                        <div
+                        <button
+                          type="button"
                           key={patient.id}
+                          aria-pressed={formData.patient_id === patient.id.toString()}
                           onClick={() => selectPatient(patient)}
-                          className={`px-4 py-2 cursor-pointer hover:bg-gray-100 ${formData.patient_id === patient.id.toString() ? 'bg-gray-100' : ''
+                          className={`block w-full min-h-11 px-4 py-2 text-left break-words cursor-pointer hover:bg-gray-100 ${formData.patient_id === patient.id.toString() ? 'bg-gray-100' : ''
                             }`}
                         >
                           {patient.first_name} {patient.last_name} - {patient.phone}
-                        </div>
+                        </button>
                       ))
                     ) : (
                       <div className="px-4 py-2 text-sm text-gray-500">No patients found</div>
@@ -1116,10 +1104,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                   </div>
                 )}
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-visit_date" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Visit Date <span className="text-red-500">*</span>
                   </label>
                   <DatePicker
+                    id="add-visit-visit_date"
                     date={formData.visit_date}
                     onDateChange={(date) => handleDateChange('visit_date', date)}
                     placeholder="Select visit date"
@@ -1131,10 +1120,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-follow_up_date" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Follow-up Date
                   </label>
                   <DatePicker
+                    id="add-visit-follow_up_date"
                     date={formData.follow_up_date}
                     onDateChange={(date) => handleDateChange('follow_up_date', date)}
                     placeholder="Select follow-up date (optional)"
@@ -1204,10 +1194,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-chief_complaint" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Chief Complaint <span className="text-red-500">*</span>
                   </label>
                   <textarea
+                    id="add-visit-chief_complaint"
                     name="chief_complaint"
                     value={formData.chief_complaint}
                     onChange={handleChange}
@@ -1225,10 +1216,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                   )}
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-symptoms" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Symptoms
                   </label>
                   <textarea
+                    id="add-visit-symptoms"
                     name="symptoms"
                     value={formData.symptoms}
                     onChange={handleChange}
@@ -1238,10 +1230,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-diagnosis" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Diagnosis
                   </label>
                   <textarea
+                    id="add-visit-diagnosis"
                     name="diagnosis"
                     value={formData.diagnosis}
                     onChange={handleChange}
@@ -1251,10 +1244,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-prescription" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Prescription
                   </label>
                   <textarea
+                    id="add-visit-prescription"
                     name="prescription"
                     value={formData.prescription}
                     onChange={handleChange}
@@ -1279,10 +1273,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-visit_date" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Visit Date <span className="text-red-500">*</span>
                   </label>
                   <DatePicker
+                    id="add-visit-visit_date"
                     date={formData.visit_date}
                     onDateChange={(date) => handleDateChange('visit_date', date)}
                     placeholder="Select visit date"
@@ -1294,20 +1289,22 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-follow_up_date" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Follow-up Date
                   </label>
                   <DatePicker
+                    id="add-visit-follow_up_date"
                     date={formData.follow_up_date}
                     onDateChange={(date) => handleDateChange('follow_up_date', date)}
                     placeholder="Select follow-up date (optional)"
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-chief_complaint" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Chief Complaint <span className="text-red-500">*</span>
                   </label>
                   <textarea
+                    id="add-visit-chief_complaint"
                     name="chief_complaint"
                     value={formData.chief_complaint}
                     onChange={handleChange}
@@ -1325,10 +1322,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                   )}
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-symptoms" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Symptoms
                   </label>
                   <textarea
+                    id="add-visit-symptoms"
                     name="symptoms"
                     value={formData.symptoms}
                     onChange={handleChange}
@@ -1338,10 +1336,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-diagnosis" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Diagnosis
                   </label>
                   <textarea
+                    id="add-visit-diagnosis"
                     name="diagnosis"
                     value={formData.diagnosis}
                     onChange={handleChange}
@@ -1351,10 +1350,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-prescription" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Prescription
                   </label>
                   <textarea
+                    id="add-visit-prescription"
                     name="prescription"
                     value={formData.prescription}
                     onChange={handleChange}
@@ -1381,10 +1381,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                 {renderInput("Weight", "vitals.weight", "text", false, "e.g., 70 kg")}
                 {renderInput("O2 Saturation", "vitals.o2", "text", false, "e.g., 98%")}
                 <div className="md:col-span-2">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-notes" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Additional Notes
                   </label>
                   <textarea
+                    id="add-visit-notes"
                     name="notes"
                     value={formData.notes}
                     onChange={handleChange}
@@ -1413,10 +1414,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                 {renderInput("Weight", "vitals.weight", "text", false, "e.g., 70 kg")}
                 {renderInput("O2 Saturation", "vitals.o2", "text", false, "e.g., 98%")}
                 <div className="md:col-span-2">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-notes" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Additional Notes
                   </label>
                   <textarea
+                    id="add-visit-notes"
                     name="notes"
                     value={formData.notes}
                     onChange={handleChange}
@@ -1437,10 +1439,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-consultation_fee" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Consultation Fee (₹) <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id="add-visit-consultation_fee"
                     type="number"
                     name="consultation_fee"
                     value={formData.consultation_fee}
@@ -1460,10 +1463,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                 </div>
 
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-payment_status" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Payment Status
                   </label>
                   <select
+                    id="add-visit-payment_status"
                     name="payment_status"
                     value={formData.payment_status}
                     onChange={handleChange}
@@ -1476,10 +1480,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                 </div>
 
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-payment_method" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Payment Method
                   </label>
                   <select
+                    id="add-visit-payment_method"
                     name="payment_method"
                     value={formData.payment_method}
                     onChange={handleChange}
@@ -1514,10 +1519,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-consultation_fee" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Consultation Fee (₹) <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id="add-visit-consultation_fee"
                     type="number"
                     name="consultation_fee"
                     value={formData.consultation_fee}
@@ -1537,10 +1543,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                 </div>
 
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-payment_status" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Payment Status
                   </label>
                   <select
+                    id="add-visit-payment_status"
                     name="payment_status"
                     value={formData.payment_status}
                     onChange={handleChange}
@@ -1553,10 +1560,11 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                 </div>
 
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  <label htmlFor="add-visit-payment_method" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                     Payment Method
                   </label>
                   <select
+                    id="add-visit-payment_method"
                     name="payment_method"
                     value={formData.payment_method}
                     onChange={handleChange}
@@ -1589,18 +1597,19 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
   const modalContent = (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0 }}
+        initial={shouldReduceMotion ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        transition={shouldReduceMotion ? { duration: 0 } : undefined}
         className="fixed inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center z-99999 p-2 sm:p-4"
         onClick={onClose}
-        onKeyDown={handleOverlayKeyDown}
         aria-hidden={false}
       >
         <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
+          initial={shouldReduceMotion ? false : { scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.9, opacity: 0 }}
+          exit={shouldReduceMotion ? { opacity: 0 } : { scale: 0.9, opacity: 0 }}
+          transition={shouldReduceMotion ? { duration: 0 } : undefined}
           className="bg-white rounded-2xl sm:rounded-3xl shadow-xl w-full max-w-[95vw] sm:max-w-xl md:max-w-2xl lg:max-w-4xl h-[82vh] sm:h-[85vh] lg:h-[94vh] flex flex-col overflow-hidden"
           onClick={(e) => e.stopPropagation()}
           role="dialog"
@@ -1618,7 +1627,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
               </div>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 text-xl sm:text-2xl p-1"
+                className="h-11 w-11 shrink-0 inline-flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700"
                 aria-label="Close modal"
               >
                 <XMarkIcon className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -1668,10 +1677,10 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 min-h-0 flex flex-col">
             {/* Content */}
             <div className="flex-1 min-h-0 relative">
-              <div className="absolute inset-0 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 hover:scrollbar-thumb-gray-400 scrollbar-track-transparent p-3 sm:p-4 md:p-5">
+              <div className="absolute inset-0 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-gray-300 hover:scrollbar-thumb-gray-400 scrollbar-track-transparent p-3 sm:p-4 md:p-5">
                 {errors.general && (
                   <div className="p-4 bg-red-50/50 backdrop-blur-sm border border-red-200 text-red-700 rounded-lg mb-6">
                     {errors.general}
@@ -1722,7 +1731,7 @@ export default function AddVisitModal({ onClose, onSuccess, preselectedPatientId
                   >
                     {loading ? (
                       <span className="flex items-center">
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <svg aria-hidden="true" className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>

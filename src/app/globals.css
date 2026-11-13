@@ -210,3 +210,30 @@
 @utility glass-panel {
   @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-xl;
 }
+
+/* Keep keyboard navigation visible, including controls with outline-none. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid hsl(var(--color-primary));
+  outline-offset: 3px;
+}
+
+:where(input, textarea)::placeholder {
+  color: #6b7280;
+  opacity: 1;
+}
+
+/* Avoid iOS input zoom and keep long forms readable on small screens. */
+@media (max-width: 639px) {
+  input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+    font-size: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
